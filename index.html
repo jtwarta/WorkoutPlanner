@@ -36,127 +36,104 @@ body {
   min-height: 100vh; -webkit-font-smoothing: antialiased; line-height: 1.5;
 }
 .app { max-width: 480px; margin: 0 auto; padding: 20px 18px 120px; }
-
-/* Header */
 .header {
-display: flex; align-items: center; justify-content: space-between;
-padding: 8px 0 16px; margin-bottom: 20px; border-bottom: 1px solid var(–border);
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 8px 0 16px; margin-bottom: 20px; border-bottom: 1px solid var(--border);
 }
 .header h1 { font-size: 20px; font-weight: 700; letter-spacing: -0.5px; }
-.header .subtitle { font-size: 11px; color: var(–text-dim); font-family: ‘JetBrains Mono’, monospace; margin-top: 2px; }
+.header .subtitle { font-size: 11px; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; margin-top: 2px; }
 .btn-refresh {
-padding: 7px 14px; font-size: 12px; font-weight: 500;
-background: var(–surface2); color: var(–text-mid);
-border: 1px solid var(–border); border-radius: 8px;
-cursor: pointer; font-family: ‘Figtree’, sans-serif;
--webkit-tap-highlight-color: transparent;
+  padding: 7px 14px; font-size: 12px; font-weight: 500;
+  background: var(--surface2); color: var(--text-mid);
+  border: 1px solid var(--border); border-radius: 8px;
+  cursor: pointer; font-family: 'Figtree', sans-serif;
+  -webkit-tap-highlight-color: transparent;
 }
-.btn-refresh:active { background: var(–surface3); transform: scale(0.97); }
-
-/* Cards */
+.btn-refresh:active { background: var(--surface3); transform: scale(0.97); }
 .card {
-background: var(–surface); border: 1px solid var(–border);
-border-radius: 14px; padding: 18px; margin-bottom: 14px;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 14px; padding: 18px; margin-bottom: 14px;
 }
 .card-title {
-font-size: 11px; font-weight: 600; text-transform: uppercase;
-letter-spacing: 1.5px; color: var(–text-dim); margin-bottom: 14px;
+  font-size: 11px; font-weight: 600; text-transform: uppercase;
+  letter-spacing: 1.5px; color: var(--text-dim); margin-bottom: 14px;
 }
-
-/* Tabs */
 .tabs {
-display: flex; gap: 4px; margin-bottom: 18px;
-background: var(–surface); border-radius: 12px; padding: 4px;
-border: 1px solid var(–border);
+  display: flex; gap: 4px; margin-bottom: 18px;
+  background: var(--surface); border-radius: 12px; padding: 4px;
+  border: 1px solid var(--border);
 }
 .tab {
-flex: 1; padding: 9px 6px; text-align: center; font-size: 13px;
-font-weight: 600; border-radius: 9px; cursor: pointer;
-color: var(–text-dim); transition: all 0.25s ease;
-border: none; background: none; font-family: ‘Figtree’, sans-serif;
--webkit-tap-highlight-color: transparent;
+  flex: 1; padding: 9px 6px; text-align: center; font-size: 13px;
+  font-weight: 600; border-radius: 9px; cursor: pointer;
+  color: var(--text-dim); transition: all 0.25s ease;
+  border: none; background: none; font-family: 'Figtree', sans-serif;
+  -webkit-tap-highlight-color: transparent;
 }
-.tab.active { background: var(–surface3); color: var(–text); }
-
-/* ===== TODAY’S SESSION ===== */
-.session-summary {
-font-size: 13px; color: var(–text-mid); margin-bottom: 16px; line-height: 1.5;
-}
-.session-summary strong { color: var(–text); font-weight: 600; }
-
+.tab.active { background: var(--surface3); color: var(--text); }
+.session-summary { font-size: 13px; color: var(--text-mid); margin-bottom: 16px; line-height: 1.5; }
+.session-summary strong { color: var(--text); font-weight: 600; }
 .session-group { margin-bottom: 20px; }
 .session-group:last-child { margin-bottom: 0; }
 .session-group-header {
-display: flex; align-items: center; justify-content: space-between;
-margin-bottom: 10px; padding-bottom: 8px; border-bottom: 1px solid var(–border);
-cursor: pointer; -webkit-tap-highlight-color: transparent;
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 10px; padding-bottom: 8px; border-bottom: 1px solid var(--border);
+  cursor: pointer; -webkit-tap-highlight-color: transparent;
 }
 .session-group-name { font-size: 14px; font-weight: 700; }
 .session-group-badge {
-font-size: 10px; font-weight: 600; padding: 3px 8px; border-radius: 6px;
-font-family: ‘JetBrains Mono’, monospace; text-transform: uppercase; letter-spacing: 0.5px;
+  font-size: 10px; font-weight: 600; padding: 3px 8px; border-radius: 6px;
+  font-family: 'JetBrains Mono', monospace; text-transform: uppercase; letter-spacing: 0.5px;
 }
-.badge-high { background: var(–danger-dim); color: var(–danger); }
-.badge-med { background: var(–warn-dim); color: var(–warn); }
-.badge-low { background: var(–accent-dim); color: var(–accent); }
-
+.badge-high { background: var(--danger-dim); color: var(--danger); }
+.badge-med { background: var(--warn-dim); color: var(--warn); }
+.badge-low { background: var(--accent-dim); color: var(--accent); }
 .session-group-explain {
-max-height: 0; overflow: hidden; transition: max-height 0.3s ease, opacity 0.25s ease; opacity: 0;
+  max-height: 0; overflow: hidden; transition: max-height 0.3s ease, opacity 0.25s ease; opacity: 0;
 }
 .session-group-explain.open { opacity: 1; }
 .session-group-explain-text {
-font-size: 13px; color: var(–text-mid); line-height: 1.55;
-padding: 0 0 12px; margin-top: -4px;
+  font-size: 13px; color: var(--text-mid); line-height: 1.55;
+  padding: 0 0 12px; margin-top: -4px;
 }
-.session-group-explain-text strong { color: var(–text); font-weight: 600; }
-
+.session-group-explain-text strong { color: var(--text); font-weight: 600; }
 .ex-row {
-display: flex; align-items: baseline; justify-content: space-between;
-padding: 8px 0; border-bottom: 1px solid rgba(42,42,46,0.5);
+  display: flex; align-items: baseline; justify-content: space-between;
+  padding: 8px 0; border-bottom: 1px solid rgba(42,42,46,0.5);
 }
 .ex-row:last-child { border-bottom: none; }
 .ex-name { font-size: 14px; font-weight: 500; flex: 1; min-width: 0; padding-right: 10px; }
 .ex-rx {
-font-family: ‘JetBrains Mono’, monospace; font-size: 12px;
-color: var(–accent); white-space: nowrap; flex-shrink: 0;
+  font-family: 'JetBrains Mono', monospace; font-size: 12px;
+  color: var(--accent); white-space: nowrap; flex-shrink: 0;
 }
-
 .session-total {
-display: flex; justify-content: space-between; align-items: center;
-padding: 12px 0 0; margin-top: 8px; border-top: 1px solid var(–border);
-font-family: ‘JetBrains Mono’, monospace; font-size: 12px; color: var(–text-dim);
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 12px 0 0; margin-top: 8px; border-top: 1px solid var(--border);
+  font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--text-dim);
 }
-.session-total strong { color: var(–text-mid); font-weight: 600; }
-
-/* ===== MUSCLE GRID ===== */
+.session-total strong { color: var(--text-mid); font-weight: 600; }
 .muscle-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-.muscle-cell { background: var(–surface2); border-radius: 10px; padding: 12px; }
+.muscle-cell { background: var(--surface2); border-radius: 10px; padding: 12px; }
 .muscle-name { font-size: 13px; font-weight: 600; }
-.muscle-stat { font-size: 11px; color: var(–text-dim); font-family: ‘JetBrains Mono’, monospace; margin-top: 5px; }
-.muscle-bar { height: 4px; background: var(–border); border-radius: 3px; margin-top: 8px; overflow: hidden; }
+.muscle-stat { font-size: 11px; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; margin-top: 5px; }
+.muscle-bar { height: 4px; background: var(--border); border-radius: 3px; margin-top: 8px; overflow: hidden; }
 .muscle-bar-fill { height: 100%; border-radius: 3px; transition: width 0.6s ease; }
-
-/* ===== WEIGHT ===== */
 .weight-chart { width: 100%; height: 130px; position: relative; }
 .weight-chart canvas { width: 100%; height: 100%; }
-.weight-current { font-family: ‘JetBrains Mono’, monospace; font-size: 30px; font-weight: 700; letter-spacing: -1px; }
-.weight-delta { font-family: ‘JetBrains Mono’, monospace; font-size: 13px; margin-left: 8px; }
-
-/* ===== HISTORY ===== */
-.workout-item { padding: 10px 0; border-bottom: 1px solid var(–border); }
+.weight-current { font-family: 'JetBrains Mono', monospace; font-size: 30px; font-weight: 700; letter-spacing: -1px; }
+.weight-delta { font-family: 'JetBrains Mono', monospace; font-size: 13px; margin-left: 8px; }
+.workout-item { padding: 10px 0; border-bottom: 1px solid var(--border); }
 .workout-item:last-child { border-bottom: none; }
 .workout-title { font-size: 14px; font-weight: 600; }
-.workout-meta { font-size: 12px; color: var(–text-dim); font-family: ‘JetBrains Mono’, monospace; margin-top: 3px; line-height: 1.4; }
-
-/* ===== LOADING / ERROR ===== */
+.workout-meta { font-size: 12px; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; margin-top: 3px; line-height: 1.4; }
 .loading { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 60vh; gap: 18px; }
-.spinner { width: 28px; height: 28px; border: 2.5px solid var(–border); border-top-color: var(–accent); border-radius: 50%; animation: spin 0.75s linear infinite; }
+.spinner { width: 28px; height: 28px; border: 2.5px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.75s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
-.loading-text { font-size: 13px; color: var(–text-dim); font-family: ‘JetBrains Mono’, monospace; }
-.error-msg { background: var(–danger-dim); border: 1px solid rgba(248,113,113,0.2); border-radius: 10px; padding: 14px; font-size: 13px; color: var(–danger); margin-bottom: 14px; }
+.loading-text { font-size: 13px; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; }
+.error-msg { background: var(--danger-dim); border: 1px solid rgba(248,113,113,0.2); border-radius: 10px; padding: 14px; font-size: 13px; color: var(--danger); margin-bottom: 14px; }
 .hidden { display: none; }
 </style>
-
 </head>
 <body>
 <div class="app" id="app">
@@ -208,181 +185,168 @@ font-family: ‘JetBrains Mono’, monospace; font-size: 12px; color: var(–tex
   </div>
 </div>
 <script>
-// ============================================================
-// PROFILE (silent)
-// ============================================================
+(function() {
+  "use strict";
+
+// Profile (silent - never displayed)
 var PROFILE = {
-  dob: new Date('1989-07-21'), sex: 'male', bodyweightLbs: 166,
-  sessionMinutes: 55, // target session length
-  get age() {
-    var t = new Date(), a = t.getFullYear() - this.dob.getFullYear();
-    var m = t.getMonth() - this.dob.getMonth();
-    if (m < 0 || (m === 0 && t.getDate() < this.dob.getDate())) a--;
-    return a;
-  }
+dob: new Date(‘1989-07-21’),
+sex: ‘male’,
+bodyweightLbs: 166,
+sessionMinutes: 55
 };
 
-// ============================================================
-// SESSION CONSTRAINTS
-// ~2.5 min per set avg (compound rest + isolation rest)
-// 55 min session => ~22 working sets max
-// Split across 2-3 muscle groups, 5-7 sets each, <8 per muscle
-// ============================================================
+// Session constraints
+// ~2.5 min per set avg => 55 min = ~22 sets
+// Cap each muscle group at 7 sets per session (research: >8 = diminishing returns)
 var MAX_SESSION_SETS = 22;
 var MAX_SETS_PER_MUSCLE = 7;
-var TARGET_MUSCLE_GROUPS = 3; // aim for 3, could be 2
+var TARGET_GROUPS = 3;
 
-// ============================================================
-// EXERCISE → MUSCLE MAPPING
-// ============================================================
+// Exercise classification
 var EXERCISE_MUSCLE_MAP = [
-{ pattern: /bench press/i, primary: ‘chest’, secondary: [‘triceps’, ‘shoulders’] },
-{ pattern: /chest press/i, primary: ‘chest’, secondary: [‘triceps’, ‘shoulders’] },
-{ pattern: /chest fly/i, primary: ‘chest’, secondary: [] },
-{ pattern: /cable fly/i, primary: ‘chest’, secondary: [] },
-{ pattern: /chest dip/i, primary: ‘chest’, secondary: [‘triceps’, ‘shoulders’] },
-{ pattern: /push.?up/i, primary: ‘chest’, secondary: [‘triceps’, ‘shoulders’] },
-{ pattern: /pec.?deck/i, primary: ‘chest’, secondary: [] },
-{ pattern: /dip/i, primary: ‘chest’, secondary: [‘triceps’, ‘shoulders’] },
-{ pattern: /romanian deadlift/i, primary: ‘hamstrings’, secondary: [‘glutes’, ‘back’] },
-{ pattern: /deadlift/i, primary: ‘back’, secondary: [‘hamstrings’, ‘glutes’] },
-{ pattern: /pull.?up/i, primary: ‘back’, secondary: [‘biceps’] },
-{ pattern: /chin.?up/i, primary: ‘back’, secondary: [‘biceps’] },
-{ pattern: /lat.?pull/i, primary: ‘back’, secondary: [‘biceps’] },
-{ pattern: /row/i, primary: ‘back’, secondary: [‘biceps’] },
-{ pattern: /rack pull/i, primary: ‘back’, secondary: [‘hamstrings’] },
-{ pattern: /back extension/i, primary: ‘back’, secondary: [‘glutes’] },
-{ pattern: /good morning/i, primary: ‘back’, secondary: [‘hamstrings’, ‘glutes’] },
-{ pattern: /shrug/i, primary: ‘back’, secondary: [] },
-{ pattern: /face pull/i, primary: ‘back’, secondary: [‘shoulders’] },
-{ pattern: /overhead press/i, primary: ‘shoulders’, secondary: [‘triceps’] },
-{ pattern: /shoulder press/i, primary: ‘shoulders’, secondary: [‘triceps’] },
-{ pattern: /military press/i, primary: ‘shoulders’, secondary: [‘triceps’] },
-{ pattern: /arnold press/i, primary: ‘shoulders’, secondary: [‘triceps’] },
-{ pattern: /lateral raise/i, primary: ‘shoulders’, secondary: [] },
-{ pattern: /front raise/i, primary: ‘shoulders’, secondary: [] },
-{ pattern: /rear delt/i, primary: ‘shoulders’, secondary: [] },
-{ pattern: /pike push/i, primary: ‘shoulders’, secondary: [‘triceps’] },
-{ pattern: /bicep curl/i, primary: ‘biceps’, secondary: [] },
-{ pattern: /hammer curl/i, primary: ‘biceps’, secondary: [] },
-{ pattern: /concentration curl/i, primary: ‘biceps’, secondary: [] },
-{ pattern: /preacher curl/i, primary: ‘biceps’, secondary: [] },
-{ pattern: /kettlebell curl/i, primary: ‘biceps’, secondary: [] },
-{ pattern: /tricep/i, primary: ‘triceps’, secondary: [] },
-{ pattern: /skull.?crush/i, primary: ‘triceps’, secondary: [] },
-{ pattern: /squat/i, primary: ‘quads’, secondary: [‘glutes’, ‘hamstrings’] },
-{ pattern: /leg press/i, primary: ‘quads’, secondary: [‘glutes’] },
-{ pattern: /leg extension/i, primary: ‘quads’, secondary: [] },
-{ pattern: /lunge/i, primary: ‘quads’, secondary: [‘glutes’, ‘hamstrings’] },
-{ pattern: /step.?up/i, primary: ‘quads’, secondary: [‘glutes’] },
-{ pattern: /hack squat/i, primary: ‘quads’, secondary: [‘glutes’] },
-{ pattern: /leg curl/i, primary: ‘hamstrings’, secondary: [] },
-{ pattern: /nordic curl/i, primary: ‘hamstrings’, secondary: [] },
-{ pattern: /stiff.?leg/i, primary: ‘hamstrings’, secondary: [‘glutes’, ‘back’] },
-{ pattern: /hip thrust/i, primary: ‘glutes’, secondary: [‘hamstrings’] },
-{ pattern: /glute/i, primary: ‘glutes’, secondary: [] },
-{ pattern: /hip abduction/i, primary: ‘glutes’, secondary: [] },
-{ pattern: /hip adduction/i, primary: ‘glutes’, secondary: [] },
-{ pattern: /calf/i, primary: ‘calves’, secondary: [] },
-{ pattern: /crunch/i, primary: ‘core’, secondary: [] },
-{ pattern: /sit.?up/i, primary: ‘core’, secondary: [] },
-{ pattern: /plank/i, primary: ‘core’, secondary: [] },
-{ pattern: /leg raise/i, primary: ‘core’, secondary: [] },
-{ pattern: /knee raise/i, primary: ‘core’, secondary: [] },
-{ pattern: /hanging/i, primary: ‘core’, secondary: [] },
-{ pattern: /ab\b/i, primary: ‘core’, secondary: [] },
-{ pattern: /russian twist/i, primary: ‘core’, secondary: [] },
+{ p: /bench press/i, m: ‘chest’, s: [‘triceps’,‘shoulders’] },
+{ p: /chest press/i, m: ‘chest’, s: [‘triceps’,‘shoulders’] },
+{ p: /chest fly/i, m: ‘chest’, s: [] },
+{ p: /cable fly/i, m: ‘chest’, s: [] },
+{ p: /chest dip/i, m: ‘chest’, s: [‘triceps’,‘shoulders’] },
+{ p: /push.?up/i, m: ‘chest’, s: [‘triceps’,‘shoulders’] },
+{ p: /pec.?deck/i, m: ‘chest’, s: [] },
+{ p: /dip/i, m: ‘chest’, s: [‘triceps’,‘shoulders’] },
+{ p: /romanian deadlift/i, m: ‘hamstrings’, s: [‘glutes’,‘back’] },
+{ p: /deadlift/i, m: ‘back’, s: [‘hamstrings’,‘glutes’] },
+{ p: /pull.?up/i, m: ‘back’, s: [‘biceps’] },
+{ p: /chin.?up/i, m: ‘back’, s: [‘biceps’] },
+{ p: /lat.?pull/i, m: ‘back’, s: [‘biceps’] },
+{ p: /row/i, m: ‘back’, s: [‘biceps’] },
+{ p: /rack pull/i, m: ‘back’, s: [‘hamstrings’] },
+{ p: /back extension/i, m: ‘back’, s: [‘glutes’] },
+{ p: /good morning/i, m: ‘back’, s: [‘hamstrings’,‘glutes’] },
+{ p: /shrug/i, m: ‘back’, s: [] },
+{ p: /face pull/i, m: ‘back’, s: [‘shoulders’] },
+{ p: /overhead press/i, m: ‘shoulders’, s: [‘triceps’] },
+{ p: /shoulder press/i, m: ‘shoulders’, s: [‘triceps’] },
+{ p: /military press/i, m: ‘shoulders’, s: [‘triceps’] },
+{ p: /arnold press/i, m: ‘shoulders’, s: [‘triceps’] },
+{ p: /lateral raise/i, m: ‘shoulders’, s: [] },
+{ p: /front raise/i, m: ‘shoulders’, s: [] },
+{ p: /rear delt/i, m: ‘shoulders’, s: [] },
+{ p: /pike push/i, m: ‘shoulders’, s: [‘triceps’] },
+{ p: /bicep curl/i, m: ‘biceps’, s: [] },
+{ p: /hammer curl/i, m: ‘biceps’, s: [] },
+{ p: /concentration curl/i, m: ‘biceps’, s: [] },
+{ p: /preacher curl/i, m: ‘biceps’, s: [] },
+{ p: /kettlebell curl/i, m: ‘biceps’, s: [] },
+{ p: /tricep/i, m: ‘triceps’, s: [] },
+{ p: /skull.?crush/i, m: ‘triceps’, s: [] },
+{ p: /squat/i, m: ‘quads’, s: [‘glutes’,‘hamstrings’] },
+{ p: /leg press/i, m: ‘quads’, s: [‘glutes’] },
+{ p: /leg extension/i, m: ‘quads’, s: [] },
+{ p: /lunge/i, m: ‘quads’, s: [‘glutes’,‘hamstrings’] },
+{ p: /step.?up/i, m: ‘quads’, s: [‘glutes’] },
+{ p: /hack squat/i, m: ‘quads’, s: [‘glutes’] },
+{ p: /leg curl/i, m: ‘hamstrings’, s: [] },
+{ p: /nordic curl/i, m: ‘hamstrings’, s: [] },
+{ p: /stiff.?leg/i, m: ‘hamstrings’, s: [‘glutes’,‘back’] },
+{ p: /hip thrust/i, m: ‘glutes’, s: [‘hamstrings’] },
+{ p: /glute/i, m: ‘glutes’, s: [] },
+{ p: /hip abduction/i, m: ‘glutes’, s: [] },
+{ p: /hip adduction/i, m: ‘glutes’, s: [] },
+{ p: /calf/i, m: ‘calves’, s: [] },
+{ p: /crunch/i, m: ‘core’, s: [] },
+{ p: /sit.?up/i, m: ‘core’, s: [] },
+{ p: /plank/i, m: ‘core’, s: [] },
+{ p: /leg raise/i, m: ‘core’, s: [] },
+{ p: /knee raise/i, m: ‘core’, s: [] },
+{ p: /hanging/i, m: ‘core’, s: [] },
+{ p: /russian twist/i, m: ‘core’, s: [] },
+{ p: /ab roll/i, m: ‘core’, s: [] },
+{ p: /wood.?chop/i, m: ‘core’, s: [] }
 ];
 
-var CARDIO_PATTERNS = [/treadmill/i, /elliptical/i, /bike/i, /cycling/i, /rowing machine/i, /jump rope/i, /jumping jack/i, /burpee/i, /stair/i, /running/i, /walking/i];
+var CARDIO = [/treadmill/i, /elliptical/i, /bike/i, /cycling/i, /rowing machine/i, /jump rope/i, /jumping jack/i, /burpee/i, /stair/i, /running/i, /walking/i];
 
-function classifyExercise(name) {
-for (var i = 0; i < CARDIO_PATTERNS.length; i++) { if (CARDIO_PATTERNS[i].test(name)) return { primary: ‘cardio’, secondary: [] }; }
-for (var i = 0; i < EXERCISE_MUSCLE_MAP.length; i++) { var m = EXERCISE_MUSCLE_MAP[i]; if (m.pattern.test(name)) return { primary: m.primary, secondary: m.secondary }; }
-return { primary: ‘other’, secondary: [] };
+function classify(name) {
+var i;
+for (i = 0; i < CARDIO.length; i++) { if (CARDIO[i].test(name)) return { m: ‘cardio’, s: [] }; }
+for (i = 0; i < EXERCISE_MUSCLE_MAP.length; i++) {
+var e = EXERCISE_MUSCLE_MAP[i];
+if (e.p.test(name)) return { m: e.m, s: e.s };
+}
+return { m: ‘other’, s: [] };
 }
 
-// ============================================================
-// MUSCLE GROUPS
-// idealSetsPerWeek: evidence-based weekly volume targets
-// ============================================================
-var MUSCLE_GROUPS = {
-chest:      { name: ‘Chest’,      idealFreqDays: 4, color: ‘#f87171’, idealSetsPerWeek: 14 },
-back:       { name: ‘Back’,       idealFreqDays: 4, color: ‘#60a5fa’, idealSetsPerWeek: 16 },
-shoulders:  { name: ‘Shoulders’,  idealFreqDays: 4, color: ‘#c084fc’, idealSetsPerWeek: 14 },
-biceps:     { name: ‘Biceps’,     idealFreqDays: 5, color: ‘#34d399’, idealSetsPerWeek: 10 },
-triceps:    { name: ‘Triceps’,    idealFreqDays: 5, color: ‘#fbbf24’, idealSetsPerWeek: 10 },
-quads:      { name: ‘Quads’,      idealFreqDays: 4, color: ‘#fb923c’, idealSetsPerWeek: 14 },
-hamstrings: { name: ‘Hamstrings’, idealFreqDays: 5, color: ‘#f472b6’, idealSetsPerWeek: 12 },
-glutes:     { name: ‘Glutes’,     idealFreqDays: 5, color: ‘#a78bfa’, idealSetsPerWeek: 12 },
-calves:     { name: ‘Calves’,     idealFreqDays: 5, color: ‘#2dd4bf’, idealSetsPerWeek: 10 },
-core:       { name: ‘Core’,       idealFreqDays: 3, color: ‘#e879f9’, idealSetsPerWeek: 10 },
+var MG = {
+chest:      { name: ‘Chest’,      freq: 4, color: ‘#f87171’, ideal: 14 },
+back:       { name: ‘Back’,       freq: 4, color: ‘#60a5fa’, ideal: 16 },
+shoulders:  { name: ‘Shoulders’,  freq: 4, color: ‘#c084fc’, ideal: 14 },
+biceps:     { name: ‘Biceps’,     freq: 5, color: ‘#34d399’, ideal: 10 },
+triceps:    { name: ‘Triceps’,    freq: 5, color: ‘#fbbf24’, ideal: 10 },
+quads:      { name: ‘Quads’,      freq: 4, color: ‘#fb923c’, ideal: 14 },
+hamstrings: { name: ‘Hamstrings’, freq: 5, color: ‘#f472b6’, ideal: 12 },
+glutes:     { name: ‘Glutes’,     freq: 5, color: ‘#a78bfa’, ideal: 12 },
+calves:     { name: ‘Calves’,     freq: 5, color: ‘#2dd4bf’, ideal: 10 },
+core:       { name: ‘Core’,       freq: 3, color: ‘#e879f9’, ideal: 10 }
 };
 
-// ============================================================
-// EXERCISE DATABASE: benchmarks for ~166lb male, intermediate
-// ============================================================
-var EXERCISE_DB = {
-‘Bench Press (Barbell)’:            { muscle: ‘chest’, benchmarkLbs: 185, sets: 4, reps: ‘6-8’ },
-‘Incline Bench Press (Dumbbell)’:   { muscle: ‘chest’, benchmarkLbs: 60, sets: 3, reps: ‘8-10’, note: ‘per hand’ },
-‘Incline Bench Press (Barbell)’:    { muscle: ‘chest’, benchmarkLbs: 155, sets: 4, reps: ‘6-8’ },
-‘Chest Fly (Machine)’:             { muscle: ‘chest’, benchmarkLbs: 140, sets: 3, reps: ‘10-12’ },
-‘Chest Fly (Dumbbell)’:            { muscle: ‘chest’, benchmarkLbs: 40, sets: 3, reps: ‘10-12’, note: ‘per hand’ },
-‘Chest Dip’:                       { muscle: ‘chest’, benchmarkLbs: 0, sets: 3, reps: ‘8-12’, note: ‘bw’ },
-‘Cable Fly Crossovers’:            { muscle: ‘chest’, benchmarkLbs: 30, sets: 3, reps: ‘12-15’, note: ‘per side’ },
-‘Chest Press (Machine)’:           { muscle: ‘chest’, benchmarkLbs: 160, sets: 3, reps: ‘8-10’ },
-‘Bent Over Row (Barbell)’:         { muscle: ‘back’, benchmarkLbs: 165, sets: 4, reps: ‘6-8’ },
-‘Pull Up’:                         { muscle: ‘back’, benchmarkLbs: 0, sets: 4, reps: ‘6-10’, note: ‘bw’ },
-‘Chin Up’:                         { muscle: ‘back’, benchmarkLbs: 0, sets: 3, reps: ‘6-10’, note: ‘bw’ },
-‘Lat Pulldown (Cable)’:            { muscle: ‘back’, benchmarkLbs: 140, sets: 3, reps: ‘8-10’ },
-‘Lat Pulldown (Machine)’:          { muscle: ‘back’, benchmarkLbs: 140, sets: 3, reps: ‘8-10’ },
-‘Seated Row (Machine)’:            { muscle: ‘back’, benchmarkLbs: 140, sets: 3, reps: ‘8-10’ },
-‘Dumbbell Row’:                    { muscle: ‘back’, benchmarkLbs: 65, sets: 3, reps: ‘8-10’, note: ‘per hand’ },
-‘Deadlift (Barbell)’:              { muscle: ‘back’, benchmarkLbs: 275, sets: 3, reps: ‘5-6’ },
-‘Overhead Press (Barbell)’:        { muscle: ‘shoulders’, benchmarkLbs: 115, sets: 4, reps: ‘6-8’ },
-‘Overhead Press (Dumbbell)’:       { muscle: ‘shoulders’, benchmarkLbs: 45, sets: 3, reps: ‘8-10’, note: ‘per hand’ },
-‘Lateral Raise (Dumbbell)’:        { muscle: ‘shoulders’, benchmarkLbs: 20, sets: 4, reps: ‘12-15’, note: ‘per hand’ },
-‘Lateral Raise (Machine)’:         { muscle: ‘shoulders’, benchmarkLbs: 80, sets: 3, reps: ‘12-15’ },
-‘Arnold Press (Dumbbell)’:         { muscle: ‘shoulders’, benchmarkLbs: 40, sets: 3, reps: ‘8-10’, note: ‘per hand’ },
-‘Seated Shoulder Press (Machine)’: { muscle: ‘shoulders’, benchmarkLbs: 120, sets: 3, reps: ‘8-10’ },
-‘Shoulder Press (Dumbbell)’:       { muscle: ‘shoulders’, benchmarkLbs: 45, sets: 3, reps: ‘8-10’, note: ‘per hand’ },
-‘Standing Military Press (Barbell)’: { muscle: ‘shoulders’, benchmarkLbs: 115, sets: 4, reps: ‘6-8’ },
-‘Bicep Curl (Barbell)’:            { muscle: ‘biceps’, benchmarkLbs: 75, sets: 3, reps: ‘8-10’ },
-‘Bicep Curl (Dumbbell)’:           { muscle: ‘biceps’, benchmarkLbs: 30, sets: 3, reps: ‘10-12’, note: ‘per hand’ },
-‘Hammer Curl (Dumbbell)’:          { muscle: ‘biceps’, benchmarkLbs: 35, sets: 3, reps: ‘10-12’, note: ‘per hand’ },
-‘Hammer Curl (Cable)’:             { muscle: ‘biceps’, benchmarkLbs: 35, sets: 3, reps: ‘10-12’, note: ‘per side’ },
-‘Concentration Curl’:              { muscle: ‘biceps’, benchmarkLbs: 25, sets: 3, reps: ‘10-12’, note: ‘per hand’ },
-‘Triceps Pushdown’:                { muscle: ‘triceps’, benchmarkLbs: 60, sets: 3, reps: ‘10-12’ },
-‘Triceps Rope Pushdown’:           { muscle: ‘triceps’, benchmarkLbs: 55, sets: 3, reps: ‘10-12’ },
-‘Triceps Extension (Cable)’:       { muscle: ‘triceps’, benchmarkLbs: 50, sets: 3, reps: ‘10-12’ },
-‘Triceps Extension (Dumbbell)’:    { muscle: ‘triceps’, benchmarkLbs: 30, sets: 3, reps: ‘10-12’ },
-‘Skullcrusher (Dumbbell)’:         { muscle: ‘triceps’, benchmarkLbs: 25, sets: 3, reps: ‘10-12’, note: ‘per hand’ },
-‘Triceps Dip’:                     { muscle: ‘triceps’, benchmarkLbs: 0, sets: 3, reps: ‘8-12’, note: ‘bw’ },
-‘Squat (Barbell)’:                 { muscle: ‘quads’, benchmarkLbs: 225, sets: 4, reps: ‘5-8’ },
-‘Leg Press (Machine)’:             { muscle: ‘quads’, benchmarkLbs: 360, sets: 4, reps: ‘8-10’ },
-‘Front Squat’:                     { muscle: ‘quads’, benchmarkLbs: 175, sets: 3, reps: ‘6-8’ },
-‘Goblet Squat’:                    { muscle: ‘quads’, benchmarkLbs: 60, sets: 3, reps: ‘10-12’ },
-‘Lunge (Dumbbell)’:                { muscle: ‘quads’, benchmarkLbs: 40, sets: 3, reps: ‘10-12’, note: ‘per hand’ },
-‘Romanian Deadlift (Barbell)’:     { muscle: ‘hamstrings’, benchmarkLbs: 205, sets: 4, reps: ‘8-10’ },
-‘Romanian Deadlift (Dumbbell)’:    { muscle: ‘hamstrings’, benchmarkLbs: 55, sets: 3, reps: ‘8-10’, note: ‘per hand’ },
-‘Seated Leg Curl (Machine)’:       { muscle: ‘hamstrings’, benchmarkLbs: 110, sets: 3, reps: ‘10-12’ },
-‘Hip Thrust (Barbell)’:            { muscle: ‘glutes’, benchmarkLbs: 225, sets: 4, reps: ‘8-10’ },
-‘Hip Thrust (Machine)’:            { muscle: ‘glutes’, benchmarkLbs: 225, sets: 3, reps: ‘8-10’ },
-‘Glute Kickback (Machine)’:        { muscle: ‘glutes’, benchmarkLbs: 80, sets: 3, reps: ‘12-15’ },
-‘Hip Abduction (Machine)’:         { muscle: ‘glutes’, benchmarkLbs: 120, sets: 3, reps: ‘12-15’ },
-‘Standing Calf Raise’:             { muscle: ‘calves’, benchmarkLbs: 180, sets: 4, reps: ‘12-15’ },
-‘Seated Calf Raise’:               { muscle: ‘calves’, benchmarkLbs: 90, sets: 3, reps: ‘12-15’ },
-‘Calf Extension (Machine)’:        { muscle: ‘calves’, benchmarkLbs: 140, sets: 3, reps: ‘12-15’ },
-‘Hanging Leg Raise’:               { muscle: ‘core’, benchmarkLbs: 0, sets: 3, reps: ‘10-15’, note: ‘bw’ },
-‘Crunch (Machine)’:                { muscle: ‘core’, benchmarkLbs: 80, sets: 3, reps: ‘12-15’ },
-‘Plank’:                           { muscle: ‘core’, benchmarkLbs: 0, sets: 3, reps: ‘45-60s’, note: ‘hold’ },
-‘Decline Crunch’:                  { muscle: ‘core’, benchmarkLbs: 0, sets: 3, reps: ‘12-15’, note: ‘bw’ },
+// Exercise DB: benchmarks for ~166lb intermediate male
+var EDB = {
+‘Bench Press (Barbell)’:            { mu: ‘chest’, bm: 185, st: 4, rp: ‘6-8’ },
+‘Incline Bench Press (Dumbbell)’:   { mu: ‘chest’, bm: 60, st: 3, rp: ‘8-10’, nt: ‘ea’ },
+‘Incline Bench Press (Barbell)’:    { mu: ‘chest’, bm: 155, st: 4, rp: ‘6-8’ },
+‘Chest Fly (Machine)’:             { mu: ‘chest’, bm: 140, st: 3, rp: ‘10-12’ },
+‘Chest Fly (Dumbbell)’:            { mu: ‘chest’, bm: 40, st: 3, rp: ‘10-12’, nt: ‘ea’ },
+‘Cable Fly Crossovers’:            { mu: ‘chest’, bm: 30, st: 3, rp: ‘12-15’, nt: ‘ea’ },
+‘Chest Press (Machine)’:           { mu: ‘chest’, bm: 160, st: 3, rp: ‘8-10’ },
+‘Bent Over Row (Barbell)’:         { mu: ‘back’, bm: 165, st: 4, rp: ‘6-8’ },
+‘Pull Up’:                         { mu: ‘back’, bm: 0, st: 4, rp: ‘6-10’, nt: ‘bw’ },
+‘Chin Up’:                         { mu: ‘back’, bm: 0, st: 3, rp: ‘6-10’, nt: ‘bw’ },
+‘Lat Pulldown (Cable)’:            { mu: ‘back’, bm: 140, st: 3, rp: ‘8-10’ },
+‘Lat Pulldown (Machine)’:          { mu: ‘back’, bm: 140, st: 3, rp: ‘8-10’ },
+‘Seated Row (Machine)’:            { mu: ‘back’, bm: 140, st: 3, rp: ‘8-10’ },
+‘Dumbbell Row’:                    { mu: ‘back’, bm: 65, st: 3, rp: ‘8-10’, nt: ‘ea’ },
+‘Deadlift (Barbell)’:              { mu: ‘back’, bm: 275, st: 3, rp: ‘5-6’ },
+‘Overhead Press (Barbell)’:        { mu: ‘shoulders’, bm: 115, st: 4, rp: ‘6-8’ },
+‘Overhead Press (Dumbbell)’:       { mu: ‘shoulders’, bm: 45, st: 3, rp: ‘8-10’, nt: ‘ea’ },
+‘Lateral Raise (Dumbbell)’:        { mu: ‘shoulders’, bm: 20, st: 4, rp: ‘12-15’, nt: ‘ea’ },
+‘Lateral Raise (Machine)’:         { mu: ‘shoulders’, bm: 80, st: 3, rp: ‘12-15’ },
+‘Arnold Press (Dumbbell)’:         { mu: ‘shoulders’, bm: 40, st: 3, rp: ‘8-10’, nt: ‘ea’ },
+‘Seated Shoulder Press (Machine)’: { mu: ‘shoulders’, bm: 120, st: 3, rp: ‘8-10’ },
+‘Shoulder Press (Dumbbell)’:       { mu: ‘shoulders’, bm: 45, st: 3, rp: ‘8-10’, nt: ‘ea’ },
+‘Bicep Curl (Barbell)’:            { mu: ‘biceps’, bm: 75, st: 3, rp: ‘8-10’ },
+‘Bicep Curl (Dumbbell)’:           { mu: ‘biceps’, bm: 30, st: 3, rp: ‘10-12’, nt: ‘ea’ },
+‘Hammer Curl (Dumbbell)’:          { mu: ‘biceps’, bm: 35, st: 3, rp: ‘10-12’, nt: ‘ea’ },
+‘Hammer Curl (Cable)’:             { mu: ‘biceps’, bm: 35, st: 3, rp: ‘10-12’, nt: ‘ea’ },
+‘Concentration Curl’:              { mu: ‘biceps’, bm: 25, st: 3, rp: ‘10-12’, nt: ‘ea’ },
+‘Triceps Pushdown’:                { mu: ‘triceps’, bm: 60, st: 3, rp: ‘10-12’ },
+‘Triceps Rope Pushdown’:           { mu: ‘triceps’, bm: 55, st: 3, rp: ‘10-12’ },
+‘Triceps Extension (Cable)’:       { mu: ‘triceps’, bm: 50, st: 3, rp: ‘10-12’ },
+‘Triceps Extension (Dumbbell)’:    { mu: ‘triceps’, bm: 30, st: 3, rp: ‘10-12’ },
+‘Skullcrusher (Dumbbell)’:         { mu: ‘triceps’, bm: 25, st: 3, rp: ‘10-12’, nt: ‘ea’ },
+‘Squat (Barbell)’:                 { mu: ‘quads’, bm: 225, st: 4, rp: ‘5-8’ },
+‘Leg Press (Machine)’:             { mu: ‘quads’, bm: 360, st: 4, rp: ‘8-10’ },
+‘Front Squat’:                     { mu: ‘quads’, bm: 175, st: 3, rp: ‘6-8’ },
+‘Goblet Squat’:                    { mu: ‘quads’, bm: 60, st: 3, rp: ‘10-12’ },
+‘Lunge (Dumbbell)’:                { mu: ‘quads’, bm: 40, st: 3, rp: ‘10-12’, nt: ‘ea’ },
+‘Romanian Deadlift (Barbell)’:     { mu: ‘hamstrings’, bm: 205, st: 4, rp: ‘8-10’ },
+‘Romanian Deadlift (Dumbbell)’:    { mu: ‘hamstrings’, bm: 55, st: 3, rp: ‘8-10’, nt: ‘ea’ },
+‘Seated Leg Curl (Machine)’:       { mu: ‘hamstrings’, bm: 110, st: 3, rp: ‘10-12’ },
+‘Hip Thrust (Barbell)’:            { mu: ‘glutes’, bm: 225, st: 4, rp: ‘8-10’ },
+‘Hip Thrust (Machine)’:            { mu: ‘glutes’, bm: 225, st: 3, rp: ‘8-10’ },
+‘Glute Kickback (Machine)’:        { mu: ‘glutes’, bm: 80, st: 3, rp: ‘12-15’ },
+‘Hip Abduction (Machine)’:         { mu: ‘glutes’, bm: 120, st: 3, rp: ‘12-15’ },
+‘Standing Calf Raise’:             { mu: ‘calves’, bm: 180, st: 4, rp: ‘12-15’ },
+‘Seated Calf Raise’:               { mu: ‘calves’, bm: 90, st: 3, rp: ‘12-15’ },
+‘Calf Extension (Machine)’:        { mu: ‘calves’, bm: 140, st: 3, rp: ‘12-15’ },
+‘Hanging Leg Raise’:               { mu: ‘core’, bm: 0, st: 3, rp: ‘10-15’, nt: ‘bw’ },
+‘Crunch (Machine)’:                { mu: ‘core’, bm: 80, st: 3, rp: ‘12-15’ },
+‘Plank’:                           { mu: ‘core’, bm: 0, st: 3, rp: ‘45-60s’, nt: ‘hold’ },
+‘Decline Crunch’:                  { mu: ‘core’, bm: 0, st: 3, rp: ‘12-15’, nt: ‘bw’ }
 };
 
-// Exercises to pick from per muscle group (in priority order)
-var MUSCLE_PICKS = {
+var PICKS = {
 chest:      [‘Bench Press (Barbell)’, ‘Incline Bench Press (Dumbbell)’, ‘Chest Fly (Machine)’, ‘Cable Fly Crossovers’],
-back:       [‘Bent Over Row (Barbell)’, ‘Pull Up’, ‘Lat Pulldown (Cable)’, ‘Seated Row (Machine)’, ‘Deadlift (Barbell)’],
+back:       [‘Bent Over Row (Barbell)’, ‘Pull Up’, ‘Lat Pulldown (Cable)’, ‘Seated Row (Machine)’],
 shoulders:  [‘Overhead Press (Barbell)’, ‘Lateral Raise (Dumbbell)’, ‘Arnold Press (Dumbbell)’, ‘Lateral Raise (Machine)’],
 biceps:     [‘Bicep Curl (Barbell)’, ‘Hammer Curl (Dumbbell)’, ‘Concentration Curl’],
 triceps:    [‘Triceps Pushdown’, ‘Triceps Extension (Cable)’, ‘Skullcrusher (Dumbbell)’],
@@ -390,64 +354,75 @@ quads:      [‘Squat (Barbell)’, ‘Leg Press (Machine)’, ‘Front Squat’
 hamstrings: [‘Romanian Deadlift (Barbell)’, ‘Seated Leg Curl (Machine)’],
 glutes:     [‘Hip Thrust (Barbell)’, ‘Glute Kickback (Machine)’, ‘Hip Abduction (Machine)’],
 calves:     [‘Standing Calf Raise’, ‘Seated Calf Raise’],
-core:       [‘Hanging Leg Raise’, ‘Crunch (Machine)’, ‘Plank’],
+core:       [‘Hanging Leg Raise’, ‘Crunch (Machine)’, ‘Plank’]
 };
 
-// ============================================================
-// WEIGHT DATA
-// ============================================================
 var WEIGHT_DATA = [
 { date: ‘2026-01-18’, value: 166.0 }, { date: ‘2026-01-17’, value: 164.4 },
 { date: ‘2025-11-30’, value: 168.0 }, { date: ‘2025-11-04’, value: 167.1 },
 { date: ‘2025-11-01’, value: 168.2 }, { date: ‘2025-10-01’, value: 169.0 },
 { date: ‘2025-09-12’, value: 169.0 }, { date: ‘2025-09-07’, value: 168.0 },
 { date: ‘2025-07-15’, value: 172.0 }, { date: ‘2025-05-23’, value: 174.2 },
-{ date: ‘2025-05-15’, value: 172.0 }, { date: ‘2025-04-30’, value: 173.0 },
+{ date: ‘2025-05-15’, value: 172.0 }, { date: ‘2025-04-30’, value: 173.0 }
 ];
 
-// ============================================================
-// STATE
-// ============================================================
-var apiKey = ‘e38cf123-61c4-4b8c-ae25-7442d6d9c874’;
+var API_KEY = ‘e38cf123-61c4-4b8c-ae25-7442d6d9c874’;
+var API_BASE = ‘https://api.hevyapp.com/v1’;
 var workoutCache = null;
-var muscleAnalysis = null;
 var exerciseHistory = {};
 
-var API_BASE = ‘https://api.hevyapp.com/v1’;
+// –– API ––
+function fetchWorkouts() {
+var all = [];
+var page = 1;
+var totalPages = 1;
 
-async function fetchWorkouts(pageSize, maxPages) {
-pageSize = pageSize || 10; maxPages = maxPages || 10;
-var all = [], page = 1, total = 1;
-while (page <= total && page <= maxPages) {
-updateLoading(‘Loading workouts (’ + all.length + ‘)…’);
-var r = await fetch(API_BASE + ‘/workouts?page=’ + page + ‘&pageSize=’ + pageSize, { headers: { ‘api-key’: apiKey } });
-if (!r.ok) throw new Error(’API error ’ + r.status);
-var d = await r.json();
-total = d.page_count || 1;
-if (d.workouts) all.push.apply(all, d.workouts);
-page++;
-}
-return all;
+```
+function fetchPage() {
+  updateLoading('Loading workouts (' + all.length + ')...');
+  return fetch(API_BASE + '/workouts?page=' + page + '&pageSize=10', {
+    headers: { 'api-key': API_KEY }
+  })
+  .then(function(r) {
+    if (!r.ok) throw new Error('API error ' + r.status);
+    return r.json();
+  })
+  .then(function(d) {
+    totalPages = d.page_count || 1;
+    if (d.workouts) {
+      for (var i = 0; i < d.workouts.length; i++) all.push(d.workouts[i]);
+    }
+    page++;
+    if (page <= totalPages && page <= 10) return fetchPage();
+    return all;
+  });
 }
 
-// ============================================================
-// BUILD EXERCISE HISTORY
-// ============================================================
+return fetchPage();
+```
+
+}
+
+// –– Exercise History ––
 function buildExerciseHistory(workouts) {
 var hist = {};
 var sorted = workouts.slice().sort(function(a, b) {
 return new Date(a.start_time || a.created_at) - new Date(b.start_time || b.created_at);
 });
-for (var w of sorted) {
+for (var wi = 0; wi < sorted.length; wi++) {
+var w = sorted[wi];
 var wDate = new Date(w.start_time || w.created_at);
-for (var ex of (w.exercises || [])) {
-var name = ex.title || ‘’; if (!name) continue;
+var exs = w.exercises || [];
+for (var ei = 0; ei < exs.length; ei++) {
+var ex = exs[ei];
+var name = ex.title || ‘’;
+if (!name) continue;
 var sets = (ex.sets || []).filter(function(s) { return s.set_type === ‘normal’ || !s.set_type; });
 if (sets.length === 0) continue;
 var best = 0, bestR = 0;
-for (var s of sets) {
-var lbs = Math.round((s.weight_kg || 0) * 2.20462);
-if (lbs > best) { best = lbs; bestR = s.reps || 0; }
+for (var si = 0; si < sets.length; si++) {
+var lbs = Math.round((sets[si].weight_kg || 0) * 2.20462);
+if (lbs > best) { best = lbs; bestR = sets[si].reps || 0; }
 }
 if (!hist[name]) hist[name] = { weights: [], dates: [] };
 hist[name].lastWeightLbs = best;
@@ -461,335 +436,396 @@ hist[name].dates.push(wDate);
 return hist;
 }
 
-// ============================================================
-// PRESCRIBE EXERCISE
-// ============================================================
-function prescribeExercise(name) {
-var db = EXERCISE_DB[name];
+// –– Prescribe ––
+function prescribe(name) {
+var db = EDB[name];
 var hist = exerciseHistory[name];
-var sets = db ? db.sets : 3;
-var reps = db ? db.reps : ‘8-10’;
-var wt = db ? db.benchmarkLbs : 0;
-var note = db ? (db.note || ‘’) : ‘’;
+var sets = db ? db.st : 3;
+var reps = db ? db.rp : ‘8-10’;
+var wt = db ? db.bm : 0;
+var note = db ? (db.nt || ‘’) : ‘’;
 
+```
 if (hist && hist.lastWeightLbs > 0) {
-var last = hist.lastWeightLbs;
-var trend = hist.weights.length >= 3
-? (hist.weights.slice(-3).reduce(function(a,b){return a+b;},0) / 3) : last;
-if (db && last < db.benchmarkLbs * 0.85) {
-wt = Math.min(Math.round(trend * 1.05 / 5) * 5, db.benchmarkLbs);
-} else {
-wt = Math.round(trend * 1.025 / 5) * 5;
+  var last = hist.lastWeightLbs;
+  var ws = hist.weights;
+  var trend = ws.length >= 3 ? (ws[ws.length-1] + ws[ws.length-2] + ws[ws.length-3]) / 3 : last;
+  if (db && last < db.bm * 0.85) {
+    wt = Math.min(Math.round(trend * 1.05 / 5) * 5, db.bm);
+  } else {
+    wt = Math.round(trend * 1.025 / 5) * 5;
+  }
+  if (hist.lastSets >= 2 && hist.lastSets <= 6) sets = hist.lastSets;
 }
-if (hist.lastSets >= 2 && hist.lastSets <= 6) sets = hist.lastSets;
-}
-if (note === ‘bw’ || note === ‘hold’) wt = 0;
-return { sets: sets, reps: reps, weightLbs: wt, note: note };
+if (note === 'bw' || note === 'hold') wt = 0;
+return { sets: sets, reps: reps, wt: wt, note: note };
+```
+
 }
 
-function formatRx(p) {
-var s = p.sets + ‘\u00d7’ + p.reps;
-if (p.weightLbs > 0) s += ’ @ ’ + p.weightLbs;
-if (p.note === ‘per hand’ || p.note === ‘per side’) s += ‘/ea’;
+function fmtRx(p) {
+var s = p.sets + String.fromCharCode(215) + p.reps;
+if (p.wt > 0) s += ’ @ ’ + p.wt;
+if (p.note === ‘ea’) s += ‘/ea’;
 return s;
 }
 
-// ============================================================
-// ANALYZE WORKOUTS
-// ============================================================
-function analyzeWorkouts(workouts) {
-var now = new Date(), stats = {};
-for (var key in MUSCLE_GROUPS) {
-var m = MUSCLE_GROUPS[key];
+// –– Analyze ––
+function analyze(workouts) {
+var now = new Date();
+var stats = {};
+var key;
+for (key in MG) {
 stats[key] = {
-key: key, name: m.name, color: m.color, idealFreqDays: m.idealFreqDays,
-idealSetsPerWeek: m.idealSetsPerWeek, lastTrained: null,
-daysSinceTrained: Infinity, totalSets30d: 0, totalVolume30d: 0, sessionCount30d: 0,
+key: key, name: MG[key].name, color: MG[key].color,
+freq: MG[key].freq, ideal: MG[key].ideal,
+lastTrained: null, daysSince: Infinity,
+sets30d: 0, sessions30d: 0
 };
 }
-var cutoff = new Date(now.getTime() - 30*24*60*60*1000);
-for (var w of workouts) {
+var cutoff = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+for (var wi = 0; wi < workouts.length; wi++) {
+var w = workouts[wi];
 var wDate = new Date(w.start_time || w.created_at);
 var isRecent = wDate >= cutoff;
-var musclesHit = {};
-for (var ex of (w.exercises || [])) {
-var cl = classifyExercise(ex.title || ‘’);
-if (cl.primary === ‘cardio’ || cl.primary === ‘other’) continue;
-var all = [cl.primary].concat(cl.secondary);
-for (var muscle of all) {
-if (!stats[muscle]) continue;
-var st = stats[muscle], isPri = muscle === cl.primary;
+var hit = {};
+var exs = w.exercises || [];
+for (var ei = 0; ei < exs.length; ei++) {
+var cl = classify(exs[ei].title || ‘’);
+if (cl.m === ‘cardio’ || cl.m === ‘other’) continue;
+var muscles = [cl.m].concat(cl.s);
+for (var mi = 0; mi < muscles.length; mi++) {
+var mu = muscles[mi];
+if (!stats[mu]) continue;
+var st = stats[mu];
 if (!st.lastTrained || wDate > st.lastTrained) {
 st.lastTrained = wDate;
-st.daysSinceTrained = Math.floor((now - wDate) / (1000*60*60*24));
+st.daysSince = Math.floor((now - wDate) / (1000 * 60 * 60 * 24));
 }
 if (isRecent) {
-var sc = (ex.sets || []).length;
-var weight = isPri ? 1.0 : 0.5;
-st.totalSets30d += Math.round(sc * weight);
-musclesHit[muscle] = true;
+var sc = (exs[ei].sets || []).length;
+var weight = mu === cl.m ? 1.0 : 0.5;
+st.sets30d += Math.round(sc * weight);
+hit[mu] = true;
 }
 }
 }
-if (isRecent) { for (var m in musclesHit) if (stats[m]) stats[m].sessionCount30d++; }
+if (isRecent) {
+for (var h in hit) { if (stats[h]) stats[h].sessions30d++; }
+}
 }
 return stats;
 }
 
-// ============================================================
-// GENERATE SESSION PLAN
-// Picks top 2-3 muscle groups, assigns exercises, caps sets
-// ============================================================
-function generateSessionPlan(muscleStats) {
-// Score each muscle group
+// –– Session Plan ––
+function buildSession(stats) {
 var scores = [];
-var weeklyVols = {}, volRatios = {}, maxRatio = 0;
-for (var key in muscleStats) {
-weeklyVols[key] = muscleStats[key].totalSets30d / 4.3;
-var ratio = weeklyVols[key] / muscleStats[key].idealSetsPerWeek;
-volRatios[key] = ratio;
-if (ratio > maxRatio) maxRatio = ratio;
+var wkVol = {}, ratios = {}, maxR = 0;
+var key;
+for (key in stats) {
+wkVol[key] = stats[key].sets30d / 4.3;
+ratios[key] = wkVol[key] / stats[key].ideal;
+if (ratios[key] > maxR) maxR = ratios[key];
 }
-for (var key in muscleStats) {
-var stat = muscleStats[key];
-var recency = Math.min(stat.daysSinceTrained / stat.idealFreqDays, 3);
-var volDef = Math.max(0, 1 - (stat.totalSets30d / (stat.idealSetsPerWeek * 4.3)));
-var imbal = maxRatio > 0 ? Math.max(0, 1 - (volRatios[key] / maxRatio)) : 0;
+for (key in stats) {
+var st = stats[key];
+var recency = Math.min(st.daysSince / st.freq, 3);
+var volDef = Math.max(0, 1 - (st.sets30d / (st.ideal * 4.3)));
+var imbal = maxR > 0 ? Math.max(0, 1 - (ratios[key] / maxR)) : 0;
 var score = (recency * 0.4) + (volDef * 0.3) + (imbal * 0.3);
+var urgency = ‘low’;
+if (st.daysSince >= st.freq * 2 || (volDef > 0.6 && imbal > 0.5)) urgency = ‘high’;
+else if (st.daysSince >= st.freq || volDef > 0.3) urgency = ‘med’;
 
 ```
-var urgency = 'low';
-if (stat.daysSinceTrained >= stat.idealFreqDays * 2 || (volDef > 0.6 && imbal > 0.5)) urgency = 'high';
-else if (stat.daysSinceTrained >= stat.idealFreqDays || volDef > 0.3) urgency = 'med';
+  var wkAct = wkVol[key].toFixed(1);
+  var parts = [];
+  if (st.daysSince === Infinity) {
+    parts.push('No recent training data found');
+  } else {
+    if (st.daysSince >= st.freq * 2)
+      parts.push('Last trained <strong>' + st.daysSince + ' days ago</strong> (due every ' + st.freq + 'd)');
+    else if (st.daysSince >= st.freq)
+      parts.push(st.daysSince + 'd since last session (ideal: every ' + st.freq + 'd)');
+    if (volDef > 0.3)
+      parts.push('<strong>' + wkAct + '</strong> sets/wk vs ' + st.ideal + ' target (' + Math.round(volDef * 100) + '% below)');
+    if (imbal > 0.4) {
+      var topK = Object.keys(ratios).sort(function(a,b){return ratios[b]-ratios[a];})[0];
+      if (topK !== key) parts.push('Lagging vs ' + stats[topK].name.toLowerCase());
+    }
+  }
+  if (parts.length === 0) parts.push('On track: ' + wkAct + ' sets/wk near the ' + st.ideal + ' target');
 
-// Build explainer
-var weeklyActual = weeklyVols[key].toFixed(1);
-var parts = [];
-if (stat.daysSinceTrained === Infinity) {
-  parts.push('No recent training data found');
-} else {
-  if (stat.daysSinceTrained >= stat.idealFreqDays * 2)
-    parts.push('Last trained <strong>' + stat.daysSinceTrained + ' days ago</strong> \u2014 due every ' + stat.idealFreqDays + 'd');
-  else if (stat.daysSinceTrained >= stat.idealFreqDays)
-    parts.push(stat.daysSinceTrained + ' days since last session (ideal: every ' + stat.idealFreqDays + 'd)');
-  if (volDef > 0.3)
-    parts.push('<strong>' + weeklyActual + '</strong> sets/wk vs ' + stat.idealSetsPerWeek + ' target (' + Math.round(volDef*100) + '% below)');
-  if (imbal > 0.4) {
-    var topKey = Object.keys(volRatios).sort(function(a,b){return volRatios[b]-volRatios[a];})[0];
-    if (topKey !== key) parts.push('Lagging vs ' + muscleStats[topKey].name.toLowerCase());
+  scores.push({
+    key: key, name: st.name, color: st.color,
+    score: score, urgency: urgency,
+    explain: parts.join('. ') + '.',
+    daysSince: st.daysSince
+  });
+}
+scores.sort(function(a, b) { return b.score - a.score; });
+
+var groups = [];
+var totalSets = 0;
+for (var i = 0; i < scores.length && groups.length < TARGET_GROUPS; i++) {
+  var rec = scores[i];
+  var picks = PICKS[rec.key] || [];
+  if (picks.length === 0) continue;
+  var gExs = [];
+  var gSets = 0;
+  for (var j = 0; j < picks.length && gSets < MAX_SETS_PER_MUSCLE; j++) {
+    var rx = prescribe(picks[j]);
+    var toAdd = Math.min(rx.sets, MAX_SETS_PER_MUSCLE - gSets, MAX_SESSION_SETS - totalSets - gSets);
+    if (toAdd <= 0) break;
+    rx.sets = toAdd;
+    gExs.push({ name: picks[j], rx: rx });
+    gSets += toAdd;
+  }
+  if (gSets > 0 && totalSets + gSets <= MAX_SESSION_SETS) {
+    groups.push({
+      key: rec.key, name: rec.name, color: rec.color,
+      urgency: rec.urgency, explain: rec.explain,
+      exercises: gExs, totalSets: gSets
+    });
+    totalSets += gSets;
   }
 }
-if (parts.length === 0) parts.push('On track \u2014 ' + weeklyActual + ' sets/wk near the ' + stat.idealSetsPerWeek + ' target');
-
-scores.push({ key: key, name: stat.name, color: stat.color, score: score, urgency: urgency, explainer: parts.join('. ') + '.', daysSince: stat.daysSinceTrained });
-```
-
-}
-scores.sort(function(a,b) { return b.score - a.score; });
-
-// Pick top muscle groups that fit in session
-var sessionGroups = [];
-var totalSets = 0;
-
-for (var i = 0; i < scores.length && sessionGroups.length < TARGET_MUSCLE_GROUPS; i++) {
-var rec = scores[i];
-var picks = MUSCLE_PICKS[rec.key] || [];
-if (picks.length === 0) continue;
-
-```
-// Build exercise list, cap at MAX_SETS_PER_MUSCLE
-var groupExercises = [];
-var groupSets = 0;
-for (var j = 0; j < picks.length && groupSets < MAX_SETS_PER_MUSCLE; j++) {
-  var rx = prescribeExercise(picks[j]);
-  var setsToAdd = Math.min(rx.sets, MAX_SETS_PER_MUSCLE - groupSets, MAX_SESSION_SETS - totalSets - groupSets);
-  if (setsToAdd <= 0) break;
-  rx.sets = setsToAdd;
-  groupExercises.push({ name: picks[j], rx: rx });
-  groupSets += setsToAdd;
-}
-
-if (groupSets > 0 && totalSets + groupSets <= MAX_SESSION_SETS) {
-  sessionGroups.push({
-    key: rec.key, name: rec.name, color: rec.color,
-    urgency: rec.urgency, explainer: rec.explainer,
-    exercises: groupExercises, totalSets: groupSets,
-  });
-  totalSets += groupSets;
-}
+return { groups: groups, totalSets: totalSets, allScores: scores };
 ```
 
 }
 
-return { groups: sessionGroups, totalSets: totalSets, allScores: scores };
-}
-
-// ============================================================
-// RENDER SESSION
-// ============================================================
+// –– Render Session ––
 function renderSession(plan) {
 var card = document.getElementById(‘session-card’);
 var estMin = Math.round(plan.totalSets * 2.5);
+var dot = String.fromCharCode(183);
+var names = [];
+for (var gi = 0; gi < plan.groups.length; gi++) names.push(plan.groups[gi].name);
 
-var html = ‘<div class="card-title">Today\u2019s Session</div>’;
-html += ‘<div class="session-summary">’;
-html += ‘<strong>’ + plan.groups.map(function(g){return g.name;}).join(’ + ‘) + ‘</strong>’;
-html += ’ \u00b7 ’ + plan.totalSets + ’ sets \u00b7 ~’ + estMin + ’ min’;
-html += ‘</div>’;
+```
+var html = '<div class="card-title">Today' + String.fromCharCode(8217) + 's Session</div>';
+html += '<div class="session-summary">';
+html += '<strong>' + names.join(' + ') + '</strong>';
+html += ' ' + dot + ' ' + plan.totalSets + ' sets ' + dot + ' ~' + estMin + ' min';
+html += '</div>';
 
-for (var g of plan.groups) {
-html += ‘<div class="session-group">’;
-html += ‘<div class="session-group-header" onclick="toggleGroupExplain(this)">’;
-html += ‘<div class="session-group-name" style="color:' + g.color + '">’ + g.name + ’ <span style="font-weight:400;font-size:12px;color:var(--text-dim)">’ + g.totalSets + ’ sets</span></div>’;
-html += ‘<div class="session-group-badge badge-' + g.urgency + '">’ + g.urgency + ‘</div>’;
-html += ‘</div>’;
-html += ‘<div class="session-group-explain"><div class="session-group-explain-text">’ + g.explainer + ‘</div></div>’;
-for (var ex of g.exercises) {
-html += ‘<div class="ex-row">’;
-html += ‘<div class="ex-name">’ + ex.name + ‘</div>’;
-html += ‘<div class="ex-rx">’ + formatRx(ex.rx) + ‘</div>’;
-html += ‘</div>’;
+for (var gi = 0; gi < plan.groups.length; gi++) {
+  var g = plan.groups[gi];
+  html += '<div class="session-group">';
+  html += '<div class="session-group-header" onclick="window._toggleExplain(this)">';
+  html += '<div class="session-group-name" style="color:' + g.color + '">' + g.name;
+  html += ' <span style="font-weight:400;font-size:12px;color:var(--text-dim)">' + g.totalSets + ' sets</span></div>';
+  html += '<div class="session-group-badge badge-' + g.urgency + '">' + g.urgency + '</div>';
+  html += '</div>';
+  html += '<div class="session-group-explain"><div class="session-group-explain-text">' + g.explain + '</div></div>';
+  for (var ei = 0; ei < g.exercises.length; ei++) {
+    var ex = g.exercises[ei];
+    html += '<div class="ex-row">';
+    html += '<div class="ex-name">' + ex.name + '</div>';
+    html += '<div class="ex-rx">' + fmtRx(ex.rx) + '</div>';
+    html += '</div>';
+  }
+  html += '</div>';
 }
-html += ‘</div>’;
-}
-
-html += ‘<div class="session-total"><span>Total</span><strong>’ + plan.totalSets + ’ sets \u00b7 ~’ + estMin + ’ min</strong></div>’;
+html += '<div class="session-total"><span>Total</span><strong>' + plan.totalSets + ' sets ' + dot + ' ~' + estMin + ' min</strong></div>';
 card.innerHTML = html;
+```
+
 }
 
-function toggleGroupExplain(el) {
+window._toggleExplain = function(el) {
 var expand = el.nextElementSibling;
 if (expand.classList.contains(‘open’)) {
-expand.style.maxHeight = ‘0’; expand.classList.remove(‘open’);
+expand.style.maxHeight = ‘0’;
+expand.classList.remove(‘open’);
 } else {
-document.querySelectorAll(’.session-group-explain.open’).forEach(function(o) { o.style.maxHeight=‘0’; o.classList.remove(‘open’); });
+var allOpen = document.querySelectorAll(’.session-group-explain.open’);
+for (var i = 0; i < allOpen.length; i++) {
+allOpen[i].style.maxHeight = ‘0’;
+allOpen[i].classList.remove(‘open’);
+}
 expand.classList.add(‘open’);
 expand.style.maxHeight = expand.scrollHeight + ‘px’;
 }
-}
+};
 
-// ============================================================
-// RENDER MUSCLE GRID
-// ============================================================
+// –– Render Muscle Grid ––
 function renderMuscleGrid(stats) {
 var grid = document.getElementById(‘muscle-grid’);
-var entries = Object.keys(stats).map(function(k){return [k, stats[k]];})
-.sort(function(a,b){return b[1].daysSinceTrained - a[1].daysSinceTrained;});
-var maxSets = Math.max.apply(null, entries.map(function(e){return e[1].totalSets30d;}).concat([1]));
-grid.innerHTML = entries.map(function(e) {
-var st = e[1];
-var pct = Math.round((st.totalSets30d / maxSets) * 100);
-var days = st.daysSinceTrained === Infinity ? ‘no data’ : st.daysSinceTrained + ‘d ago’;
-var wk = (st.totalSets30d / 4.3).toFixed(1);
-return ‘<div class="muscle-cell"><div class="muscle-name" style="color:'+st.color+'">’+st.name+
-‘</div><div class="muscle-stat">’+days+’ \u00b7 ‘+wk+’ sets/wk</div>’+
-‘<div class="muscle-bar"><div class="muscle-bar-fill" style="width:'+pct+'%;background:'+st.color+'"></div></div></div>’;
-}).join(’’);
+var entries = [];
+for (var k in stats) entries.push([k, stats[k]]);
+entries.sort(function(a, b) { return b[1].daysSince - a[1].daysSince; });
+var maxSets = 1;
+for (var i = 0; i < entries.length; i++) {
+if (entries[i][1].sets30d > maxSets) maxSets = entries[i][1].sets30d;
+}
+var dot = String.fromCharCode(183);
+var html = ‘’;
+for (var i = 0; i < entries.length; i++) {
+var st = entries[i][1];
+var pct = Math.round((st.sets30d / maxSets) * 100);
+var days = st.daysSince === Infinity ? ‘no data’ : st.daysSince + ‘d ago’;
+var wk = (st.sets30d / 4.3).toFixed(1);
+html += ‘<div class="muscle-cell"><div class="muscle-name" style="color:' + st.color + '">’ + st.name +
+‘</div><div class="muscle-stat">’ + days + ’ ’ + dot + ’ ’ + wk + ’ sets/wk</div>’ +
+‘<div class="muscle-bar"><div class="muscle-bar-fill" style="width:' + pct + '%;background:' + st.color + '"></div></div></div>’;
+}
+grid.innerHTML = html;
 }
 
-// ============================================================
-// RENDER HISTORY
-// ============================================================
-function renderRecentWorkouts(workouts) {
+// –– Render History ––
+function renderHistory(workouts) {
 var c = document.getElementById(‘recent-workouts’);
-c.innerHTML = workouts.slice(0,12).map(function(w) {
+var n = Math.min(workouts.length, 12);
+var dot = String.fromCharCode(183);
+var html = ‘’;
+for (var i = 0; i < n; i++) {
+var w = workouts[i];
 var d = new Date(w.start_time || w.created_at);
-var ds = d.toLocaleDateString(‘en-US’,{weekday:‘short’,month:‘short’,day:‘numeric’});
-var exs = (w.exercises||[]).map(function(e){return e.title||’?’;});
-var ts = (w.exercises||[]).reduce(function(s,e){return s+(e.sets||[]).length;},0);
-var sum = exs.slice(0,3).join(’, ‘)+(exs.length>3?’ +’+( exs.length-3)+’ more’:’’);
-return ‘<div class="workout-item"><div class="workout-title">’+(w.title||‘Workout’)+
-‘</div><div class="workout-meta">’+ds+’ \u00b7 ‘+ts+’ sets \u00b7 ‘+sum+’</div></div>’;
-}).join(’’);
+var ds = d.toLocaleDateString(‘en-US’, { weekday: ‘short’, month: ‘short’, day: ‘numeric’ });
+var exs = w.exercises || [];
+var names = [];
+var ts = 0;
+for (var j = 0; j < exs.length; j++) {
+names.push(exs[j].title || ‘?’);
+ts += (exs[j].sets || []).length;
+}
+var sum = names.slice(0, 3).join(’, ‘);
+if (names.length > 3) sum += ’ +’ + (names.length - 3) + ’ more’;
+html += ‘<div class="workout-item"><div class="workout-title">’ + (w.title || ‘Workout’) +
+‘</div><div class="workout-meta">’ + ds + ’ ’ + dot + ’ ’ + ts + ’ sets ’ + dot + ’ ’ + sum + ‘</div></div>’;
+}
+c.innerHTML = html;
 }
 
-// ============================================================
-// RENDER WEIGHT
-// ============================================================
-function renderWeightChart() {
-var cut = new Date(); cut.setFullYear(cut.getFullYear()-1);
-var recent = WEIGHT_DATA.filter(function(d){return new Date(d.date)>=cut;}).reverse();
-if (!recent.length) return;
-var cur = WEIGHT_DATA[0].value, prev = WEIGHT_DATA.length>1?WEIGHT_DATA[1].value:cur;
+// –– Render Weight ––
+function renderWeight() {
+var cut = new Date();
+cut.setFullYear(cut.getFullYear() - 1);
+var recent = [];
+for (var i = WEIGHT_DATA.length - 1; i >= 0; i–) {
+if (new Date(WEIGHT_DATA[i].date) >= cut) recent.push(WEIGHT_DATA[i]);
+}
+recent.reverse();
+if (recent.length === 0) return;
+var cur = WEIGHT_DATA[0].value;
+var prev = WEIGHT_DATA.length > 1 ? WEIGHT_DATA[1].value : cur;
 var delta = cur - prev;
 document.getElementById(‘weight-current’).textContent = cur.toFixed(1);
 var de = document.getElementById(‘weight-delta’);
-de.textContent = (delta>=0?’+’:’’)+delta.toFixed(1);
-de.style.color = delta<=0?‘var(–accent)’:‘var(–warn)’;
+de.textContent = (delta >= 0 ? ‘+’ : ‘’) + delta.toFixed(1);
+de.style.color = delta <= 0 ? ‘var(–accent)’ : ‘var(–warn)’;
 var canvas = document.getElementById(‘weight-canvas’);
 var ctx = canvas.getContext(‘2d’);
-var dpr = window.devicePixelRatio||1;
+var dpr = window.devicePixelRatio || 1;
 var rect = canvas.parentElement.getBoundingClientRect();
-canvas.width = rect.width*dpr; canvas.height = 130*dpr;
-canvas.style.width = rect.width+‘px’; canvas.style.height = ‘130px’;
-ctx.scale(dpr,dpr);
-var w=rect.width, h=130, pad={top:12,bottom:22,left:0,right:0};
-var vals=recent.map(function(d){return d.value;});
-var mn=Math.min.apply(null,vals)-2, mx=Math.max.apply(null,vals)+2;
-var xs=(w-pad.left-pad.right)/Math.max(recent.length-1,1);
-ctx.beginPath(); ctx.strokeStyle=’#4ade80’; ctx.lineWidth=2.5;
-ctx.lineJoin=‘round’; ctx.lineCap=‘round’;
-recent.forEach(function(d,i){
-var x=pad.left+i*xs, y=pad.top+(1-(d.value-mn)/(mx-mn))*(h-pad.top-pad.bottom);
-i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
-});
+canvas.width = rect.width * dpr;
+canvas.height = 130 * dpr;
+canvas.style.width = rect.width + ‘px’;
+canvas.style.height = ‘130px’;
+ctx.scale(dpr, dpr);
+var w = rect.width, h = 130;
+var pad = { top: 12, bottom: 22, left: 0, right: 0 };
+var vals = [];
+for (var i = 0; i < recent.length; i++) vals.push(recent[i].value);
+var mn = Math.min.apply(null, vals) - 2;
+var mx = Math.max.apply(null, vals) + 2;
+var xs = (w - pad.left - pad.right) / Math.max(recent.length - 1, 1);
+ctx.beginPath();
+ctx.strokeStyle = ‘#4ade80’;
+ctx.lineWidth = 2.5;
+ctx.lineJoin = ‘round’;
+ctx.lineCap = ‘round’;
+for (var i = 0; i < recent.length; i++) {
+var x = pad.left + i * xs;
+var y = pad.top + (1 - (recent[i].value - mn) / (mx - mn)) * (h - pad.top - pad.bottom);
+if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+}
 ctx.stroke();
-var lx=pad.left+(recent.length-1)*xs;
-ctx.lineTo(lx,h-pad.bottom); ctx.lineTo(pad.left,h-pad.bottom); ctx.closePath();
-var gr=ctx.createLinearGradient(0,0,0,h);
-gr.addColorStop(0,‘rgba(74,222,128,0.12)’); gr.addColorStop(1,‘rgba(74,222,128,0)’);
-ctx.fillStyle=gr; ctx.fill();
-[0,recent.length-1].forEach(function(i){
-var x=pad.left+i*xs, y=pad.top+(1-(recent[i].value-mn)/(mx-mn))*(h-pad.top-pad.bottom);
-ctx.beginPath(); ctx.arc(x,y,4,0,Math.PI*2); ctx.fillStyle=’#4ade80’; ctx.fill();
-});
-ctx.fillStyle=’#66666e’; ctx.font=‘11px JetBrains Mono,monospace’;
-ctx.textAlign=‘left’; ctx.fillText(recent[0].date.substring(5),pad.left,h-4);
-ctx.textAlign=‘right’; ctx.fillText(recent[recent.length-1].date.substring(5),w-pad.right,h-4);
+var lx = pad.left + (recent.length - 1) * xs;
+ctx.lineTo(lx, h - pad.bottom);
+ctx.lineTo(pad.left, h - pad.bottom);
+ctx.closePath();
+var gr = ctx.createLinearGradient(0, 0, 0, h);
+gr.addColorStop(0, ‘rgba(74,222,128,0.12)’);
+gr.addColorStop(1, ‘rgba(74,222,128,0)’);
+ctx.fillStyle = gr;
+ctx.fill();
+var ends = [0, recent.length - 1];
+for (var ei = 0; ei < ends.length; ei++) {
+var idx = ends[ei];
+var x = pad.left + idx * xs;
+var y = pad.top + (1 - (recent[idx].value - mn) / (mx - mn)) * (h - pad.top - pad.bottom);
+ctx.beginPath();
+ctx.arc(x, y, 4, 0, Math.PI * 2);
+ctx.fillStyle = ‘#4ade80’;
+ctx.fill();
+}
+ctx.fillStyle = ‘#66666e’;
+ctx.font = ‘11px JetBrains Mono, monospace’;
+ctx.textAlign = ‘left’;
+ctx.fillText(recent[0].date.substring(5), pad.left, h - 4);
+ctx.textAlign = ‘right’;
+ctx.fillText(recent[recent.length - 1].date.substring(5), w - pad.right, h - 4);
 }
 
-// ============================================================
-// TABS & LIFECYCLE
-// ============================================================
-function switchTab(tab) {
-document.querySelectorAll(’[id^=“tab-”]’).forEach(function(el){el.classList.add(‘hidden’);});
-document.getElementById(‘tab-’+tab).classList.remove(‘hidden’);
-document.querySelectorAll(’.tab’).forEach(function(el){el.classList.toggle(‘active’,el.dataset.tab===tab);});
-if (tab===‘weight’) setTimeout(renderWeightChart,50);
+// –– Tabs ––
+window.switchTab = function(tab) {
+var tabs = document.querySelectorAll(’[id^=“tab-”]’);
+for (var i = 0; i < tabs.length; i++) tabs[i].classList.add(‘hidden’);
+document.getElementById(‘tab-’ + tab).classList.remove(‘hidden’);
+var btns = document.querySelectorAll(’.tab’);
+for (var i = 0; i < btns.length; i++) {
+btns[i].classList.toggle(‘active’, btns[i].getAttribute(‘data-tab’) === tab);
 }
+if (tab === ‘weight’) setTimeout(renderWeight, 50);
+};
+
 function showScreen(s) {
-[‘loading-screen’,‘dashboard’].forEach(function(id){document.getElementById(id).classList.toggle(‘hidden’,id!==s);});
+var screens = [‘loading-screen’, ‘dashboard’];
+for (var i = 0; i < screens.length; i++) {
+document.getElementById(screens[i]).classList.toggle(‘hidden’, screens[i] !== s);
 }
-function updateLoading(t) { document.getElementById(‘loading-text’).textContent=t; }
-function showError(m) { document.getElementById(‘error-area’).innerHTML=’<div class="error-msg">’+m+’</div>’; }
+}
 
-async function refreshData() { await loadDashboard(); }
+function updateLoading(t) {
+document.getElementById(‘loading-text’).textContent = t;
+}
 
-async function loadDashboard() {
+function showError(m) {
+document.getElementById(‘error-area’).innerHTML = ‘<div class="error-msg">’ + m + ‘</div>’;
+}
+
+window.refreshData = function() { loadDashboard(); };
+
+function loadDashboard() {
 showScreen(‘loading-screen’);
-try {
-updateLoading(‘Loading workouts…’);
-var workouts = await fetchWorkouts(10,10);
+fetchWorkouts()
+.then(function(workouts) {
 workoutCache = workouts;
 updateLoading(‘Analyzing…’);
 exerciseHistory = buildExerciseHistory(workouts);
-var stats = analyzeWorkouts(workouts);
-muscleAnalysis = stats;
-var plan = generateSessionPlan(stats);
+var stats = analyze(workouts);
+var plan = buildSession(stats);
 showScreen(‘dashboard’);
-document.getElementById(‘last-updated’).textContent = ’updated ’ + new Date().toLocaleTimeString(‘en-US’,{hour:‘numeric’,minute:‘2-digit’});
+document.getElementById(‘last-updated’).textContent = ’updated ’ + new Date().toLocaleTimeString(‘en-US’, { hour: ‘numeric’, minute: ‘2-digit’ });
 renderSession(plan);
 renderMuscleGrid(stats);
-renderRecentWorkouts(workouts);
-renderWeightChart();
-} catch(err) {
-console.error(err); showScreen(‘dashboard’);
-showError(’Failed to load: ’+err.message);
-}
+renderHistory(workouts);
+renderWeight();
+})
+.catch(function(err) {
+console.error(err);
+showScreen(‘dashboard’);
+showError(’Failed to load: ’ + err.message);
+});
 }
 
-if (WEIGHT_DATA.length>0) PROFILE.bodyweightLbs = WEIGHT_DATA[0].value;
+if (WEIGHT_DATA.length > 0) PROFILE.bodyweightLbs = WEIGHT_DATA[0].value;
 loadDashboard();
+
+})();
 </script>
 
 </body>
