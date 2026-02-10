@@ -1,5 +1,4 @@
 <!DOCTYPE html>
-
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -33,349 +32,346 @@
   --purple-dim: rgba(192, 132, 252, 0.12);
 }
 
-- { margin: 0; padding: 0; box-sizing: border-box; }
+* { margin: 0; padding: 0; box-sizing: border-box; }
 
 body {
-font-family: ‘Figtree’, -apple-system, sans-serif;
-background: var(–bg);
-color: var(–text);
-min-height: 100vh;
--webkit-font-smoothing: antialiased;
-line-height: 1.5;
+  font-family: 'Figtree', -apple-system, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  line-height: 1.5;
 }
 
-.mono { font-family: ‘JetBrains Mono’, monospace; }
+.mono { font-family: 'JetBrains Mono', monospace; }
 
 /* Layout */
 .app {
-max-width: 480px;
-margin: 0 auto;
-padding: 20px 18px;
-padding-bottom: 120px;
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 20px 18px;
+  padding-bottom: 120px;
 }
 
 /* Header */
 .header {
-display: flex;
-align-items: center;
-justify-content: space-between;
-padding: 8px 0 16px;
-margin-bottom: 20px;
-border-bottom: 1px solid var(–border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 0 16px;
+  margin-bottom: 20px;
+  border-bottom: 1px solid var(--border);
 }
 .header h1 {
-font-size: 20px;
-font-weight: 700;
-letter-spacing: -0.5px;
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
 }
 .header .subtitle {
-font-size: 11px;
-color: var(–text-dim);
-font-family: ‘JetBrains Mono’, monospace;
-margin-top: 2px;
+  font-size: 11px;
+  color: var(--text-dim);
+  font-family: 'JetBrains Mono', monospace;
+  margin-top: 2px;
 }
 .btn-refresh {
-padding: 7px 14px;
-font-size: 12px;
-font-weight: 500;
-background: var(–surface2);
-color: var(–text-mid);
-border: 1px solid var(–border);
-border-radius: 8px;
-cursor: pointer;
-font-family: ‘Figtree’, sans-serif;
-transition: all 0.2s ease;
--webkit-tap-highlight-color: transparent;
+  padding: 7px 14px;
+  font-size: 12px;
+  font-weight: 500;
+  background: var(--surface2);
+  color: var(--text-mid);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  cursor: pointer;
+  font-family: 'Figtree', sans-serif;
+  transition: all 0.2s ease;
+  -webkit-tap-highlight-color: transparent;
 }
 .btn-refresh:active {
-background: var(–surface3);
-transform: scale(0.97);
+  background: var(--surface3);
+  transform: scale(0.97);
 }
 
 /* Cards */
 .card {
-background: var(–surface);
-border: 1px solid var(–border);
-border-radius: 14px;
-padding: 18px;
-margin-bottom: 14px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 18px;
+  margin-bottom: 14px;
 }
 .card-title {
-font-size: 11px;
-font-weight: 600;
-text-transform: uppercase;
-letter-spacing: 1.5px;
-color: var(–text-dim);
-margin-bottom: 14px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--text-dim);
+  margin-bottom: 14px;
 }
 
 /* Tabs */
 .tabs {
-display: flex;
-gap: 4px;
-margin-bottom: 18px;
-background: var(–surface);
-border-radius: 12px;
-padding: 4px;
-border: 1px solid var(–border);
+  display: flex;
+  gap: 4px;
+  margin-bottom: 18px;
+  background: var(--surface);
+  border-radius: 12px;
+  padding: 4px;
+  border: 1px solid var(--border);
 }
 .tab {
-flex: 1;
-padding: 9px 6px;
-text-align: center;
-font-size: 13px;
-font-weight: 600;
-border-radius: 9px;
-cursor: pointer;
-color: var(–text-dim);
-transition: all 0.25s ease;
-border: none;
-background: none;
-font-family: ‘Figtree’, sans-serif;
--webkit-tap-highlight-color: transparent;
+  flex: 1;
+  padding: 9px 6px;
+  text-align: center;
+  font-size: 13px;
+  font-weight: 600;
+  border-radius: 9px;
+  cursor: pointer;
+  color: var(--text-dim);
+  transition: all 0.25s ease;
+  border: none;
+  background: none;
+  font-family: 'Figtree', sans-serif;
+  -webkit-tap-highlight-color: transparent;
 }
 .tab.active {
-background: var(–surface3);
-color: var(–text);
+  background: var(--surface3);
+  color: var(--text);
 }
 
 /* ===================== */
 /* RECOMMENDATIONS       */
 /* ===================== */
 .rec-item {
-border-bottom: 1px solid var(–border);
-cursor: pointer;
--webkit-tap-highlight-color: transparent;
-transition: background 0.15s ease;
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.15s ease;
 }
 .rec-item:last-child { border-bottom: none; }
-.rec-item:active { background: var(–surface2); }
+.rec-item:active { background: var(--surface2); }
 
 .rec-row {
-display: flex;
-align-items: center;
-gap: 14px;
-padding: 12px 2px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 2px;
 }
 .rec-rank {
-font-family: ‘JetBrains Mono’, monospace;
-font-size: 13px;
-font-weight: 600;
-color: var(–accent);
-width: 22px;
-text-align: center;
-flex-shrink: 0;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--accent);
+  width: 22px;
+  text-align: center;
+  flex-shrink: 0;
 }
 .rec-info { flex: 1; min-width: 0; }
 .rec-name {
-font-size: 15px;
-font-weight: 600;
-line-height: 1.3;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.3;
 }
 .rec-detail {
-font-size: 12px;
-color: var(–text-dim);
-margin-top: 2px;
-font-family: ‘JetBrains Mono’, monospace;
+  font-size: 12px;
+  color: var(--text-dim);
+  margin-top: 2px;
+  font-family: 'JetBrains Mono', monospace;
 }
 .rec-urgency {
-font-size: 10px;
-font-weight: 600;
-padding: 4px 9px;
-border-radius: 6px;
-font-family: ‘JetBrains Mono’, monospace;
-flex-shrink: 0;
-text-transform: uppercase;
-letter-spacing: 0.5px;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 4px 9px;
+  border-radius: 6px;
+  font-family: 'JetBrains Mono', monospace;
+  flex-shrink: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
-.urgency-high { background: var(–danger-dim); color: var(–danger); }
-.urgency-med { background: var(–warn-dim); color: var(–warn); }
-.urgency-low { background: var(–accent-dim); color: var(–accent); }
+.urgency-high { background: var(--danger-dim); color: var(--danger); }
+.urgency-med { background: var(--warn-dim); color: var(--warn); }
+.urgency-low { background: var(--accent-dim); color: var(--accent); }
 
 /* Expandable explainer */
 .rec-expand {
-max-height: 0;
-overflow: hidden;
-transition: max-height 0.3s ease, opacity 0.25s ease;
-opacity: 0;
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease, opacity 0.25s ease;
+  opacity: 0;
 }
 .rec-expand.open {
-opacity: 1;
+  opacity: 1;
 }
 .rec-explainer {
-padding: 0 2px 14px 36px;
-font-size: 13px;
-color: var(–text-mid);
-line-height: 1.55;
+  padding: 0 2px 14px 36px;
+  font-size: 13px;
+  color: var(--text-mid);
+  line-height: 1.55;
 }
 .rec-explainer strong {
-color: var(–text);
-font-weight: 600;
+  color: var(--text);
+  font-weight: 600;
 }
 
 /* ===================== */
 /* EXERCISE PRESCRIPTIONS */
 /* ===================== */
 .ex-group {
-margin-bottom: 18px;
+  margin-bottom: 18px;
 }
 .ex-group:last-child { margin-bottom: 0; }
 .ex-group-title {
-font-size: 13px;
-font-weight: 600;
-margin-bottom: 8px;
-padding-bottom: 6px;
-border-bottom: 1px solid var(–border);
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 8px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--border);
 }
 .ex-row {
-display: flex;
-align-items: baseline;
-justify-content: space-between;
-padding: 7px 0;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  padding: 7px 0;
 }
 .ex-name {
-font-size: 14px;
-font-weight: 500;
-flex: 1;
-min-width: 0;
-padding-right: 12px;
+  font-size: 14px;
+  font-weight: 500;
+  flex: 1;
+  min-width: 0;
+  padding-right: 12px;
 }
 .ex-prescription {
-font-family: ‘JetBrains Mono’, monospace;
-font-size: 12px;
-color: var(–accent);
-white-space: nowrap;
-flex-shrink: 0;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  color: var(--accent);
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 /* ===================== */
 /* MUSCLE GRID           */
 /* ===================== */
 .muscle-grid {
-display: grid;
-grid-template-columns: 1fr 1fr;
-gap: 10px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
 }
 .muscle-cell {
-background: var(–surface2);
-border-radius: 10px;
-padding: 12px;
+  background: var(--surface2);
+  border-radius: 10px;
+  padding: 12px;
 }
 .muscle-name {
-font-size: 13px;
-font-weight: 600;
+  font-size: 13px;
+  font-weight: 600;
 }
 .muscle-stat {
-font-size: 11px;
-color: var(–text-dim);
-font-family: ‘JetBrains Mono’, monospace;
-margin-top: 5px;
+  font-size: 11px;
+  color: var(--text-dim);
+  font-family: 'JetBrains Mono', monospace;
+  margin-top: 5px;
 }
 .muscle-bar {
-height: 4px;
-background: var(–border);
-border-radius: 3px;
-margin-top: 8px;
-overflow: hidden;
+  height: 4px;
+  background: var(--border);
+  border-radius: 3px;
+  margin-top: 8px;
+  overflow: hidden;
 }
 .muscle-bar-fill {
-height: 100%;
-border-radius: 3px;
-transition: width 0.6s ease;
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.6s ease;
 }
 
 /* ===================== */
 /* WEIGHT TAB            */
 /* ===================== */
 .weight-chart {
-width: 100%;
-height: 130px;
-position: relative;
+  width: 100%;
+  height: 130px;
+  position: relative;
 }
 .weight-chart canvas { width: 100%; height: 100%; }
 .weight-current {
-font-family: ‘JetBrains Mono’, monospace;
-font-size: 30px;
-font-weight: 700;
-letter-spacing: -1px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 30px;
+  font-weight: 700;
+  letter-spacing: -1px;
 }
 .weight-delta {
-font-family: ‘JetBrains Mono’, monospace;
-font-size: 13px;
-margin-left: 8px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  margin-left: 8px;
 }
 
 /* ===================== */
 /* HISTORY               */
 /* ===================== */
 .workout-item {
-padding: 10px 0;
-border-bottom: 1px solid var(–border);
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
 }
 .workout-item:last-child { border-bottom: none; }
 .workout-title {
-font-size: 14px;
-font-weight: 600;
+  font-size: 14px;
+  font-weight: 600;
 }
 .workout-meta {
-font-size: 12px;
-color: var(–text-dim);
-font-family: ‘JetBrains Mono’, monospace;
-margin-top: 3px;
-line-height: 1.4;
+  font-size: 12px;
+  color: var(--text-dim);
+  font-family: 'JetBrains Mono', monospace;
+  margin-top: 3px;
+  line-height: 1.4;
 }
 
 /* ===================== */
 /* LOADING & ERROR       */
 /* ===================== */
 .loading {
-display: flex;
-flex-direction: column;
-align-items: center;
-justify-content: center;
-min-height: 60vh;
-gap: 18px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+  gap: 18px;
 }
 .spinner {
-width: 28px; height: 28px;
-border: 2.5px solid var(–border);
-border-top-color: var(–accent);
-border-radius: 50%;
-animation: spin 0.75s linear infinite;
+  width: 28px; height: 28px;
+  border: 2.5px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.75s linear infinite;
 }
 @keyframes spin { to { transform: rotate(360deg); } }
 .loading-text {
-font-size: 13px;
-color: var(–text-dim);
-font-family: ‘JetBrains Mono’, monospace;
+  font-size: 13px;
+  color: var(--text-dim);
+  font-family: 'JetBrains Mono', monospace;
 }
 .error-msg {
-background: var(–danger-dim);
-border: 1px solid rgba(248,113,113,0.2);
-border-radius: 10px;
-padding: 14px;
-font-size: 13px;
-color: var(–danger);
-margin-bottom: 14px;
-line-height: 1.4;
+  background: var(--danger-dim);
+  border: 1px solid rgba(248,113,113,0.2);
+  border-radius: 10px;
+  padding: 14px;
+  font-size: 13px;
+  color: var(--danger);
+  margin-bottom: 14px;
+  line-height: 1.4;
 }
 
 .hidden { display: none; }
 </style>
-
 </head>
 <body>
 <div class="app" id="app">
 
   <!-- Loading Screen -->
-
   <div id="loading-screen" class="loading">
     <div class="spinner"></div>
     <div class="loading-text" id="loading-text">Connecting to Hevy...</div>
   </div>
 
   <!-- Main Dashboard -->
-
   <div id="dashboard" class="hidden">
     <div class="header">
       <div>
@@ -385,60 +381,57 @@ line-height: 1.4;
       <button class="btn-refresh" onclick="refreshData()">Refresh</button>
     </div>
 
-```
-<div id="error-area"></div>
+    <div id="error-area"></div>
 
-<div class="tabs">
-  <button class="tab active" data-tab="today" onclick="switchTab('today')">Today</button>
-  <button class="tab" data-tab="muscles" onclick="switchTab('muscles')">Muscles</button>
-  <button class="tab" data-tab="history" onclick="switchTab('history')">History</button>
-  <button class="tab" data-tab="weight" onclick="switchTab('weight')">Weight</button>
-</div>
-
-<!-- Today Tab -->
-<div id="tab-today">
-  <div class="card">
-    <div class="card-title">Recommended Training</div>
-    <div id="recommendations"></div>
-  </div>
-  <div class="card">
-    <div class="card-title">Suggested Exercises</div>
-    <div id="suggested-exercises"></div>
-  </div>
-</div>
-
-<!-- Muscles Tab -->
-<div id="tab-muscles" class="hidden">
-  <div class="card">
-    <div class="card-title">Muscle Group Status</div>
-    <div id="muscle-grid" class="muscle-grid"></div>
-  </div>
-</div>
-
-<!-- History Tab -->
-<div id="tab-history" class="hidden">
-  <div class="card">
-    <div class="card-title">Recent Workouts</div>
-    <div id="recent-workouts"></div>
-  </div>
-</div>
-
-<!-- Weight Tab -->
-<div id="tab-weight" class="hidden">
-  <div class="card">
-    <div class="card-title">Body Weight</div>
-    <div style="display:flex;align-items:baseline;margin-bottom:18px;">
-      <span class="weight-current" id="weight-current">--</span>
-      <span class="weight-delta" id="weight-delta"></span>
-      <span style="font-size:13px;color:var(--text-dim);margin-left:6px;">lbs</span>
+    <div class="tabs">
+      <button class="tab active" data-tab="today" onclick="switchTab('today')">Today</button>
+      <button class="tab" data-tab="muscles" onclick="switchTab('muscles')">Muscles</button>
+      <button class="tab" data-tab="history" onclick="switchTab('history')">History</button>
+      <button class="tab" data-tab="weight" onclick="switchTab('weight')">Weight</button>
     </div>
-    <div class="weight-chart">
-      <canvas id="weight-canvas"></canvas>
-    </div>
-  </div>
-</div>
-```
 
+    <!-- Today Tab -->
+    <div id="tab-today">
+      <div class="card">
+        <div class="card-title">Recommended Training</div>
+        <div id="recommendations"></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Suggested Exercises</div>
+        <div id="suggested-exercises"></div>
+      </div>
+    </div>
+
+    <!-- Muscles Tab -->
+    <div id="tab-muscles" class="hidden">
+      <div class="card">
+        <div class="card-title">Muscle Group Status</div>
+        <div id="muscle-grid" class="muscle-grid"></div>
+      </div>
+    </div>
+
+    <!-- History Tab -->
+    <div id="tab-history" class="hidden">
+      <div class="card">
+        <div class="card-title">Recent Workouts</div>
+        <div id="recent-workouts"></div>
+      </div>
+    </div>
+
+    <!-- Weight Tab -->
+    <div id="tab-weight" class="hidden">
+      <div class="card">
+        <div class="card-title">Body Weight</div>
+        <div style="display:flex;align-items:baseline;margin-bottom:18px;">
+          <span class="weight-current" id="weight-current">--</span>
+          <span class="weight-delta" id="weight-delta"></span>
+          <span style="font-size:13px;color:var(--text-dim);margin-left:6px;">lbs</span>
+        </div>
+        <div class="weight-chart">
+          <canvas id="weight-canvas"></canvas>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -1475,6 +1468,5 @@ if (WEIGHT_DATA.length > 0) {
 // Boot
 loadDashboard();
 </script>
-
 </body>
 </html>
