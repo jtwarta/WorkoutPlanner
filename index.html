@@ -912,7 +912,7 @@ let exerciseHistory = {}; // { exerciseName: { lastWeightLbs, lastReps, lastDate
 // ============================================================
 // CORS proxy - Hevy API doesn't allow browser requests directly
 // Replace with your Cloudflare Worker URL after deploying worker.js
-const API_BASE = 'https://hevy-proxy.jtwarta.workers.dev/v1';
+const API_BASE = 'https://api.hevyapp.com/v1';
 
 async function fetchWorkouts(pageSize = 10, maxPages = 10) {
   const allWorkouts = [];
