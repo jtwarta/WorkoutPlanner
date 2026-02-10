@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+
+<html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<style>body{background:#0a0a0a;color:#fff;font-family:monospace;padding:20px;font-size:14px}pre{white-space:pre-wrap;word-wrap:break-word}</style>
+</head><body>
+<div id="log">Starting test...</div>
+<script>
+var log = document.getElementById('log');
+function addLog(msg) { log.innerHTML += '<br>' + msg; }
+try {
+  addLog('Step 1: JS loaded OK');
+  var API_KEY = 'e38cf123-61c4-4b8c-ae25-7442d6d9c874';
+  var url = 'https://api.hevyapp.com/v1/workouts?page=1&pageSize=1';
+  addLog('Step 2: Fetching ' + url);
+  fetch(url, { headers: { 'api-key': API_KEY } })
+    .then(function(r) {
+      addLog('Step 3: Got response, status=' + r.status);
+      return r.text();
+    })
+    .then(function(t) {
+      addLog('Step 4: Body length=' + t.length);
+      addLog('Step 5: First 200 chars: ' + t.substring(0, 200));
+    })
+    .catch(function(e) {
+      addLog('FETCH ERROR: ' + e.message);
+    });
+} catch(e) {
+  addLog('SYNC ERROR: ' + e.message);
+}
+</script></body></html>
