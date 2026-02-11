@@ -691,7 +691,7 @@ body {
         </div>
         <div class="chart-legend">
           <span><span class="legend-dot" style="background:var(--accent)"></span>Weight</span>
-          <span><span class="legend-dot" style="background:var(--strength)"></span>Strength Index</span>
+          <span><span class="legend-dot" style="background:var(--strength)"></span>Strength Score</span>
         </div>
       </div>
     </div>
@@ -1345,15 +1345,27 @@ function preprocessWorkouts(workouts, bodyweightLbs) {
       }
     }
 
-    // SI data point
+    // Strength Score data point (normalized: 1.0 = 50th percentile for 36yo male)
     const hasData = Object.values(siRolling1RMs).some(v => v > 0);
     if (hasData) {
       const bw = getBodyweightAt(dateStr);
-      let index = 0;
       const lifts = {};
+      let totalWeight = 0;
+
+      // First pass: identify which lifts have data and sum their weights
+      for (const [liftKey, liftDef] of Object.entries(STRENGTH_INDEX_LIFTS)) {
+        if (siRolling1RMs[liftKey] > 0) totalWeight += liftDef.weight;
+      }
+
+      // Second pass: compute normalized score with re-weighted lifts
+      let index = 0;
       for (const [liftKey, liftDef] of Object.entries(STRENGTH_INDEX_LIFTS)) {
         const mult = bw > 0 ? siRolling1RMs[liftKey] / bw : 0;
-        index += mult * liftDef.weight;
+        const normalized = liftDef.p50 > 0 ? mult / liftDef.p50 : 0;
+        const adjustedWeight = totalWeight > 0 ? liftDef.weight / totalWeight : 0;
+        if (siRolling1RMs[liftKey] > 0) {
+          index += normalized * adjustedWeight;
+        }
         lifts[liftKey] = { rm: Math.round(siRolling1RMs[liftKey]), mult: Math.round(mult * 100) / 100 };
       }
       siTimeline.push({ date: dateStr, index: Math.round(index * 100) / 100, lifts: { ...lifts } });
@@ -1386,12 +1398,15 @@ function preprocessWorkouts(workouts, bodyweightLbs) {
 // ============================================================
 // STRENGTH INDEX LIFT DEFINITIONS
 // ============================================================
+// p50 = 50th percentile BW multiplier, age-adjusted for 36yo male (~75kg class)
+// Base values from van den Hoek et al. 2024 (26-35 bracket), reduced ~4% for 36-39 bracket
+// Row p50 derived from approximate StrengthLevel data (same age adjustment applied)
 const STRENGTH_INDEX_LIFTS = {
-  bench:    { weight: 0.20, patterns: [/bench press.*barbell/i, /^bench press$/i] },
-  squat:    { weight: 0.25, patterns: [/squat.*barbell/i, /^squat$/i, /barbell.*squat/i] },
-  deadlift: { weight: 0.30, patterns: [/^deadlift/i, /deadlift.*barbell/i] },
-  ohp:      { weight: 0.10, patterns: [/overhead press/i, /shoulder press/i, /military press/i] },
-  row:      { weight: 0.15, patterns: [/barbell row/i, /bent over row/i, /pendlay row/i] },
+  bench:    { weight: 0.20, p50: 1.15, patterns: [/bench press.*barbell/i, /^bench press$/i] },
+  squat:    { weight: 0.25, p50: 1.54, patterns: [/squat.*barbell/i, /^squat$/i, /barbell.*squat/i] },
+  deadlift: { weight: 0.30, p50: 1.78, patterns: [/^deadlift/i, /deadlift.*barbell/i] },
+  ohp:      { weight: 0.10, p50: 0.69, patterns: [/overhead press/i, /shoulder press/i, /military press/i] },
+  row:      { weight: 0.15, p50: 0.86, patterns: [/barbell row/i, /bent over row/i, /pendlay row/i, /seated row/i, /cable row/i, /dumbbell row/i] },
 };
 
 // ============================================================
@@ -2011,9 +2026,9 @@ function populateStrengthDetail() {
 
   if (strengthIndexData.length > 0) {
     latestSI = strengthIndexData[strengthIndexData.length - 1];
-    siLabel.textContent = `SI: ${latestSI.index.toFixed(2)}`;
+    siLabel.textContent = `SS: ${latestSI.index.toFixed(2)}`;
   } else {
-    siLabel.textContent = `SI: --`;
+    siLabel.textContent = `SS: --`;
   }
 
   let detailHtml = '<div style="display:grid;grid-template-columns:1fr;gap:2px;">';
