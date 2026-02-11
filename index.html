@@ -375,6 +375,10 @@ body {
   color: var(--strength);
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
+  padding: 6px 12px;
+  background: var(--strength-dim);
+  border: 1px solid rgba(129, 140, 248, 0.25);
+  border-radius: 8px;
 }
 .strength-detail {
   max-height: 0;
@@ -2074,7 +2078,7 @@ function renderHeatmap(workouts) {
   // Generate last 8 weeks of days
   const now = new Date();
   const days = [];
-  const numWeeks = 8;
+  const numWeeks = 2;
   for (let i = numWeeks * 7 - 1; i >= 0; i--) {
     const d = new Date(now);
     d.setDate(d.getDate() - i);
@@ -2100,7 +2104,7 @@ function renderHeatmap(workouts) {
 
   // Direction indicator row above the grid
   html += `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;padding:0 0 0 ${labelWidth + 2}px;">`;
-  html += `<span style="font-size:12px;font-family:'JetBrains Mono',monospace;color:var(--text-dim);">8 wks ago</span>`;
+  html += `<span style="font-size:12px;font-family:'JetBrains Mono',monospace;color:var(--text-dim);">2 wks ago</span>`;
   html += `<span style="font-size:12px;font-family:'JetBrains Mono',monospace;color:var(--accent);">Today \u2192</span>`;
   html += `</div>`;
 
@@ -2210,50 +2214,52 @@ function renderWeightChart() {
 
   // Strength Index display
   const siDisplay = document.getElementById('strength-index-display');
+  const detailInner = document.getElementById('strength-detail-inner');
+  const liftBenchmarks = {
+    bench:    { label: 'Bench',    std: 'bench_press' },
+    squat:    { label: 'Squat',    std: 'squat' },
+    deadlift: { label: 'Deadlift', std: 'deadlift' },
+    ohp:      { label: 'OHP',      std: 'overhead_press' },
+    row:      { label: 'Row',      std: 'barbell_row' },
+  };
+  const bw = PROFILE.bodyweightLbs;
+  let latestSI = null;
+
   if (strengthIndexData.length > 0) {
-    const latestSI = strengthIndexData[strengthIndexData.length - 1];
+    latestSI = strengthIndexData[strengthIndexData.length - 1];
     siDisplay.textContent = `SI: ${latestSI.index.toFixed(2)}`;
+  } else {
+    siDisplay.textContent = `SI: --`;
+  }
 
-    // Render detail on tap — show user's lift vs percentile benchmarks
-    const detailInner = document.getElementById('strength-detail-inner');
-    const liftBenchmarks = {
-      bench:    { label: 'Bench',    std: 'bench_press' },
-      squat:    { label: 'Squat',    std: 'squat' },
-      deadlift: { label: 'Deadlift', std: 'deadlift' },
-      ohp:      { label: 'OHP',      std: 'overhead_press' },
-      row:      { label: 'Row',      std: 'barbell_row' },
-    };
-    const bw = PROFILE.bodyweightLbs;
-    let detailHtml = '<div style="display:grid;grid-template-columns:1fr;gap:8px;">';
-    for (const [key, info] of Object.entries(liftBenchmarks)) {
-      const lift = latestSI.lifts[key];
-      const std = STRENGTH_STANDARDS[info.std];
-      const m = std ? std.multipliers : null;
+  // Always populate detail panel (benchmarks shown even without user data)
+  let detailHtml = '<div style="display:grid;grid-template-columns:1fr;gap:2px;">';
+  for (const [key, info] of Object.entries(liftBenchmarks)) {
+    const lift = latestSI ? latestSI.lifts[key] : null;
+    const std = STRENGTH_STANDARDS[info.std];
+    const m = std ? std.multipliers : null;
 
-      detailHtml += '<div style="padding:8px 0;border-bottom:1px solid var(--border);">';
-      detailHtml += `<div style="font-weight:600;color:var(--text);font-size:13px;margin-bottom:4px;">${info.label}</div>`;
+    detailHtml += '<div style="padding:8px 0;border-bottom:1px solid var(--border);">';
+    detailHtml += `<div style="font-weight:600;color:var(--text);font-size:14px;margin-bottom:4px;">${info.label}</div>`;
 
-      if (lift && lift.rm > 0) {
-        const pctile = estimatePercentile(info.std, lift.mult);
-        const pctColor = pctile >= 75 ? 'var(--accent)' : pctile >= 50 ? 'var(--warn)' : 'var(--danger)';
-        detailHtml += `<div style="color:var(--text-mid);">You: <span style="color:var(--text);font-weight:600;">${lift.rm} lbs</span> (${lift.mult}\u00d7 BW) <span style="color:${pctColor};font-weight:600;">${pctile}th %ile</span></div>`;
-      } else {
-        detailHtml += `<div style="color:var(--text-dim);">You: no data</div>`;
-      }
+    if (lift && lift.rm > 0) {
+      const pctile = estimatePercentile(info.std, lift.mult);
+      const pctColor = pctile >= 75 ? 'var(--accent)' : pctile >= 50 ? 'var(--warn)' : 'var(--danger)';
+      detailHtml += `<div style="color:var(--text-mid);font-size:13px;">You: <span style="color:var(--text);font-weight:600;">${lift.rm} lbs</span> (${lift.mult}\u00d7 BW) <span style="color:${pctColor};font-weight:600;">${pctile}th %ile</span></div>`;
+    } else {
+      detailHtml += `<div style="color:var(--text-dim);font-size:13px;">You: no data yet</div>`;
+    }
 
-      if (m) {
-        const p50 = Math.round(m[2] * bw);
-        const p75 = Math.round(m[3] * bw);
-        const p90 = Math.round(m[4] * bw);
-        detailHtml += `<div style="color:var(--text-dim);font-size:11px;margin-top:2px;">50th: ${p50}lbs \u00b7 75th: ${p75}lbs \u00b7 90th: ${p90}lbs</div>`;
-      }
-      detailHtml += '</div>';
+    if (m) {
+      const p50 = Math.round(m[2] * bw);
+      const p75 = Math.round(m[3] * bw);
+      const p90 = Math.round(m[4] * bw);
+      detailHtml += `<div style="color:var(--text-dim);font-size:12px;margin-top:3px;">50th: ${p50}lbs \u00b7 75th: ${p75}lbs \u00b7 90th: ${p90}lbs</div>`;
     }
     detailHtml += '</div>';
-    detailInner.innerHTML = detailHtml;
-  } else {
-    siDisplay.textContent = 'SI: --';
   }
+  detailHtml += '</div>';
+  detailInner.innerHTML = detailHtml;
 
   // Canvas
   const canvas = document.getElementById('weight-canvas');
