@@ -349,16 +349,43 @@ body {
   font-size: 14px;
   color: var(--text-dim);
 }
-/* v1.1: SI label is non-interactive */
+/* v1.1: SI label - subtle, non-interactive */
 .strength-index-label {
   font-family: 'JetBrains Mono', monospace;
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 600;
   color: var(--strength);
-  padding: 6px 12px;
-  background: var(--strength-dim);
-  border: 1px solid rgba(129, 140, 248, 0.25);
-  border-radius: 8px;
+  opacity: 0.85;
+}
+
+/* Constraints chips */
+.constraints-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+.constraint-chip {
+  padding: 5px 10px;
+  font-size: 12px;
+  font-weight: 500;
+  font-family: 'JetBrains Mono', monospace;
+  background: var(--surface2);
+  color: var(--text-dim);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: all 0.15s ease;
+  user-select: none;
+}
+.constraint-chip:active {
+  transform: scale(0.96);
+}
+.constraint-chip.active {
+  color: var(--accent);
+  border-color: rgba(74, 222, 128, 0.3);
+  background: var(--accent-dim);
 }
 /* v1.1: SI detail always visible */
 .strength-detail-panel {
@@ -479,8 +506,8 @@ body {
   z-index: 2;
 }
 .heatmap-cell {
-  width: 100%;
-  aspect-ratio: 1;
+  width: 18px;
+  height: 18px;
   border-radius: 3px;
   background: var(--surface2);
   cursor: pointer;
@@ -638,6 +665,7 @@ body {
       </div>
       <div class="card">
         <div class="card-title">Today's Session</div>
+        <div id="constraints-row" class="constraints-row"></div>
         <div id="session-summary"></div>
         <div id="suggested-exercises"></div>
       </div>
@@ -836,6 +864,11 @@ function getWorkingSets(exercise) {
 // Normalize exercise name for caching/matching
 function normalizeExerciseName(name) {
   return (name || '').trim().toLowerCase().replace(/\s+/g, ' ').replace(/['']/g, "'");
+}
+
+// Format set counts: show decimals only when fractional
+function formatSets(n) {
+  return Number.isInteger(n) ? String(n) : n.toFixed(1);
 }
 
 // Classification cache keyed by template_id or normalized name
@@ -1133,6 +1166,64 @@ let exerciseHistory = {};
 let muscle1RMs = {};
 let strengthIndexData = [];
 let WEIGHT_DATA = [];
+let LAST_RECS = null;
+
+// ============================================================
+// SESSION PREFS (Constraints Knob)
+// ============================================================
+const PREFS_KEY = 'wa_prefs_v1_1';
+const PREFS_DEFAULTS = {
+  sessionCapMin: 60,
+  equipment: 'gym',
+  avoidOHP: false,
+  strictness: 'balanced',
+};
+
+function loadPrefs() {
+  try {
+    const raw = localStorage.getItem(PREFS_KEY);
+    if (!raw) return { ...PREFS_DEFAULTS };
+    return { ...PREFS_DEFAULTS, ...JSON.parse(raw) };
+  } catch (e) { return { ...PREFS_DEFAULTS }; }
+}
+
+function savePrefs(prefs) {
+  localStorage.setItem(PREFS_KEY, JSON.stringify(prefs));
+}
+
+let sessionPrefs = loadPrefs();
+
+const GYM_ONLY_REGEX = /(Machine|Cable|Smith|Leg Press|Hack Squat|Pec Deck)/i;
+
+// Chip definitions
+const CHIP_DEFS = [
+  { key: 'sessionCapMin', label: v => `${v}m`, values: [30, 45, 60] },
+  { key: 'equipment', label: v => v === 'gym' ? 'Gym' : 'Home', values: ['gym', 'home'] },
+  { key: 'avoidOHP', label: v => v ? 'No OHP' : 'OHP OK', values: [false, true] },
+  { key: 'strictness', label: v => v.charAt(0).toUpperCase() + v.slice(1), values: ['loose', 'balanced', 'strict'] },
+];
+
+function renderConstraintChips() {
+  const row = document.getElementById('constraints-row');
+  if (!row) return;
+  row.innerHTML = CHIP_DEFS.map(def => {
+    const current = sessionPrefs[def.key];
+    const isNonDefault = current !== PREFS_DEFAULTS[def.key];
+    return `<div class="constraint-chip${isNonDefault ? ' active' : ''}" data-key="${def.key}" onclick="cycleChip('${def.key}')">${def.label(current)}</div>`;
+  }).join('');
+}
+
+function cycleChip(key) {
+  const def = CHIP_DEFS.find(d => d.key === key);
+  if (!def) return;
+  const current = sessionPrefs[key];
+  const idx = def.values.indexOf(current);
+  const next = def.values[(idx + 1) % def.values.length];
+  sessionPrefs[key] = next;
+  savePrefs(sessionPrefs);
+  renderConstraintChips();
+  if (LAST_RECS) renderTimedSession(LAST_RECS);
+}
 
 // ============================================================
 // API + CACHING (v1.1 Task 7)
@@ -1276,7 +1367,7 @@ function preprocessWorkouts(workouts, bodyweightLbs) {
 
         if (isRecent) {
           const weight = isPrimary ? 1.0 : 0.5;
-          stat.totalSets30d += Math.round(setCount * weight);
+          stat.totalSets30d += setCount * weight;
           for (const s of workingSets) {
             stat.totalVolume30d += (s.reps || 0) * (s.weight_kg || 0) * weight;
           }
@@ -1290,7 +1381,7 @@ function preprocessWorkouts(workouts, bodyweightLbs) {
         if (!MUSCLE_GROUPS[muscle]) continue;
         const isPrimary = muscle === classification.primary;
         const weight = isPrimary ? 1.0 : 0.5;
-        heatmapDayMuscle[dateStr][muscle] = (heatmapDayMuscle[dateStr][muscle] || 0) + Math.round(setCount * weight);
+        heatmapDayMuscle[dateStr][muscle] = (heatmapDayMuscle[dateStr][muscle] || 0) + setCount * weight;
       }
 
       // Heatmap detail
@@ -1514,7 +1605,7 @@ function generateRecommendations(muscleStats) {
       sets30d: stat.totalSets30d,
       detail: stat.daysSinceTrained === Infinity
         ? 'no data'
-        : `${stat.daysSinceTrained}d ago \u00b7 ${stat.totalSets30d} sets/30d`,
+        : `${stat.daysSinceTrained}d ago \u00b7 ${formatSets(stat.totalSets30d)} sets/30d`,
       explainer,
       weeklyActual: parseFloat(weeklyActual),
       weeklyIdeal,
@@ -1551,7 +1642,8 @@ function getMovementPattern(exName) {
   return null;
 }
 
-function buildTimedSession(recs) {
+function buildTimedSession(recs, prefs) {
+  prefs = prefs || sessionPrefs;
   const topKeys = recs.slice(0, 3).map(r => r.key);
   const recScores = {};
   recs.forEach(r => { recScores[r.key] = r.score; });
@@ -1568,8 +1660,16 @@ function buildTimedSession(recs) {
 
     for (let i = 0; i < cappedPicks.length; i++) {
       const exName = cappedPicks[i];
+
+      // Equipment filter: exclude gym-only exercises in home mode
+      if (prefs.equipment === 'home' && GYM_ONLY_REGEX.test(exName)) continue;
+
       const db = EXERCISE_DB[exName];
       const p = prescribeExercise(exName);
+      const mp = getMovementPattern(exName);
+
+      // No OHP filter: exclude compound vertical push
+      if (prefs.avoidOHP && mp === 'vertical_push' && db && db.type === 'compound') continue;
 
       const typeBonus = (db && db.type === 'compound') ? 1.5 : 1.0;
       let deficitBonus = 1.0;
@@ -1585,35 +1685,42 @@ function buildTimedSession(recs) {
         importance, timeSec,
         isCompound: db && db.type === 'compound',
         isIsolation: db && db.type === 'isolation',
-        movementPattern: getMovementPattern(exName),
+        movementPattern: mp,
       });
     }
   }
 
   candidates.sort((a, b) => b.importance - a.importance);
 
-  // v1.1: Fatigue-aware selection
-  const capSec = TIME_CONSTANTS.sessionCapMin * 60;
+  // Time cap from prefs
+  const capSec = (prefs.sessionCapMin || TIME_CONSTANTS.sessionCapMin) * 60;
   const session = [];
   let totalSec = 0;
-  const usedPatterns = new Set();     // Track heavy compound patterns
-  const muscleCompoundCount = {};     // Max 1 heavy compound per muscle
+  const usedPatterns = new Set();
+  const muscleCompoundCount = {};
 
-  // Track if #1 priority muscle has an isolation
   const topMuscle = topKeys[0];
   let topMuscleHasIsolation = false;
+
+  // Strictness rules
+  const enforcePatternRule = prefs.strictness !== 'loose';
+  const strictCompoundRule = prefs.strictness === 'strict';
 
   for (const c of candidates) {
     if (totalSec + c.timeSec > capSec) continue;
 
-    // Fatigue check: max 1 heavy compound per movement pattern
-    if (c.isCompound && c.movementPattern) {
+    // Movement pattern uniqueness (strict + balanced)
+    if (enforcePatternRule && c.isCompound && c.movementPattern) {
       if (usedPatterns.has(c.movementPattern)) continue;
     }
 
-    // Max 1 compound per muscle (prefer variety)
+    // Max 1 compound per muscle
     if (c.isCompound) {
-      if ((muscleCompoundCount[c.muscle] || 0) >= 1) continue;
+      if (strictCompoundRule && (muscleCompoundCount[c.muscle] || 0) >= 1) continue;
+      // Balanced: relax if session is under-filled (<70% cap)
+      if (prefs.strictness === 'balanced' && (muscleCompoundCount[c.muscle] || 0) >= 1) {
+        if (totalSec >= capSec * 0.7) continue;
+      }
     }
 
     session.push(c);
@@ -1801,10 +1908,11 @@ function renderHeatmap(dayMuscleMap, dayWorkoutsMap) {
   if (maxSets === 0) maxSets = 1;
 
   const labelWidth = 54;
+  const cellSize = 18;
   let html = '';
 
-  // v1.1: Use fractional columns so cells fill the width without scrolling
-  html += `<div class="heatmap-grid" style="grid-template-columns: ${labelWidth}px repeat(${numDays}, 1fr); grid-template-rows: 22px repeat(${muscleKeys.length}, 18px);">`;
+  // Fixed cell sizing for stable layout on all widths
+  html += `<div class="heatmap-grid" style="grid-template-columns: ${labelWidth}px repeat(${numDays}, ${cellSize}px); grid-template-rows: 22px repeat(${muscleKeys.length}, ${cellSize}px);">`;
 
   // Day labels row
   html += `<div></div>`;
@@ -1829,7 +1937,7 @@ function renderHeatmap(dayMuscleMap, dayWorkoutsMap) {
       const sets = (dayMuscleMap[day] && dayMuscleMap[day][mKey]) || 0;
       const opacity = sets > 0 ? Math.max(0.25, Math.min(sets / maxSets, 1)) : 0;
       const bgColor = sets > 0 ? `rgba(74, 222, 128, ${opacity})` : 'var(--surface2)';
-      html += `<div class="heatmap-cell" style="background:${bgColor}" data-day="${day}" onclick="selectHeatmapDay('${day}')" title="${day}: ${sets} sets"></div>`;
+      html += `<div class="heatmap-cell" style="background:${bgColor}" data-day="${day}" onclick="selectHeatmapDay('${day}')" title="${day}: ${formatSets(sets)} sets"></div>`;
     }
   }
 
@@ -1881,7 +1989,10 @@ function selectHeatmapDay(day) {
 function renderWeightChart() {
   WEIGHT_DATA = getMergedWeightData();
 
-  // v1.1: ALWAYS populate SI detail BEFORE any early returns
+  // Update bodyweight BEFORE populating strength detail so benchmarks use fresh weight
+  if (WEIGHT_DATA.length > 0) PROFILE.bodyweightLbs = WEIGHT_DATA[0].value;
+
+  // ALWAYS populate strength detail BEFORE any early returns
   populateStrengthDetail();
 
   if (WEIGHT_DATA.length === 0) return;
@@ -1899,8 +2010,6 @@ function renderWeightChart() {
   const deltaEl = document.getElementById('weight-delta');
   deltaEl.textContent = `${delta >= 0 ? '+' : ''}${delta.toFixed(1)}`;
   deltaEl.style.color = delta <= 0 ? 'var(--accent)' : 'var(--warn)';
-
-  PROFILE.bodyweightLbs = current;
 
   // Canvas
   const canvas = document.getElementById('weight-canvas');
@@ -2132,6 +2241,7 @@ function renderDashboard(workouts) {
   strengthIndexData = pp.strengthIndexTimeline;
 
   const recs = generateRecommendations(pp.muscleStats);
+  LAST_RECS = recs;
 
   showScreen('dashboard');
 
@@ -2140,6 +2250,7 @@ function renderDashboard(workouts) {
     `v1.1 \u00b7 ${now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}`;
 
   renderRecommendations(recs);
+  renderConstraintChips();
   renderTimedSession(recs);
   renderMuscleGrid(pp.muscleStats);
   renderHeatmap(pp.heatmapDayMuscle, pp.heatmapDayWorkouts);
