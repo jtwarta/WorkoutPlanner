@@ -30,6 +30,8 @@
   --blue-dim: rgba(96, 165, 250, 0.12);
   --purple: #c084fc;
   --purple-dim: rgba(192, 132, 252, 0.12);
+  --strength: #818cf8;
+  --strength-dim: rgba(129, 140, 248, 0.12);
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -215,6 +217,26 @@ body {
 /* ===================== */
 /* EXERCISE PRESCRIPTIONS */
 /* ===================== */
+.session-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border);
+}
+.session-time {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--accent);
+}
+.session-count {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  color: var(--text-dim);
+}
+
 .ex-group {
   margin-bottom: 18px;
 }
@@ -246,6 +268,16 @@ body {
   white-space: nowrap;
   flex-shrink: 0;
 }
+.ex-time {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  color: var(--text-dim);
+  white-space: nowrap;
+  flex-shrink: 0;
+  margin-left: 8px;
+  min-width: 38px;
+  text-align: right;
+}
 
 /* ===================== */
 /* MUSCLE GRID           */
@@ -256,9 +288,10 @@ body {
   gap: 10px;
 }
 .muscle-cell {
-  background: var(--surface2);
   border-radius: 10px;
   padding: 12px;
+  transition: all 0.3s ease;
+  border: 1px solid var(--border);
 }
 .muscle-name {
   font-size: 13px;
@@ -270,9 +303,16 @@ body {
   font-family: 'JetBrains Mono', monospace;
   margin-top: 5px;
 }
+.muscle-percentile {
+  font-size: 10px;
+  font-weight: 600;
+  font-family: 'JetBrains Mono', monospace;
+  margin-top: 4px;
+  opacity: 0.9;
+}
 .muscle-bar {
   height: 4px;
-  background: var(--border);
+  background: rgba(255,255,255,0.08);
   border-radius: 3px;
   margin-top: 8px;
   overflow: hidden;
@@ -286,9 +326,20 @@ body {
 /* ===================== */
 /* WEIGHT TAB            */
 /* ===================== */
+.weight-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 18px;
+}
+.weight-left {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
 .weight-chart {
   width: 100%;
-  height: 130px;
+  height: 150px;
   position: relative;
 }
 .weight-chart canvas { width: 100%; height: 100%; }
@@ -301,7 +352,206 @@ body {
 .weight-delta {
   font-family: 'JetBrains Mono', monospace;
   font-size: 13px;
-  margin-left: 8px;
+}
+.weight-unit {
+  font-size: 13px;
+  color: var(--text-dim);
+}
+.strength-index-display {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--strength);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.strength-detail {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease, opacity 0.25s ease;
+  opacity: 0;
+}
+.strength-detail.open {
+  opacity: 1;
+}
+.strength-detail-inner {
+  padding: 12px 0 4px;
+  font-size: 12px;
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--text-mid);
+  line-height: 1.7;
+}
+.chart-legend {
+  display: flex;
+  gap: 16px;
+  margin-top: 12px;
+  font-size: 11px;
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--text-dim);
+}
+.legend-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-right: 5px;
+  vertical-align: middle;
+}
+
+/* Weight input form */
+.btn-log-weight {
+  padding: 5px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  background: var(--accent-dim);
+  color: var(--accent);
+  border: 1px solid rgba(74, 222, 128, 0.25);
+  border-radius: 7px;
+  cursor: pointer;
+  font-family: 'Figtree', sans-serif;
+  -webkit-tap-highlight-color: transparent;
+  transition: all 0.2s ease;
+}
+.btn-log-weight:active {
+  transform: scale(0.96);
+}
+.weight-input-form {
+  display: none;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 14px;
+  padding: 12px;
+  background: var(--surface2);
+  border-radius: 10px;
+  border: 1px solid var(--border);
+}
+.weight-input-form.open {
+  display: flex;
+}
+.weight-input-form input {
+  width: 90px;
+  padding: 7px 10px;
+  font-size: 14px;
+  font-family: 'JetBrains Mono', monospace;
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  outline: none;
+  -webkit-appearance: none;
+}
+.weight-input-form input:focus {
+  border-color: var(--accent);
+}
+.weight-input-form .btn-save {
+  padding: 7px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  background: var(--accent);
+  color: #0a0a0a;
+  border: none;
+  border-radius: 7px;
+  cursor: pointer;
+  font-family: 'Figtree', sans-serif;
+}
+.weight-input-form .btn-cancel {
+  padding: 7px 10px;
+  font-size: 12px;
+  background: none;
+  color: var(--text-dim);
+  border: none;
+  cursor: pointer;
+  font-family: 'Figtree', sans-serif;
+}
+
+/* ===================== */
+/* HISTORY - HEATMAP     */
+/* ===================== */
+.heatmap-container {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  margin: 0 -4px;
+  padding: 0 4px;
+}
+.heatmap-grid {
+  display: grid;
+  gap: 2px;
+  min-width: max-content;
+}
+.heatmap-label {
+  font-size: 10px;
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--text-dim);
+  display: flex;
+  align-items: center;
+  padding-right: 6px;
+  white-space: nowrap;
+  position: sticky;
+  left: 0;
+  background: var(--surface);
+  z-index: 2;
+}
+.heatmap-cell {
+  width: 14px;
+  height: 14px;
+  border-radius: 2px;
+  background: var(--surface2);
+  cursor: pointer;
+  transition: opacity 0.15s ease;
+}
+.heatmap-cell:active {
+  opacity: 0.7;
+}
+.heatmap-day-labels {
+  font-size: 9px;
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--text-dim);
+  display: flex;
+  align-items: flex-end;
+  padding-bottom: 4px;
+  text-align: center;
+}
+.heatmap-day-detail {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease, opacity 0.25s ease;
+  opacity: 0;
+  margin-top: 0;
+}
+.heatmap-day-detail.open {
+  opacity: 1;
+  margin-top: 12px;
+}
+.heatmap-day-detail-inner {
+  padding: 12px;
+  background: var(--surface2);
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  font-size: 13px;
+  line-height: 1.6;
+}
+.heatmap-day-detail-inner .detail-date {
+  font-weight: 600;
+  margin-bottom: 8px;
+  font-size: 12px;
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--text-mid);
+}
+.heatmap-day-detail-inner .detail-exercise {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: 3px 0;
+}
+.heatmap-day-detail-inner .detail-name {
+  font-weight: 500;
+  font-size: 13px;
+}
+.heatmap-day-detail-inner .detail-sets {
+  font-size: 11px;
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--accent);
+  flex-shrink: 0;
 }
 
 /* ===================== */
@@ -397,7 +647,8 @@ body {
         <div id="recommendations"></div>
       </div>
       <div class="card">
-        <div class="card-title">Suggested Exercises</div>
+        <div class="card-title">Today's Session</div>
+        <div id="session-summary"></div>
         <div id="suggested-exercises"></div>
       </div>
     </div>
@@ -413,22 +664,43 @@ body {
     <!-- History Tab -->
     <div id="tab-history" class="hidden">
       <div class="card">
-        <div class="card-title">Recent Workouts</div>
-        <div id="recent-workouts"></div>
+        <div class="card-title">Training Heatmap</div>
+        <div class="heatmap-container" id="heatmap-container"></div>
+        <div class="heatmap-day-detail" id="heatmap-day-detail">
+          <div class="heatmap-day-detail-inner" id="heatmap-day-detail-inner"></div>
+        </div>
       </div>
     </div>
 
     <!-- Weight Tab -->
     <div id="tab-weight" class="hidden">
       <div class="card">
-        <div class="card-title">Body Weight</div>
-        <div style="display:flex;align-items:baseline;margin-bottom:18px;">
-          <span class="weight-current" id="weight-current">--</span>
-          <span class="weight-delta" id="weight-delta"></span>
-          <span style="font-size:13px;color:var(--text-dim);margin-left:6px;">lbs</span>
+        <div class="card-title" style="display:flex;align-items:center;justify-content:space-between;">
+          <span>Body Weight & Strength</span>
+          <button class="btn-log-weight" onclick="toggleWeightForm()">+ Log</button>
+        </div>
+        <div class="weight-input-form" id="weight-input-form">
+          <input type="number" id="weight-input" placeholder="lbs" step="0.1" inputmode="decimal">
+          <button class="btn-save" onclick="saveWeight()">Save</button>
+          <button class="btn-cancel" onclick="toggleWeightForm()">Cancel</button>
+        </div>
+        <div class="weight-header">
+          <div class="weight-left">
+            <span class="weight-current" id="weight-current">--</span>
+            <span class="weight-delta" id="weight-delta"></span>
+            <span class="weight-unit">lbs</span>
+          </div>
+          <div class="strength-index-display" id="strength-index-display" onclick="toggleStrengthDetail()">--</div>
+        </div>
+        <div class="strength-detail" id="strength-detail">
+          <div class="strength-detail-inner" id="strength-detail-inner"></div>
         </div>
         <div class="weight-chart">
           <canvas id="weight-canvas"></canvas>
+        </div>
+        <div class="chart-legend">
+          <span><span class="legend-dot" style="background:var(--accent)"></span>Weight</span>
+          <span><span class="legend-dot" style="background:var(--strength)"></span>Strength Index</span>
         </div>
       </div>
     </div>
@@ -437,7 +709,34 @@ body {
 
 <script>
 // ============================================================
-// USER PROFILE (silent \u2014 never displayed)
+// SCIENTIFIC FOUNDATION (Feature 3)
+// ============================================================
+// PILLAR 1: Volume-Hypertrophy Targets
+// Source: Schoenfeld et al. (2017) "Dose-response relationship between weekly resistance
+// training volume and increases in muscle mass: A systematic review and meta-analysis"
+// - 10+ sets/week per muscle group produces significantly greater hypertrophy than <5 sets
+// Source: Schoenfeld (2016) frequency meta-analysis
+// - Training each muscle 2x/week is superior to 1x/week for hypertrophy
+// Ideal volumes below reflect intermediate programming (~10-16 sets/week per muscle group)
+
+// PILLAR 2: Strength Standards / Percentile Benchmarks
+// Big Three (bench, squat, deadlift): van den Hoek et al. (2024) "Normative data for the
+// squat, bench press and deadlift" — 809,986 drug-tested competition entries from OpenPowerlifting
+// Accessory lifts (OHP, curl, row, etc.): Approximate estimates from StrengthLevel.com data
+// and general intermediate standards (Rippetoe, Henriques). Marked as approximate.
+
+// PILLAR 3: 1RM Estimation
+// Brzycki formula: 1RM = weight x (36 / (37 - reps)) — valid for 1-10 rep sets
+// Epley formula: 1RM = weight x (1 + reps / 30) — used for sets >10 reps
+// Source: Brzycki (1993), Epley (1985)
+
+// PILLAR 4: Progressive Overload
+// Current logic: +5% if below 85% of benchmark, +2.5% if at/above benchmark
+// NSCA guideline: "Increase load 2-10% when target reps are achieved for 2 consecutive sessions"
+// Round to nearest 5 lbs for practical plate loading
+
+// ============================================================
+// USER PROFILE (silent — never displayed)
 // ============================================================
 const PROFILE = {
   dob: new Date('1989-07-21'),
@@ -455,7 +754,107 @@ const PROFILE = {
 };
 
 // ============================================================
-// EXERCISE \u2192 MUSCLE GROUP MAPPING
+// STRENGTH STANDARDS (Pillar 2)
+// BW multipliers for 1RM — male, ~75kg class, age 26-35
+// Percentile: [10th, 25th, 50th, 75th, 90th]
+// Big three from van den Hoek et al. 2024 (OpenPowerlifting data)
+// Accessory lifts: approximate, from StrengthLevel.com / general standards
+// ============================================================
+const STRENGTH_STANDARDS = {
+  'bench_press':     { multipliers: [0.70, 0.95, 1.20, 1.50, 1.95], keyMuscle: 'chest' },
+  'squat':           { multipliers: [0.85, 1.20, 1.60, 2.10, 2.83], keyMuscle: 'quads' },
+  'deadlift':        { multipliers: [1.05, 1.45, 1.85, 2.50, 3.25], keyMuscle: 'back' },
+  'overhead_press':  { multipliers: [0.40, 0.55, 0.72, 0.90, 1.15], keyMuscle: 'shoulders' },
+  'barbell_row':     { multipliers: [0.50, 0.70, 0.90, 1.15, 1.45], keyMuscle: 'back' },       // approximate
+  'barbell_curl':    { multipliers: [0.25, 0.35, 0.50, 0.65, 0.85], keyMuscle: 'biceps' },     // approximate
+  'skull_crusher':   { multipliers: [0.20, 0.30, 0.40, 0.55, 0.70], keyMuscle: 'triceps' },    // approximate
+  'leg_curl':        { multipliers: [0.25, 0.35, 0.50, 0.65, 0.80], keyMuscle: 'hamstrings' }, // approximate
+  'hip_thrust':      { multipliers: [0.65, 0.95, 1.30, 1.75, 2.25], keyMuscle: 'glutes' },     // approximate
+  'calf_raise':      { multipliers: [0.50, 0.75, 1.00, 1.40, 1.85], keyMuscle: 'calves' },     // approximate
+  'plank_equivalent': { multipliers: null, keyMuscle: 'core' }, // Core uses volume compliance only
+};
+
+// Map muscle groups to their key lift standard and exercise match patterns
+const MUSCLE_KEY_LIFTS = {
+  chest:      { standard: 'bench_press',    patterns: [/bench press/i] },
+  back:       { standard: 'deadlift',       patterns: [/deadlift/i, /barbell row/i, /bent over row/i] },
+  shoulders:  { standard: 'overhead_press', patterns: [/overhead press/i, /shoulder press/i, /military press/i] },
+  quads:      { standard: 'squat',          patterns: [/squat/i] },
+  hamstrings: { standard: 'leg_curl',       patterns: [/leg curl/i, /romanian deadlift/i] },
+  glutes:     { standard: 'hip_thrust',     patterns: [/hip thrust/i] },
+  biceps:     { standard: 'barbell_curl',   patterns: [/barbell curl/i, /bicep curl/i] },
+  triceps:    { standard: 'skull_crusher',  patterns: [/skullcrusher/i, /skull crusher/i, /tricep extension/i, /triceps extension/i, /triceps pushdown/i, /tricep pushdown/i] },
+  calves:     { standard: 'calf_raise',     patterns: [/calf raise/i, /calf extension/i] },
+  core:       { standard: 'plank_equivalent', patterns: [] },
+};
+
+// ============================================================
+// 1RM ESTIMATION FUNCTIONS (Pillar 3)
+// ============================================================
+// Brzycki (1993): valid for 1-10 reps
+function estimate1RM_Brzycki(weightLbs, reps) {
+  if (reps <= 0) return 0;
+  if (reps === 1) return weightLbs;
+  if (reps >= 37) return weightLbs; // formula breaks at 37 reps
+  return weightLbs * (36 / (37 - reps));
+}
+
+// Epley (1985): better for >10 reps
+function estimate1RM_Epley(weightLbs, reps) {
+  if (reps <= 0) return 0;
+  if (reps === 1) return weightLbs;
+  return weightLbs * (1 + reps / 30);
+}
+
+// Auto-select: Brzycki for <=10, Epley for >10
+function estimate1RM(weightLbs, reps) {
+  if (reps <= 10) return estimate1RM_Brzycki(weightLbs, reps);
+  return estimate1RM_Epley(weightLbs, reps);
+}
+
+// ============================================================
+// PERCENTILE ESTIMATION
+// Given a BW multiplier and a standard key, interpolate percentile
+// ============================================================
+function estimatePercentile(standardKey, bwMultiplier) {
+  const std = STRENGTH_STANDARDS[standardKey];
+  if (!std || !std.multipliers) return null;
+  const m = std.multipliers; // [10th, 25th, 50th, 75th, 90th]
+  const pctiles = [10, 25, 50, 75, 90];
+
+  if (bwMultiplier <= m[0]) return Math.round((bwMultiplier / m[0]) * 10);
+  if (bwMultiplier >= m[4]) return Math.min(99, 90 + Math.round(((bwMultiplier - m[4]) / (m[4] * 0.2)) * 9));
+
+  for (let i = 0; i < m.length - 1; i++) {
+    if (bwMultiplier >= m[i] && bwMultiplier <= m[i + 1]) {
+      const frac = (bwMultiplier - m[i]) / (m[i + 1] - m[i]);
+      return Math.round(pctiles[i] + frac * (pctiles[i + 1] - pctiles[i]));
+    }
+  }
+  return 50;
+}
+
+// ============================================================
+// TIME ESTIMATION (Feature 2)
+// ============================================================
+const TIME_CONSTANTS = {
+  compoundSetSec: 45,    // seconds per working set for compound exercises
+  isolationSetSec: 35,   // seconds per working set for isolation exercises
+  restBetweenSets: 120,  // 2 minutes rest between sets
+  transitionSec: 90,     // walk to station, load plates, adjust
+  sessionCapMin: 60,     // maximum session length in minutes
+};
+
+function calculateExerciseTime(exerciseName, sets) {
+  const db = EXERCISE_DB[exerciseName];
+  const isCompound = db && db.type === 'compound';
+  const setTime = isCompound ? TIME_CONSTANTS.compoundSetSec : TIME_CONSTANTS.isolationSetSec;
+  const totalSec = (sets * setTime) + ((sets - 1) * TIME_CONSTANTS.restBetweenSets) + TIME_CONSTANTS.transitionSec;
+  return totalSec;
+}
+
+// ============================================================
+// EXERCISE -> MUSCLE GROUP MAPPING
 // ============================================================
 const EXERCISE_MUSCLE_MAP = [
   // Chest
@@ -558,6 +957,8 @@ function classifyExercise(name) {
 
 // ============================================================
 // MUSCLE GROUP METADATA
+// Based on Schoenfeld et al. volume-hypertrophy dose-response
+// and intermediate programming guidelines (Pillar 1)
 // ============================================================
 const MUSCLE_GROUPS = {
   chest:      { name: 'Chest',      idealFreqDays: 4, color: '#f87171', idealSetsPerWeek: 14 },
@@ -577,6 +978,7 @@ const MUSCLE_GROUPS = {
 // Benchmarks for ~166lb male, age 36, intermediate level
 // Based on Symmetric Strength / ExRx / Strength Level data
 // All weights in lbs. "intermediate" = ~1-2 years training
+// Progressive overload: +5% if <85% benchmark, +2.5% if at/above (Pillar 4, NSCA guideline)
 // ============================================================
 const EXERCISE_DB = {
   // --- CHEST ---
@@ -875,9 +1277,10 @@ const MUSCLE_EXERCISE_PICKS = {
 };
 
 // ============================================================
-// BODY WEIGHT DATA (from CSV)
+// BODY WEIGHT DATA — Baseline from Strong CSV export
+// New entries added via localStorage (Feature 1)
 // ============================================================
-const WEIGHT_DATA = [
+const WEIGHT_DATA_BASELINE = [
   { date: '2026-01-18', value: 166.0 },
   { date: '2026-01-17', value: 164.4 },
   { date: '2025-11-30', value: 168.0 },
@@ -893,18 +1296,51 @@ const WEIGHT_DATA = [
 ];
 
 // ============================================================
+// WEIGHT localStorage FUNCTIONS (Feature 1)
+// ============================================================
+function getStoredWeightEntries() {
+  try {
+    const raw = localStorage.getItem('weightHistory');
+    if (!raw) return [];
+    return JSON.parse(raw);
+  } catch (e) {
+    return [];
+  }
+}
+
+function saveWeightEntry(date, value) {
+  const entries = getStoredWeightEntries();
+  entries.push({ date, value });
+  localStorage.setItem('weightHistory', JSON.stringify(entries));
+}
+
+function getMergedWeightData() {
+  const stored = getStoredWeightEntries();
+  const all = [...WEIGHT_DATA_BASELINE, ...stored];
+  // Deduplicate by date (keep latest value for each date)
+  const byDate = {};
+  for (const entry of all) {
+    byDate[entry.date] = entry.value;
+  }
+  return Object.entries(byDate)
+    .map(([date, value]) => ({ date, value }))
+    .sort((a, b) => b.date.localeCompare(a.date)); // descending
+}
+
+// ============================================================
 // STATE
 // ============================================================
 const apiKey = 'e38cf123-61c4-4b8c-ae25-7442d6d9c874';
 let workoutCache = null;
 let muscleAnalysis = null;
-let exerciseHistory = {}; // { exerciseName: { lastWeightLbs, lastReps, lastDate } }
+let exerciseHistory = {};
+let muscle1RMs = {};        // { muscleKey: { best1RM, bwMult, percentile } }
+let strengthIndexData = []; // [{ date, index, lifts: {...} }]
+let WEIGHT_DATA = [];       // merged weight data
 
 // ============================================================
 // API
 // ============================================================
-// CORS proxy - Hevy API doesn't allow browser requests directly
-// Replace with your Cloudflare Worker URL after deploying worker.js
 const API_BASE = 'https://api.hevyapp.com/v1';
 
 async function fetchWorkouts(pageSize = 10, maxPages = 10) {
@@ -932,7 +1368,7 @@ async function fetchWorkouts(pageSize = 10, maxPages = 10) {
 function buildExerciseHistory(workouts) {
   const history = {};
 
-  // Process oldest \u2192 newest so latest values overwrite
+  // Process oldest -> newest so latest values overwrite
   const sorted = [...workouts].sort((a, b) =>
     new Date(a.start_time || a.created_at) - new Date(b.start_time || b.created_at)
   );
@@ -976,47 +1412,176 @@ function buildExerciseHistory(workouts) {
 }
 
 // ============================================================
+// COMPUTE MUSCLE GROUP 1RM & PERCENTILES (Feature 4)
+// For each muscle group, find best estimated 1RM from Hevy data
+// in last 30 days on the key lift, compute BW multiplier and percentile
+// ============================================================
+function computeMuscle1RMs(workouts, bodyweightLbs) {
+  const now = new Date();
+  const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+  const results = {};
+
+  for (const [muscleKey, keyLift] of Object.entries(MUSCLE_KEY_LIFTS)) {
+    let best1RM = 0;
+    let bestExName = '';
+
+    for (const w of workouts) {
+      const wDate = new Date(w.start_time || w.created_at);
+      if (wDate < thirtyDaysAgo) continue;
+
+      for (const ex of (w.exercises || [])) {
+        const name = ex.title || '';
+        const matched = keyLift.patterns.some(p => p.test(name));
+        if (!matched) continue;
+
+        for (const s of (ex.sets || [])) {
+          const wKg = s.weight_kg || 0;
+          const wLbs = wKg * 2.20462;
+          const reps = s.reps || 0;
+          if (wLbs <= 0 || reps <= 0) continue;
+
+          const est = estimate1RM(wLbs, reps);
+          if (est > best1RM) {
+            best1RM = est;
+            bestExName = name;
+          }
+        }
+      }
+    }
+
+    const bwMult = bodyweightLbs > 0 ? best1RM / bodyweightLbs : 0;
+    const percentile = estimatePercentile(keyLift.standard, bwMult);
+
+    results[muscleKey] = {
+      best1RM: Math.round(best1RM),
+      bwMult: Math.round(bwMult * 100) / 100,
+      percentile,
+      exercise: bestExName,
+    };
+  }
+
+  return results;
+}
+
+// ============================================================
+// STRENGTH INDEX COMPUTATION (Feature 6)
+// Composite index tracking estimated 1RM progress over time
+// ============================================================
+const STRENGTH_INDEX_LIFTS = {
+  bench:    { weight: 0.20, patterns: [/bench press.*barbell/i, /^bench press$/i] },
+  squat:    { weight: 0.25, patterns: [/squat.*barbell/i, /^squat$/i, /barbell.*squat/i] },
+  deadlift: { weight: 0.30, patterns: [/^deadlift/i, /deadlift.*barbell/i] },
+  ohp:      { weight: 0.10, patterns: [/overhead press/i, /shoulder press/i, /military press/i] },
+  row:      { weight: 0.15, patterns: [/barbell row/i, /bent over row/i, /pendlay row/i] },
+};
+
+function computeStrengthIndexTimeline(workouts, weightData) {
+  // Sort workouts oldest -> newest
+  const sorted = [...workouts].sort((a, b) =>
+    new Date(a.start_time || a.created_at) - new Date(b.start_time || b.created_at)
+  );
+
+  // Sort weight data oldest -> newest for interpolation
+  const weightSorted = [...weightData].sort((a, b) => a.date.localeCompare(b.date));
+
+  function getBodyweightAt(dateStr) {
+    // Find the most recent weight entry at or before this date
+    let bw = PROFILE.bodyweightLbs;
+    for (const w of weightSorted) {
+      if (w.date <= dateStr) bw = w.value;
+      else break;
+    }
+    return bw;
+  }
+
+  const rolling1RMs = { bench: 0, squat: 0, deadlift: 0, ohp: 0, row: 0 };
+  const timeline = [];
+
+  for (const w of sorted) {
+    const wDate = new Date(w.start_time || w.created_at);
+    const dateStr = wDate.toISOString().split('T')[0];
+    let updated = false;
+
+    for (const ex of (w.exercises || [])) {
+      const name = ex.title || '';
+
+      for (const [liftKey, liftDef] of Object.entries(STRENGTH_INDEX_LIFTS)) {
+        const matched = liftDef.patterns.some(p => p.test(name));
+        if (!matched) continue;
+
+        for (const s of (ex.sets || [])) {
+          const wKg = s.weight_kg || 0;
+          const wLbs = wKg * 2.20462;
+          const reps = s.reps || 0;
+          if (wLbs <= 0 || reps <= 0) continue;
+
+          const est = estimate1RM(wLbs, reps);
+          if (est > rolling1RMs[liftKey]) {
+            rolling1RMs[liftKey] = est;
+            updated = true;
+          }
+        }
+      }
+    }
+
+    // Only add a data point if at least one lift has data
+    const hasData = Object.values(rolling1RMs).some(v => v > 0);
+    if (hasData) {
+      const bw = getBodyweightAt(dateStr);
+      let index = 0;
+      const lifts = {};
+      for (const [liftKey, liftDef] of Object.entries(STRENGTH_INDEX_LIFTS)) {
+        const mult = bw > 0 ? rolling1RMs[liftKey] / bw : 0;
+        index += mult * liftDef.weight;
+        lifts[liftKey] = { rm: Math.round(rolling1RMs[liftKey]), mult: Math.round(mult * 100) / 100 };
+      }
+      timeline.push({
+        date: dateStr,
+        index: Math.round(index * 100) / 100,
+        lifts: { ...lifts },
+      });
+    }
+  }
+
+  return timeline;
+}
+
+// ============================================================
 // SMART WEIGHT PRESCRIPTION
-// Given an exercise name, returns { sets, reps, weightLbs, note }
-// Blends actual history with benchmark data
+// Blends actual history with benchmark data (Pillar 4)
 // ============================================================
 function prescribeExercise(name) {
   const db = EXERCISE_DB[name];
   const hist = exerciseHistory[name];
 
-  // Default from DB
   let sets = db ? db.sets : 3;
   let reps = db ? db.reps : '8-10';
   let weightLbs = db ? db.benchmarkLbs : 0;
   let note = db ? (db.note || '') : '';
 
   if (hist && hist.lastWeightLbs > 0) {
-    // Use actual history as base, apply progressive overload
     const lastW = hist.lastWeightLbs;
     const trend = hist.weights.length >= 3
       ? hist.weights.slice(-3).reduce((a, b) => a + b, 0) / 3
       : lastW;
 
-    // If they're already at or above benchmark, push slightly above recent
-    // If below benchmark, suggest something between current and benchmark
+    // Progressive overload logic (Pillar 4):
+    // NSCA: "Increase load 2-10% when target reps are achieved for 2 consecutive sessions"
     if (db && lastW < db.benchmarkLbs * 0.85) {
-      // Well below benchmark: suggest ~5% above recent average, capped at benchmark
+      // Well below benchmark: +5% above trend, capped at benchmark
       weightLbs = Math.min(Math.round(trend * 1.05 / 5) * 5, db.benchmarkLbs);
     } else {
-      // At or near benchmark: progressive overload, +2.5-5%
+      // At or near benchmark: +2.5% progressive overload
       weightLbs = Math.round(trend * 1.025 / 5) * 5;
     }
 
-    // Use their actual set count if they have a pattern
     if (hist.lastSets >= 2 && hist.lastSets <= 6) {
       sets = hist.lastSets;
     }
   } else if (!db) {
-    // Unknown exercise, no history
     return { sets: 3, reps: '8-10', weightLbs: 0, note: 'no data' };
   }
 
-  // Bodyweight exercises: no weight display
   if (note === 'bodyweight' || note === 'hold') {
     weightLbs = 0;
   }
@@ -1115,13 +1680,11 @@ function analyzeWorkouts(workouts) {
 function generateRecommendations(muscleStats) {
   const recs = [];
 
-  // Compute weekly volume ratios for each muscle
   const weeklyVolumes = {};
   for (const [key, stat] of Object.entries(muscleStats)) {
-    weeklyVolumes[key] = stat.totalSets30d / 4.3; // ~4.3 weeks in 30 days
+    weeklyVolumes[key] = stat.totalSets30d / 4.3;
   }
 
-  // Find the most-trained muscle's ratio to its ideal, to detect relative imbalances
   const volumeRatios = {};
   let maxRatio = 0;
   for (const [key, stat] of Object.entries(muscleStats)) {
@@ -1137,7 +1700,6 @@ function generateRecommendations(muscleStats) {
     const idealSets30d = stat.idealSetsPerWeek * 4.3;
     const volumeDeficit = Math.max(0, 1 - (stat.totalSets30d / idealSets30d));
 
-    // Imbalance: how far behind is this muscle vs the best-trained muscle?
     const imbalanceScore = maxRatio > 0 ? Math.max(0, 1 - (volumeRatios[key] / maxRatio)) : 0;
 
     const score = (recencyScore * 0.4) + (volumeDeficit * 0.3) + (imbalanceScore * 0.3);
@@ -1149,7 +1711,6 @@ function generateRecommendations(muscleStats) {
       urgency = 'med';
     }
 
-    // Build explanation
     const weeklyActual = weeklyVolumes[key].toFixed(1);
     const weeklyIdeal = stat.idealSetsPerWeek;
     let explainer = '';
@@ -1159,21 +1720,17 @@ function generateRecommendations(muscleStats) {
     } else {
       const parts = [];
 
-      // Recency
       if (stat.daysSinceTrained >= stat.idealFreqDays * 2) {
         parts.push(`Last trained <strong>${stat.daysSinceTrained} days ago</strong> \u2014 ideally every ${stat.idealFreqDays} days for optimal growth`);
       } else if (stat.daysSinceTrained >= stat.idealFreqDays) {
         parts.push(`Trained ${stat.daysSinceTrained} days ago, slightly past the ${stat.idealFreqDays}-day window`);
       }
 
-      // Volume
       if (volumeDeficit > 0.3) {
         parts.push(`Volume is <strong>${weeklyActual} sets/week</strong> vs the ${weeklyIdeal} recommended \u2014 ${Math.round(volumeDeficit * 100)}% below target`);
       }
 
-      // Imbalance
       if (imbalanceScore > 0.4) {
-        // Find the most-trained muscle for comparison
         const topMuscle = Object.entries(volumeRatios).sort((a, b) => b[1] - a[1])[0];
         if (topMuscle[0] !== key) {
           parts.push(`Lagging behind your ${muscleStats[topMuscle[0]].name.toLowerCase()} proportionally \u2014 focus here to balance out`);
@@ -1208,6 +1765,112 @@ function generateRecommendations(muscleStats) {
 }
 
 // ============================================================
+// SESSION PLANNING WITH TIME CAP (Feature 2)
+// ============================================================
+function buildTimedSession(recs) {
+  // Pick top 3 priority muscle groups
+  const topKeys = recs.slice(0, 3).map(r => r.key);
+  const recScores = {};
+  recs.forEach((r, i) => { recScores[r.key] = r.score; });
+
+  // Build candidate exercise list with importance scoring
+  const candidates = [];
+  for (const key of topKeys) {
+    const picks = MUSCLE_EXERCISE_PICKS[key] || [];
+    const groupPriority = recScores[key] || 0;
+
+    for (let i = 0; i < picks.length; i++) {
+      const exName = picks[i];
+      const db = EXERCISE_DB[exName];
+      const p = prescribeExercise(exName);
+
+      // Importance: muscle priority (0-3) * type bonus * benchmark deficit
+      const typeBonus = (db && db.type === 'compound') ? 1.5 : 1.0;
+      let deficitBonus = 1.0;
+      if (db && db.benchmarkLbs > 0 && p.weightLbs > 0) {
+        const ratio = p.weightLbs / db.benchmarkLbs;
+        deficitBonus = ratio < 0.85 ? 1.3 : 1.0;
+      }
+      const orderBonus = 1 - (i * 0.1); // prefer earlier picks
+
+      const importance = groupPriority * typeBonus * deficitBonus * orderBonus;
+      const timeSec = calculateExerciseTime(exName, p.sets);
+
+      candidates.push({
+        name: exName,
+        muscle: key,
+        prescription: p,
+        importance,
+        timeSec,
+        isCompound: db && db.type === 'compound',
+      });
+    }
+  }
+
+  // Sort by importance descending
+  candidates.sort((a, b) => b.importance - a.importance);
+
+  // Apply 60-minute cap
+  const capSec = TIME_CONSTANTS.sessionCapMin * 60;
+  const session = [];
+  let totalSec = 0;
+
+  for (const c of candidates) {
+    if (totalSec + c.timeSec > capSec) continue;
+    session.push(c);
+    totalSec += c.timeSec;
+  }
+
+  return { exercises: session, totalSec };
+}
+
+// ============================================================
+// HEATMAP DATA BUILD (Feature 5)
+// ============================================================
+function buildHeatmapData(workouts) {
+  const dayMuscleMap = {}; // { 'YYYY-MM-DD': { chest: N, back: N, ... } }
+  const dayWorkouts = {};  // { 'YYYY-MM-DD': [{ name, sets }] }
+
+  for (const w of workouts) {
+    const wDate = new Date(w.start_time || w.created_at);
+    const dateStr = wDate.toISOString().split('T')[0];
+
+    if (!dayMuscleMap[dateStr]) dayMuscleMap[dateStr] = {};
+    if (!dayWorkouts[dateStr]) dayWorkouts[dateStr] = [];
+
+    for (const ex of (w.exercises || [])) {
+      const name = ex.title || '';
+      const classification = classifyExercise(name);
+      if (classification.primary === 'cardio' || classification.primary === 'other') continue;
+
+      const setCount = (ex.sets || []).length;
+      const allMuscles = [classification.primary, ...classification.secondary];
+
+      for (const muscle of allMuscles) {
+        if (!MUSCLE_GROUPS[muscle]) continue;
+        const isPrimary = muscle === classification.primary;
+        const weight = isPrimary ? 1.0 : 0.5;
+        dayMuscleMap[dateStr][muscle] = (dayMuscleMap[dateStr][muscle] || 0) + Math.round(setCount * weight);
+      }
+
+      // For detail view, build compact exercise list
+      const bestSet = (ex.sets || []).reduce((best, s) => {
+        const wLbs = Math.round((s.weight_kg || 0) * 2.20462);
+        return wLbs > (best.w || 0) ? { w: wLbs, r: s.reps || 0 } : best;
+      }, {});
+      dayWorkouts[dateStr].push({
+        name,
+        sets: setCount,
+        bestWeight: bestSet.w || 0,
+        bestReps: bestSet.r || 0,
+      });
+    }
+  }
+
+  return { dayMuscleMap, dayWorkouts };
+}
+
+// ============================================================
 // RENDERING
 // ============================================================
 function renderRecommendations(recs) {
@@ -1229,29 +1892,46 @@ function renderRecommendations(recs) {
       </div>
     </div>
   `).join('');
+}
 
-  // Render exercise prescriptions for top 3 muscle groups
+function renderTimedSession(recs) {
+  const { exercises, totalSec } = buildTimedSession(recs);
+  const totalMin = Math.round(totalSec / 60);
+
+  // Summary
+  const summaryEl = document.getElementById('session-summary');
+  summaryEl.innerHTML = `
+    <div class="session-summary">
+      <div class="session-time">~${totalMin} min</div>
+      <div class="session-count">${exercises.length} exercises</div>
+    </div>
+  `;
+
+  // Group exercises by muscle
   const exContainer = document.getElementById('suggested-exercises');
-  const topKeys = top.slice(0, 3).map(r => r.key);
+  const grouped = {};
+  for (const ex of exercises) {
+    if (!grouped[ex.muscle]) grouped[ex.muscle] = [];
+    grouped[ex.muscle].push(ex);
+  }
+
   let exHtml = '';
-
-  for (const key of topKeys) {
-    const picks = MUSCLE_EXERCISE_PICKS[key] || [];
-    if (picks.length === 0) continue;
-
+  for (const [key, exes] of Object.entries(grouped)) {
+    const meta = MUSCLE_GROUPS[key];
+    if (!meta) continue;
     exHtml += `<div class="ex-group">
-      <div class="ex-group-title" style="color:${MUSCLE_GROUPS[key].color}">${MUSCLE_GROUPS[key].name}</div>`;
+      <div class="ex-group-title" style="color:${meta.color}">${meta.name}</div>`;
 
-    for (const exName of picks) {
-      const p = prescribeExercise(exName);
-      const rx = formatPrescription(p);
+    for (const ex of exes) {
+      const rx = formatPrescription(ex.prescription);
+      const timeMin = (ex.timeSec / 60).toFixed(0);
       exHtml += `
         <div class="ex-row">
-          <div class="ex-name">${exName}</div>
+          <div class="ex-name">${ex.name}</div>
           <div class="ex-prescription">${rx}</div>
+          <div class="ex-time">${timeMin}m</div>
         </div>`;
     }
-
     exHtml += `</div>`;
   }
 
@@ -1264,7 +1944,6 @@ function toggleExplainer(el) {
     expand.style.maxHeight = '0';
     expand.classList.remove('open');
   } else {
-    // Close any others
     document.querySelectorAll('.rec-expand.open').forEach(other => {
       other.style.maxHeight = '0';
       other.classList.remove('open');
@@ -1272,6 +1951,55 @@ function toggleExplainer(el) {
     expand.classList.add('open');
     expand.style.maxHeight = expand.scrollHeight + 'px';
   }
+}
+
+// ============================================================
+// MUSCLE GRID with Dual-Axis Color (Feature 4)
+// Hue = strength percentile, Saturation = recency
+// ============================================================
+function getMuscleCardColor(muscleKey, daysSinceTrained, idealFreqDays) {
+  const rmData = muscle1RMs[muscleKey];
+  let percentile = rmData ? rmData.percentile : null;
+
+  // For core or no data, use volume compliance for hue
+  if (percentile === null) {
+    const stat = muscleAnalysis ? muscleAnalysis[muscleKey] : null;
+    if (stat) {
+      const volRatio = stat.totalSets30d / (stat.idealSetsPerWeek * 4.3);
+      percentile = Math.round(Math.min(volRatio, 1) * 75); // max 75th for volume-only
+    } else {
+      percentile = 25;
+    }
+  }
+
+  // Hue: percentile -> color
+  // <25 = red (0), 25-50 = orange (30), 50-75 = yellow-green (70), >75 = green (140)
+  let hue;
+  if (percentile < 25) hue = Math.round((percentile / 25) * 30);
+  else if (percentile < 50) hue = 30 + Math.round(((percentile - 25) / 25) * 40);
+  else if (percentile < 75) hue = 70 + Math.round(((percentile - 50) / 25) * 40);
+  else hue = 110 + Math.round(Math.min((percentile - 75) / 25, 1) * 30);
+
+  // Saturation/Brightness: recency
+  // Recently trained = muted, overdue = vivid
+  const overdueDays = Math.max(0, daysSinceTrained - idealFreqDays);
+  let sat, light;
+  if (daysSinceTrained === Infinity) {
+    sat = 60; light = 25;
+  } else if (overdueDays <= 0) {
+    sat = 20; light = 16;
+  } else if (overdueDays <= 2) {
+    sat = 35; light = 19;
+  } else {
+    sat = Math.min(55 + overdueDays * 3, 70);
+    light = Math.min(22 + overdueDays, 30);
+  }
+
+  return {
+    bg: `hsla(${hue}, ${sat}%, ${light}%, 0.35)`,
+    border: `hsla(${hue}, ${sat}%, ${light + 15}%, 0.4)`,
+    textColor: `hsl(${hue}, ${Math.min(sat + 20, 85)}%, ${Math.min(light + 40, 75)}%)`,
+  };
 }
 
 function renderMuscleGrid(muscleStats) {
@@ -1283,38 +2011,150 @@ function renderMuscleGrid(muscleStats) {
     const barPct = Math.round((stat.totalSets30d / maxSets) * 100);
     const daysText = stat.daysSinceTrained === Infinity ? 'no data' : `${stat.daysSinceTrained}d ago`;
     const weeklyVol = (stat.totalSets30d / 4.3).toFixed(1);
+    const colors = getMuscleCardColor(key, stat.daysSinceTrained, stat.idealFreqDays);
+    const rmData = muscle1RMs[key];
+    const pctText = rmData && rmData.percentile !== null
+      ? (rmData.percentile >= 75 ? `Top ${100 - rmData.percentile}%` : `${rmData.percentile}th %ile`)
+      : '';
+
     return `
-      <div class="muscle-cell">
-        <div class="muscle-name" style="color:${stat.color}">${stat.name}</div>
-        <div class="muscle-stat">${daysText} \u00b7 ${weeklyVol}/wk</div>
+      <div class="muscle-cell" style="background:${colors.bg};border-color:${colors.border}">
+        <div class="muscle-name" style="color:${colors.textColor}">${stat.name}</div>
+        <div class="muscle-stat">${daysText} \u00b7 ${weeklyVol}/${stat.idealSetsPerWeek}/wk</div>
+        ${pctText ? `<div class="muscle-percentile" style="color:${colors.textColor}">${pctText}</div>` : ''}
         <div class="muscle-bar">
-          <div class="muscle-bar-fill" style="width:${barPct}%;background:${stat.color}"></div>
+          <div class="muscle-bar-fill" style="width:${barPct}%;background:${colors.textColor}"></div>
         </div>
       </div>`;
   }).join('');
 }
 
-function renderRecentWorkouts(workouts) {
-  const container = document.getElementById('recent-workouts');
-  const recent = workouts.slice(0, 12);
-  container.innerHTML = recent.map(w => {
-    const date = new Date(w.start_time || w.created_at);
-    const dateStr = date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
-    const exercises = (w.exercises || []).map(e => e.title || 'Unknown');
-    const totalSets = (w.exercises || []).reduce((sum, e) => sum + (e.sets || []).length, 0);
-    const summary = exercises.slice(0, 3).join(', ') + (exercises.length > 3 ? ` +${exercises.length - 3} more` : '');
-    return `
-      <div class="workout-item">
-        <div class="workout-title">${w.title || 'Workout'}</div>
-        <div class="workout-meta">${dateStr} \u00b7 ${totalSets} sets \u00b7 ${summary}</div>
-      </div>`;
-  }).join('');
+// ============================================================
+// CALENDAR HEATMAP (Feature 5)
+// ============================================================
+let heatmapDayWorkouts = {};
+let selectedHeatmapDay = null;
+
+function renderHeatmap(workouts) {
+  const { dayMuscleMap, dayWorkouts: dwMap } = buildHeatmapData(workouts);
+  heatmapDayWorkouts = dwMap;
+
+  const container = document.getElementById('heatmap-container');
+  const muscleKeys = ['chest', 'back', 'shoulders', 'quads', 'hamstrings', 'glutes', 'biceps', 'triceps', 'calves', 'core'];
+  const muscleLabels = ['Chest', 'Back', 'Shldr', 'Quads', 'Hams', 'Glts', 'Bis', 'Tris', 'Calves', 'Core'];
+
+  // Generate last 10 weeks of days
+  const now = new Date();
+  const days = [];
+  const numWeeks = 10;
+  for (let i = numWeeks * 7 - 1; i >= 0; i--) {
+    const d = new Date(now);
+    d.setDate(d.getDate() - i);
+    days.push(d.toISOString().split('T')[0]);
+  }
+
+  // Find max sets for opacity scaling
+  let maxSets = 0;
+  for (const [, muscles] of Object.entries(dayMuscleMap)) {
+    for (const [, sets] of Object.entries(muscles)) {
+      if (sets > maxSets) maxSets = sets;
+    }
+  }
+  if (maxSets === 0) maxSets = 1;
+
+  // Grid: columns = label + days, rows = day header + muscles
+  const cols = days.length + 1; // +1 for label column
+  const labelWidth = 48;
+  const cellSize = 14;
+  const gap = 2;
+
+  let html = `<div class="heatmap-grid" style="grid-template-columns: ${labelWidth}px repeat(${days.length}, ${cellSize}px); grid-template-rows: 18px repeat(${muscleKeys.length}, ${cellSize}px);">`;
+
+  // Day labels row (first cell is empty corner)
+  html += `<div></div>`;
+  for (let i = 0; i < days.length; i++) {
+    const d = new Date(days[i] + 'T12:00:00');
+    // Show label every Monday or first of month
+    const isMonday = d.getDay() === 1;
+    const isFirst = d.getDate() === 1;
+    let label = '';
+    if (isFirst) {
+      label = d.toLocaleDateString('en-US', { month: 'short' });
+    } else if (isMonday && i > 0 && i % 7 === 0) {
+      label = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    }
+    html += `<div class="heatmap-day-labels" style="font-size:8px;justify-content:center;">${label}</div>`;
+  }
+
+  // Muscle rows
+  for (let m = 0; m < muscleKeys.length; m++) {
+    const mKey = muscleKeys[m];
+    html += `<div class="heatmap-label">${muscleLabels[m]}</div>`;
+    for (const day of days) {
+      const sets = (dayMuscleMap[day] && dayMuscleMap[day][mKey]) || 0;
+      const opacity = sets > 0 ? Math.max(0.25, Math.min(sets / maxSets, 1)) : 0;
+      const bgColor = sets > 0
+        ? `rgba(74, 222, 128, ${opacity})`
+        : 'var(--surface2)';
+      html += `<div class="heatmap-cell" style="background:${bgColor}" data-day="${day}" onclick="selectHeatmapDay('${day}')" title="${day}: ${sets} sets"></div>`;
+    }
+  }
+
+  html += '</div>';
+  container.innerHTML = html;
 }
 
+function selectHeatmapDay(day) {
+  const detailEl = document.getElementById('heatmap-day-detail');
+  const innerEl = document.getElementById('heatmap-day-detail-inner');
+
+  // Toggle off if same day tapped
+  if (selectedHeatmapDay === day && detailEl.classList.contains('open')) {
+    detailEl.style.maxHeight = '0';
+    detailEl.classList.remove('open');
+    selectedHeatmapDay = null;
+    return;
+  }
+
+  selectedHeatmapDay = day;
+  const exercises = heatmapDayWorkouts[day] || [];
+  const dateObj = new Date(day + 'T12:00:00');
+  const dateStr = dateObj.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+
+  if (exercises.length === 0) {
+    innerEl.innerHTML = `<div class="detail-date">${dateStr}</div><div style="color:var(--text-dim);font-size:12px;">Rest day</div>`;
+  } else {
+    let html = `<div class="detail-date">${dateStr}</div>`;
+    for (const ex of exercises) {
+      const weightStr = ex.bestWeight > 0 ? ` @ ${ex.bestWeight}lbs` : '';
+      html += `<div class="detail-exercise">
+        <span class="detail-name">${ex.name}</span>
+        <span class="detail-sets">${ex.sets}s${ex.bestReps > 0 ? ` \u00d7 ${ex.bestReps}r` : ''}${weightStr}</span>
+      </div>`;
+    }
+    innerEl.innerHTML = html;
+  }
+
+  detailEl.classList.add('open');
+  detailEl.style.maxHeight = innerEl.scrollHeight + 24 + 'px';
+
+  // Highlight selected column
+  document.querySelectorAll('.heatmap-cell').forEach(cell => {
+    cell.style.outline = cell.dataset.day === day ? '1.5px solid var(--accent)' : 'none';
+  });
+}
+
+// ============================================================
+// WEIGHT CHART with Strength Index (Feature 6)
+// Dual Y-axis: left = bodyweight (lbs), right = Strength Index
+// ============================================================
 function renderWeightChart() {
+  WEIGHT_DATA = getMergedWeightData();
+  if (WEIGHT_DATA.length === 0) return;
+
   const cutoff = new Date();
   cutoff.setFullYear(cutoff.getFullYear() - 1);
-  const recent = WEIGHT_DATA.filter(d => new Date(d.date) >= cutoff).reverse();
+  const recent = WEIGHT_DATA.filter(d => new Date(d.date) >= cutoff).reverse(); // oldest first
 
   if (recent.length === 0) return;
 
@@ -1327,27 +2167,56 @@ function renderWeightChart() {
   deltaEl.textContent = `${delta >= 0 ? '+' : ''}${delta.toFixed(1)}`;
   deltaEl.style.color = delta <= 0 ? 'var(--accent)' : 'var(--warn)';
 
+  // Update profile bodyweight
+  PROFILE.bodyweightLbs = current;
+
+  // Strength Index display
+  const siDisplay = document.getElementById('strength-index-display');
+  if (strengthIndexData.length > 0) {
+    const latestSI = strengthIndexData[strengthIndexData.length - 1];
+    siDisplay.textContent = `SI: ${latestSI.index.toFixed(2)}`;
+
+    // Render detail on tap
+    const detailInner = document.getElementById('strength-detail-inner');
+    const liftNames = { bench: 'Bench', squat: 'Squat', deadlift: 'Deadlift', ohp: 'OHP', row: 'Row' };
+    let detailHtml = '';
+    for (const [key, label] of Object.entries(liftNames)) {
+      const lift = latestSI.lifts[key];
+      if (lift && lift.rm > 0) {
+        detailHtml += `${label} 1RM: ${lift.rm} lbs (${lift.mult}\u00d7 BW)<br>`;
+      } else {
+        detailHtml += `${label} 1RM: no data<br>`;
+      }
+    }
+    detailInner.innerHTML = detailHtml;
+  } else {
+    siDisplay.textContent = 'SI: --';
+  }
+
+  // Canvas
   const canvas = document.getElementById('weight-canvas');
   const ctx = canvas.getContext('2d');
   const dpr = window.devicePixelRatio || 1;
   const rect = canvas.parentElement.getBoundingClientRect();
   canvas.width = rect.width * dpr;
-  canvas.height = 130 * dpr;
+  canvas.height = 150 * dpr;
   canvas.style.width = rect.width + 'px';
-  canvas.style.height = '130px';
+  canvas.style.height = '150px';
   ctx.scale(dpr, dpr);
 
   const w = rect.width;
-  const h = 130;
+  const h = 150;
   const pad = { top: 12, bottom: 22, left: 0, right: 0 };
+  const chartW = w - pad.left - pad.right;
+  const chartH = h - pad.top - pad.bottom;
 
-  const values = recent.map(d => d.value);
-  const min = Math.min(...values) - 2;
-  const max = Math.max(...values) + 2;
+  // Weight line data
+  const wValues = recent.map(d => d.value);
+  const wMin = Math.min(...wValues) - 2;
+  const wMax = Math.max(...wValues) + 2;
+  const wXStep = chartW / Math.max(recent.length - 1, 1);
 
-  const xStep = (w - pad.left - pad.right) / Math.max(recent.length - 1, 1);
-
-  // Smooth line
+  // Draw weight line
   ctx.beginPath();
   ctx.strokeStyle = '#4ade80';
   ctx.lineWidth = 2.5;
@@ -1355,41 +2224,123 @@ function renderWeightChart() {
   ctx.lineCap = 'round';
 
   recent.forEach((d, i) => {
-    const x = pad.left + i * xStep;
-    const y = pad.top + (1 - (d.value - min) / (max - min)) * (h - pad.top - pad.bottom);
+    const x = pad.left + i * wXStep;
+    const y = pad.top + (1 - (d.value - wMin) / (wMax - wMin)) * chartH;
     if (i === 0) ctx.moveTo(x, y);
     else ctx.lineTo(x, y);
   });
   ctx.stroke();
 
-  // Gradient fill
-  const lastX = pad.left + (recent.length - 1) * xStep;
+  // Weight gradient fill
+  const lastX = pad.left + (recent.length - 1) * wXStep;
   ctx.lineTo(lastX, h - pad.bottom);
   ctx.lineTo(pad.left, h - pad.bottom);
   ctx.closePath();
   const gradient = ctx.createLinearGradient(0, 0, 0, h);
-  gradient.addColorStop(0, 'rgba(74, 222, 128, 0.12)');
+  gradient.addColorStop(0, 'rgba(74, 222, 128, 0.10)');
   gradient.addColorStop(1, 'rgba(74, 222, 128, 0)');
   ctx.fillStyle = gradient;
   ctx.fill();
 
-  // Endpoint dots
+  // Endpoint dots for weight
   [0, recent.length - 1].forEach(i => {
-    const x = pad.left + i * xStep;
-    const y = pad.top + (1 - (recent[i].value - min) / (max - min)) * (h - pad.top - pad.bottom);
+    const x = pad.left + i * wXStep;
+    const y = pad.top + (1 - (recent[i].value - wMin) / (wMax - wMin)) * chartH;
     ctx.beginPath();
     ctx.arc(x, y, 4, 0, Math.PI * 2);
     ctx.fillStyle = '#4ade80';
     ctx.fill();
   });
 
-  // Labels
+  // Strength Index line (if data available)
+  if (strengthIndexData.length >= 2) {
+    // Map SI data to the same X range as weight (by date)
+    const wDates = recent.map(d => d.date);
+    const firstDate = wDates[0];
+    const lastDate = wDates[wDates.length - 1];
+    const totalDays = (new Date(lastDate) - new Date(firstDate)) / (1000 * 60 * 60 * 24);
+
+    // Filter SI data to same time range
+    const siFiltered = strengthIndexData.filter(d => d.date >= firstDate && d.date <= lastDate);
+    if (siFiltered.length >= 2) {
+      const siValues = siFiltered.map(d => d.index);
+      const siMin = Math.min(...siValues) - 0.1;
+      const siMax = Math.max(...siValues) + 0.1;
+
+      ctx.beginPath();
+      ctx.strokeStyle = '#818cf8';
+      ctx.lineWidth = 2;
+      ctx.setLineDash([4, 4]);
+
+      siFiltered.forEach((d, i) => {
+        const dayOffset = (new Date(d.date) - new Date(firstDate)) / (1000 * 60 * 60 * 24);
+        const x = pad.left + (totalDays > 0 ? (dayOffset / totalDays) : 0) * chartW;
+        const y = pad.top + (1 - (d.index - siMin) / (siMax - siMin)) * chartH;
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      });
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      // Endpoint dots for SI
+      [0, siFiltered.length - 1].forEach(i => {
+        const d = siFiltered[i];
+        const dayOffset = (new Date(d.date) - new Date(firstDate)) / (1000 * 60 * 60 * 24);
+        const x = pad.left + (totalDays > 0 ? (dayOffset / totalDays) : 0) * chartW;
+        const y = pad.top + (1 - (d.index - siMin) / (siMax - siMin)) * chartH;
+        ctx.beginPath();
+        ctx.arc(x, y, 3.5, 0, Math.PI * 2);
+        ctx.fillStyle = '#818cf8';
+        ctx.fill();
+      });
+    }
+  }
+
+  // Date labels
   ctx.fillStyle = '#66666e';
   ctx.font = '11px JetBrains Mono, monospace';
   ctx.textAlign = 'left';
   ctx.fillText(recent[0].date.substring(5), pad.left, h - 4);
   ctx.textAlign = 'right';
   ctx.fillText(recent[recent.length - 1].date.substring(5), w - pad.right, h - 4);
+}
+
+function toggleStrengthDetail() {
+  const detail = document.getElementById('strength-detail');
+  if (detail.classList.contains('open')) {
+    detail.style.maxHeight = '0';
+    detail.classList.remove('open');
+  } else {
+    detail.classList.add('open');
+    detail.style.maxHeight = detail.querySelector('.strength-detail-inner').scrollHeight + 'px';
+  }
+}
+
+// ============================================================
+// WEIGHT INPUT (Feature 1)
+// ============================================================
+function toggleWeightForm() {
+  const form = document.getElementById('weight-input-form');
+  form.classList.toggle('open');
+  if (form.classList.contains('open')) {
+    const input = document.getElementById('weight-input');
+    input.value = '';
+    input.focus();
+  }
+}
+
+function saveWeight() {
+  const input = document.getElementById('weight-input');
+  const val = parseFloat(input.value);
+  if (isNaN(val) || val < 50 || val > 500) {
+    input.style.borderColor = 'var(--danger)';
+    setTimeout(() => { input.style.borderColor = 'var(--border)'; }, 1500);
+    return;
+  }
+  const today = new Date().toISOString().split('T')[0];
+  saveWeightEntry(today, val);
+  toggleWeightForm();
+  renderWeightChart();
 }
 
 // ============================================================
@@ -1437,9 +2388,23 @@ async function loadDashboard() {
     workoutCache = workouts;
 
     updateLoading('Analyzing...');
+
+    // Merge weight data
+    WEIGHT_DATA = getMergedWeightData();
+    if (WEIGHT_DATA.length > 0) {
+      PROFILE.bodyweightLbs = WEIGHT_DATA[0].value;
+    }
+
     exerciseHistory = buildExerciseHistory(workouts);
     const stats = analyzeWorkouts(workouts);
     muscleAnalysis = stats;
+
+    // Compute 1RM percentiles for each muscle group (Feature 4)
+    muscle1RMs = computeMuscle1RMs(workouts, PROFILE.bodyweightLbs);
+
+    // Compute Strength Index timeline (Feature 6)
+    strengthIndexData = computeStrengthIndexTimeline(workouts, WEIGHT_DATA);
+
     const recs = generateRecommendations(stats);
 
     showScreen('dashboard');
@@ -1449,8 +2414,9 @@ async function loadDashboard() {
       `updated ${now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}`;
 
     renderRecommendations(recs);
+    renderTimedSession(recs);
     renderMuscleGrid(stats);
-    renderRecentWorkouts(workouts);
+    renderHeatmap(workouts);
     renderWeightChart();
 
   } catch (err) {
@@ -1458,11 +2424,6 @@ async function loadDashboard() {
     showScreen('dashboard');
     showError(`Failed to load: ${err.message}`);
   }
-}
-
-// Update profile bodyweight from latest data
-if (WEIGHT_DATA.length > 0) {
-  PROFILE.bodyweightLbs = WEIGHT_DATA[0].value;
 }
 
 // Boot
