@@ -1892,7 +1892,7 @@ function renderHeatmap(dayMuscleMap, dayWorkoutsMap) {
   // v1.1: 10 days lookback, no scroll
   const now = new Date();
   const days = [];
-  const numDays = 14;
+  const numDays = 12;
   for (let i = numDays - 1; i >= 0; i--) {
     const d = new Date(now);
     d.setDate(d.getDate() - i);
