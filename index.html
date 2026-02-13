@@ -2380,7 +2380,10 @@ async function fetchHealthData() {
       healthData = null;
       return;
     }
-    const data = await resp.json();
+    // Shortcuts inserts literal newlines in JSON - strip them before parsing
+    const rawText = await resp.text();
+    const cleanText = rawText.replace(/\n/g, '').replace(/\r/g, '');
+    const data = JSON.parse(cleanText);
     healthData = data;
 
     // Check freshness
