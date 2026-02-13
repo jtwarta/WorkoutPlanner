@@ -736,6 +736,142 @@ body {
   color: var(--text-dim);
 }
 
+/* ===================== */
+/* CARDIO PLAN           */
+/* ===================== */
+.cardio-week-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+}
+.cardio-week-done {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 14px;
+  color: var(--text-mid);
+}
+.cardio-week-bar-track {
+  flex: 1;
+  height: 5px;
+  border-radius: 3px;
+  background: var(--surface3);
+  overflow: hidden;
+}
+.cardio-week-bar-fill {
+  height: 100%;
+  border-radius: 3px;
+  background: var(--blue);
+  transition: width 0.4s ease;
+}
+.cardio-week-target {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 12px;
+  color: var(--text-dim);
+  white-space: nowrap;
+}
+.cardio-rx {
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border);
+}
+.cardio-rx:last-child { border-bottom: none; }
+.cardio-rx-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+.cardio-rx-zone {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 5px;
+  font-family: 'Space Grotesk', sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.zone-2 { background: var(--blue-dim); color: var(--blue); }
+.zone-4 { background: var(--warn-dim); color: var(--warn); }
+.zone-5 { background: var(--danger-dim); color: var(--danger); }
+.cardio-rx-time {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 13px;
+  color: var(--text-dim);
+}
+.cardio-rx-name {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 4px;
+}
+.cardio-rx-detail {
+  font-size: 13px;
+  font-family: 'Space Grotesk', sans-serif;
+  color: var(--text-mid);
+  line-height: 1.5;
+}
+.cardio-rx-hr {
+  display: inline-block;
+  margin-top: 4px;
+  font-size: 12px;
+  font-family: 'Space Grotesk', sans-serif;
+  color: var(--blue);
+}
+.cardio-done-msg {
+  font-size: 14px;
+  color: var(--accent);
+  font-family: 'Space Grotesk', sans-serif;
+  padding: 8px 0;
+}
+
+/* Strength percentile bar */
+.str-pctile-bar-wrap {
+  position: relative;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--surface3);
+  margin-top: 8px;
+  margin-bottom: 2px;
+}
+.str-pctile-bar-track {
+  height: 100%;
+  border-radius: 3px;
+  background: linear-gradient(90deg, var(--danger) 0%, var(--warn) 40%, var(--accent) 100%);
+  opacity: 0.35;
+  width: 100%;
+}
+.str-pctile-marker {
+  position: absolute;
+  top: 50%;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  border: 1.5px solid var(--surface);
+}
+.str-pctile-ticks {
+  position: relative;
+  height: 10px;
+}
+.str-pctile-tick {
+  position: absolute;
+  top: 0;
+  width: 1px;
+  height: 5px;
+  background: var(--text-dim);
+  opacity: 0.35;
+}
+.str-pctile-tick-label {
+  position: absolute;
+  top: 6px;
+  font-size: 9px;
+  font-family: 'Space Grotesk', sans-serif;
+  color: var(--text-dim);
+  transform: translateX(-50%);
+  opacity: 0.7;
+}
+
 .hidden { display: none; }
 </style>
 </head>
@@ -753,7 +889,7 @@ body {
     <div class="header">
       <div>
         <h1>Workout Advisor</h1>
-        <div class="subtitle" id="last-updated">v1.2</div>
+        <div class="subtitle" id="last-updated">v1.1</div>
       </div>
       <button class="btn-refresh" onclick="refreshData()">Refresh</button>
     </div>
@@ -778,6 +914,11 @@ body {
         <div id="constraints-row" class="constraints-row"></div>
         <div id="session-summary"></div>
         <div id="suggested-exercises"></div>
+      </div>
+      <div class="card" id="cardio-card">
+        <div class="card-title">Cardio Plan</div>
+        <div id="cardio-summary"></div>
+        <div id="cardio-prescriptions"></div>
       </div>
     </div>
 
@@ -1639,6 +1780,281 @@ const STRENGTH_INDEX_LIFTS = {
 };
 
 // ============================================================
+// CARDIOVASCULAR TRAINING ENGINE (Pillar 5)
+// ============================================================
+// SCIENTIFIC FOUNDATION
+// Source 1: ACSM (2018) "Guidelines for Exercise Testing & Prescription" (11th ed)
+//   - 150 min/week moderate OR 75 min/week vigorous, or equivalent combination
+// Source 2: Seiler (2010) "What is Best Practice for Training Intensity and Duration
+//   Distribution in Endurance Athletes?" - polarized 80/20 model
+// Source 3: Tanaka et al. (2001) "Age-predicted maximal heart rate revisited"
+//   - HRmax = 208 - 0.7 × age (more accurate than 220-age)
+// Source 4: Karvonen (1957) "Heart Rate Reserve" method for HR zones
+//   - Target HR = ((HRmax - HRrest) × %intensity) + HRrest
+// Source 5: Stöggl & Sperlich (2014) "Polarized training has greater impact on key
+//   endurance variables than threshold, high-intensity, or high-volume training"
+
+// HR Zone calculations
+function calculateHRZones(age, restingHR) {
+  // Tanaka formula (Source 3)
+  const hrMax = Math.round(208 - 0.7 * age);
+
+  if (restingHR && restingHR > 0) {
+    // Karvonen method (Source 4) - more personalized
+    const hrr = hrMax - restingHR;
+    return {
+      hrMax,
+      method: 'karvonen',
+      zone1: { low: Math.round(restingHR + hrr * 0.50), high: Math.round(restingHR + hrr * 0.60), label: 'Recovery' },
+      zone2: { low: Math.round(restingHR + hrr * 0.60), high: Math.round(restingHR + hrr * 0.70), label: 'Aerobic Base' },
+      zone3: { low: Math.round(restingHR + hrr * 0.70), high: Math.round(restingHR + hrr * 0.80), label: 'Tempo' },
+      zone4: { low: Math.round(restingHR + hrr * 0.80), high: Math.round(restingHR + hrr * 0.90), label: 'Threshold' },
+      zone5: { low: Math.round(restingHR + hrr * 0.90), high: hrMax, label: 'VO2max' },
+    };
+  }
+
+  // Fallback: straight %HRmax
+  return {
+    hrMax,
+    method: 'hrmax',
+    zone1: { low: Math.round(hrMax * 0.50), high: Math.round(hrMax * 0.60), label: 'Recovery' },
+    zone2: { low: Math.round(hrMax * 0.60), high: Math.round(hrMax * 0.70), label: 'Aerobic Base' },
+    zone3: { low: Math.round(hrMax * 0.70), high: Math.round(hrMax * 0.80), label: 'Tempo' },
+    zone4: { low: Math.round(hrMax * 0.80), high: Math.round(hrMax * 0.90), label: 'Threshold' },
+    zone5: { low: Math.round(hrMax * 0.90), high: hrMax, label: 'VO2max' },
+  };
+}
+
+// Weekly targets (Source 1: ACSM + Source 2: Seiler polarized model)
+const CARDIO_WEEKLY_TARGETS = {
+  totalMinModerate: 150,  // ACSM: 150 min/week moderate
+  zone2Pct: 0.80,         // Polarized: 80% easy
+  hiitPct: 0.20,          // Polarized: 20% hard
+  zone2MinPerWeek: 120,   // 80% of 150 = 120 min
+  hiitMinPerWeek: 30,     // 20% of 150 = 30 min (at vigorous = 60 min moderate-equivalent)
+  sessionsPerWeek: 3,     // 2 easy + 1 hard
+};
+
+// Cardio protocol database
+// Each protocol has: modality, zone, duration (min), structure description
+const CARDIO_PROTOCOLS = {
+  zone2: [
+    {
+      name: 'Incline Walk',
+      detail: '3.5 mph, 8-12% grade',
+      durationMin: 35,
+      notes: 'Nose-breathing pace \u2014 you should be able to hold a conversation',
+      modality: 'treadmill',
+    },
+    {
+      name: 'Steady-State Cycling',
+      detail: '70-80 RPM, moderate resistance',
+      durationMin: 30,
+      notes: 'Maintain cadence, keep effort conversational',
+      modality: 'bike',
+    },
+    {
+      name: 'Elliptical Steady State',
+      detail: 'Moderate resistance, 130+ strides/min',
+      durationMin: 30,
+      notes: 'Full range of motion, upright posture',
+      modality: 'elliptical',
+    },
+    {
+      name: 'Stair Climber Steady',
+      detail: 'Level 5-7, steady pace',
+      durationMin: 25,
+      notes: 'Hands off rails, upright posture',
+      modality: 'stairclimber',
+    },
+    {
+      name: 'Rowing Steady State',
+      detail: '22-26 strokes/min, focus on form',
+      durationMin: 25,
+      notes: 'Drive with legs first, steady breathing',
+      modality: 'rower',
+    },
+  ],
+  hiit: [
+    {
+      name: 'Rowing Intervals',
+      detail: '5\u00d72 min hard / 2 min easy',
+      durationMin: 22,
+      notes: '500m pace target: push hard on work sets',
+      modality: 'rower',
+      zone: 4,
+    },
+    {
+      name: 'Cycling Intervals',
+      detail: '6\u00d71 min sprint / 2 min recovery',
+      durationMin: 20,
+      notes: 'High resistance on sprints, spin easy on rest',
+      modality: 'bike',
+      zone: 5,
+    },
+    {
+      name: 'Stair Climber Intervals',
+      detail: '5\u00d72 min level 10-12 / 2 min level 4-5',
+      durationMin: 22,
+      notes: 'Hands off rails during work intervals',
+      modality: 'stairclimber',
+      zone: 4,
+    },
+    {
+      name: 'Treadmill Intervals',
+      detail: '6\u00d71 min run @ 8-9 mph / 2 min walk',
+      durationMin: 20,
+      notes: 'Flat or 1% incline, max effort on sprints',
+      modality: 'treadmill',
+      zone: 5,
+    },
+  ],
+};
+
+// Analyze cardio from workout history (last 7 days)
+function analyzeCardioHistory(workouts) {
+  const now = new Date();
+  const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+
+  let cardioSessions7d = 0;
+  let estimatedMinutes7d = 0;
+  const recentModalities = [];
+
+  for (const w of workouts) {
+    const wDate = new Date(w.start_time || w.created_at);
+    if (wDate < sevenDaysAgo) continue;
+
+    for (const ex of (w.exercises || [])) {
+      const name = ex.title || '';
+      const isCardio = CARDIO_PATTERNS.some(p => p.test(name));
+      if (!isCardio) continue;
+
+      cardioSessions7d++;
+      // Estimate duration from sets: Hevy duration-based exercises store duration_seconds
+      let sessionMin = 0;
+      for (const s of (ex.sets || [])) {
+        if (s.duration_seconds && s.duration_seconds > 0) {
+          sessionMin += s.duration_seconds / 60;
+        } else {
+          // Fallback: assume ~20 min per cardio exercise if no duration data
+          sessionMin = 20;
+          break;
+        }
+      }
+      estimatedMinutes7d += sessionMin;
+
+      // Track modality for variety
+      const modality = name.toLowerCase();
+      if (/treadmill|walk|run/i.test(modality)) recentModalities.push('treadmill');
+      else if (/bike|cycl/i.test(modality)) recentModalities.push('bike');
+      else if (/elliptical/i.test(modality)) recentModalities.push('elliptical');
+      else if (/stair/i.test(modality)) recentModalities.push('stairclimber');
+      else if (/row/i.test(modality)) recentModalities.push('rower');
+    }
+  }
+
+  return { cardioSessions7d, estimatedMinutes7d, recentModalities };
+}
+
+// Generate cardio recommendations for today
+function generateCardioRecommendations(workouts) {
+  const rhr = healthData ? healthData.resting_heart_rate : null;
+  const zones = calculateHRZones(PROFILE.age, rhr);
+  const history = analyzeCardioHistory(workouts);
+
+  const targetMin = CARDIO_WEEKLY_TARGETS.totalMinModerate;
+  const remainingMin = Math.max(0, targetMin - history.estimatedMinutes7d);
+  const targetSessions = CARDIO_WEEKLY_TARGETS.sessionsPerWeek;
+  const remainingSessions = Math.max(0, targetSessions - history.cardioSessions7d);
+
+  // If target met for the week
+  if (remainingSessions <= 0 && remainingMin <= 0) {
+    return { zones, history, prescriptions: [], weekComplete: true, remainingMin: 0, targetMin };
+  }
+
+  const prescriptions = [];
+
+  // Decide session split: if 3+ sessions remain, prescribe 1 HIIT + 1 Zone 2
+  // If 2 remain: 1 Zone 2 + 1 HIIT. If 1 remains: Zone 2 (safer default)
+  const needHIIT = remainingSessions >= 2 && history.cardioSessions7d < 1;
+  const zone2Count = needHIIT ? 1 : Math.min(remainingSessions, 2);
+  const hiitCount = needHIIT ? 1 : (remainingSessions >= 2 ? 1 : 0);
+
+  // Pick zone 2 protocols (avoid recently used modalities for variety)
+  const z2Pool = CARDIO_PROTOCOLS.zone2.filter(p => !history.recentModalities.includes(p.modality));
+  const z2Picks = z2Pool.length > 0 ? z2Pool : CARDIO_PROTOCOLS.zone2;
+
+  for (let i = 0; i < zone2Count && i < z2Picks.length; i++) {
+    const protocol = z2Picks[i % z2Picks.length];
+    prescriptions.push({
+      ...protocol,
+      zone: 2,
+      hrRange: `${zones.zone2.low}-${zones.zone2.high}`,
+    });
+  }
+
+  // Pick HIIT protocol
+  if (hiitCount > 0) {
+    const hiitPool = CARDIO_PROTOCOLS.hiit.filter(p => !history.recentModalities.includes(p.modality));
+    const hiitPicks = hiitPool.length > 0 ? hiitPool : CARDIO_PROTOCOLS.hiit;
+    const protocol = hiitPicks[0];
+    const hiitZone = protocol.zone || 4;
+    const zoneData = hiitZone === 5 ? zones.zone5 : zones.zone4;
+    prescriptions.push({
+      ...protocol,
+      zone: hiitZone,
+      hrRange: `${zoneData.low}-${zoneData.high}`,
+    });
+  }
+
+  return { zones, history, prescriptions, weekComplete: false, remainingMin, targetMin };
+}
+
+// ============================================================
+// RENDER CARDIO PLAN
+// ============================================================
+function renderCardioPlan(workouts) {
+  const result = generateCardioRecommendations(workouts);
+  const summaryEl = document.getElementById('cardio-summary');
+  const rxEl = document.getElementById('cardio-prescriptions');
+
+  // Week progress bar
+  const donePct = Math.min(100, Math.round(((result.targetMin - result.remainingMin) / result.targetMin) * 100));
+  const doneMin = result.targetMin - result.remainingMin;
+
+  summaryEl.innerHTML = `
+    <div class="cardio-week-bar">
+      <div class="cardio-week-done">${Math.round(doneMin)}/${result.targetMin}m</div>
+      <div class="cardio-week-bar-track"><div class="cardio-week-bar-fill" style="width:${donePct}%"></div></div>
+      <div class="cardio-week-target">this week</div>
+    </div>`;
+
+  if (result.weekComplete) {
+    rxEl.innerHTML = `<div class="cardio-done-msg">\u2713 Weekly cardio target met. Active recovery or rest recommended.</div>`;
+    return;
+  }
+
+  let html = '';
+  for (const rx of result.prescriptions) {
+    const zoneClass = rx.zone >= 5 ? 'zone-5' : rx.zone >= 4 ? 'zone-4' : 'zone-2';
+    const zoneLabel = rx.zone >= 5 ? 'Zone 5' : rx.zone >= 4 ? 'Zone 4' : 'Zone 2';
+
+    html += `<div class="cardio-rx">
+      <div class="cardio-rx-header">
+        <span class="cardio-rx-zone ${zoneClass}">${zoneLabel}</span>
+        <span class="cardio-rx-time">${rx.durationMin} min</span>
+      </div>
+      <div class="cardio-rx-name">${rx.name}</div>
+      <div class="cardio-rx-detail">${rx.detail}</div>
+      <div class="cardio-rx-detail" style="margin-top:2px;color:var(--text-dim);font-size:12px;">${rx.notes}</div>
+      <div class="cardio-rx-hr">\u2661 HR: ${rx.hrRange} bpm</div>
+    </div>`;
+  }
+
+  rxEl.innerHTML = html;
+}
+
+// ============================================================
 // SMART WEIGHT PRESCRIPTION (Pillar 4)
 // ============================================================
 function prescribeExercise(name) {
@@ -2058,8 +2474,10 @@ function renderHeatmap(dayMuscleMap, dayWorkoutsMap) {
     const d = new Date(days[i] + 'T12:00:00');
     const isFirst = i === 0;
     const isLast = i === days.length - 1;
+    const isMid1 = i === 4;
+    const isMid2 = i === 8;
     let label = '';
-    if (isFirst) {
+    if (isFirst || isMid1 || isMid2) {
       label = `${d.getMonth() + 1}/${d.getDate()}`;
     } else if (isLast) {
       label = 'Today';
@@ -2296,10 +2714,32 @@ function populateStrengthDetail() {
     }
 
     if (m) {
+      const p25 = Math.round(m[1] * bw);
       const p50 = Math.round(m[2] * bw);
       const p75 = Math.round(m[3] * bw);
       const p90 = Math.round(m[4] * bw);
-      detailHtml += `<div style="color:var(--text-dim);font-size:12px;margin-top:3px;">50th: ${p50}lbs \u00b7 75th: ${p75}lbs \u00b7 90th: ${p90}lbs</div>`;
+
+      // User marker position (clamp 2%-98%)
+      let userPct = 50;
+      if (lift && lift.rm > 0) {
+        const pctile = estimatePercentile(info.std, lift.mult);
+        userPct = Math.max(2, Math.min(98, pctile));
+      }
+      const hasData = lift && lift.rm > 0;
+      const markerColor = userPct >= 75 ? 'var(--accent)' : userPct >= 50 ? 'var(--warn)' : 'var(--danger)';
+
+      detailHtml += `<div class="str-pctile-bar-wrap">
+        <div class="str-pctile-bar-track"></div>
+        ${hasData ? `<div class="str-pctile-marker" style="left:${userPct}%;background:${markerColor}"></div>` : ''}
+      </div>
+      <div class="str-pctile-ticks">
+        <div class="str-pctile-tick" style="left:25%"></div>
+        <div class="str-pctile-tick-label" style="left:25%">${p25}</div>
+        <div class="str-pctile-tick" style="left:50%"></div>
+        <div class="str-pctile-tick-label" style="left:50%">${p50}</div>
+        <div class="str-pctile-tick" style="left:75%"></div>
+        <div class="str-pctile-tick-label" style="left:75%">${p75}</div>
+      </div>`;
     }
     detailHtml += '</div>';
   }
@@ -2594,7 +3034,7 @@ function renderDashboard(workouts) {
 
   const now = new Date();
   document.getElementById('last-updated').innerHTML =
-    `v1.2 \u00b7 ${now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })} <span class="health-dot ${healthStatus}" title="${getHealthStatusTitle()}"></span>`;
+    `v1.1 \u00b7 ${now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })} <span class="health-dot ${healthStatus}" title="${getHealthStatusTitle()}"></span>`;
 
   renderRecommendations(recs);
   renderConstraintChips();
@@ -2603,6 +3043,7 @@ function renderDashboard(workouts) {
   renderHeatmap(pp.heatmapDayMuscle, pp.heatmapDayWorkouts);
   renderWeightChart();
   renderHealthVitals();
+  renderCardioPlan(workouts);
 }
 
 async function refreshData() {
