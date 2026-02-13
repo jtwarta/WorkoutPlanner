@@ -627,6 +627,116 @@ body {
 }
 
 .hidden { display: none; }
+
+/* Health status indicator */
+.health-dot {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  margin-left: 6px;
+  vertical-align: middle;
+  position: relative;
+  top: -0.5px;
+}
+.health-dot.ok { background: var(--accent); }
+.health-dot.stale { background: var(--warn); }
+.health-dot.missing { background: var(--text-dim); opacity: 0.4; }
+.health-dot.pending { background: var(--text-dim); opacity: 0.3; }
+
+/* Health Vitals */
+.vitals-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 14px;
+}
+.vital-cell {
+  padding: 12px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--surface2);
+}
+.vital-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--text-dim);
+  margin-bottom: 6px;
+}
+.vital-value {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1.2;
+}
+.vital-unit {
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--text-dim);
+  margin-left: 2px;
+}
+.vital-context {
+  font-size: 11px;
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--text-dim);
+  margin-top: 4px;
+}
+
+/* Cardio Fitness Score */
+.cardio-score-row {
+  margin-bottom: 14px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--border);
+}
+.cardio-score-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+.cardio-score-left {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+.cardio-score-value {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--text);
+}
+.cardio-score-unit {
+  font-size: 12px;
+  color: var(--text-dim);
+}
+.cardio-score-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 14px;
+  font-weight: 600;
+}
+.cardio-score-bar-wrap {
+  height: 6px;
+  border-radius: 3px;
+  background: var(--surface3);
+  overflow: hidden;
+  position: relative;
+}
+.cardio-score-bar {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.6s ease;
+}
+.cardio-score-scale {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 4px;
+  font-size: 10px;
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--text-dim);
+}
 </style>
 </head>
 <body>
@@ -643,7 +753,7 @@ body {
     <div class="header">
       <div>
         <h1>Workout Advisor</h1>
-        <div class="subtitle" id="last-updated">v1.1</div>
+        <div class="subtitle" id="last-updated">v1.2</div>
       </div>
       <button class="btn-refresh" onclick="refreshData()">Refresh</button>
     </div>
@@ -654,7 +764,7 @@ body {
       <button class="tab active" data-tab="today" onclick="switchTab('today')">Today</button>
       <button class="tab" data-tab="muscles" onclick="switchTab('muscles')">Muscles</button>
       <button class="tab" data-tab="history" onclick="switchTab('history')">History</button>
-      <button class="tab" data-tab="weight" onclick="switchTab('weight')">Weight</button>
+      <button class="tab" data-tab="weight" onclick="switchTab('weight')">Body</button>
     </div>
 
     <!-- Today Tab -->
@@ -721,6 +831,32 @@ body {
           <span><span class="legend-dot" style="background:var(--accent)"></span>Weight</span>
           <span><span class="legend-dot" style="background:var(--strength)"></span>Strength Score</span>
         </div>
+      </div>
+
+      <!-- Health Vitals Card -->
+      <div class="card" id="health-vitals-card" style="display:none;">
+        <div class="card-title" style="display:flex;align-items:center;justify-content:space-between;">
+          <span>Health Vitals</span>
+          <span class="health-sync-time" id="health-sync-time" style="font-size:11px;font-family:'JetBrains Mono',monospace;color:var(--text-dim);text-transform:none;letter-spacing:0;"></span>
+        </div>
+        <!-- Cardio Fitness Score -->
+        <div class="cardio-score-row" id="cardio-score-row">
+          <div class="cardio-score-header">
+            <div class="cardio-score-left">
+              <span class="cardio-score-value" id="cardio-score-value">--</span>
+              <span class="cardio-score-unit">mL/kg/min</span>
+            </div>
+            <div class="cardio-score-label" id="cardio-score-label">--</div>
+          </div>
+          <div class="cardio-score-bar-wrap">
+            <div class="cardio-score-bar" id="cardio-score-bar"></div>
+          </div>
+          <div class="cardio-score-scale">
+            <span>Low</span><span>Fair</span><span>Good</span><span>High</span><span>Elite</span>
+          </div>
+        </div>
+        <!-- Vitals Grid -->
+        <div class="vitals-grid" id="vitals-grid"></div>
       </div>
     </div>
   </div>
@@ -1167,6 +1303,8 @@ let muscle1RMs = {};
 let strengthIndexData = [];
 let WEIGHT_DATA = [];
 let LAST_RECS = null;
+let healthData = null;
+let healthStatus = 'pending'; // 'ok' | 'stale' | 'missing' | 'pending'
 
 // ============================================================
 // SESSION PREFS (Constraints Knob)
@@ -2207,6 +2345,7 @@ function switchTab(tab) {
   });
   if (tab === 'weight') {
     setTimeout(renderWeightChart, 50);
+    setTimeout(renderHealthVitals, 50);
   }
 }
 
@@ -2225,6 +2364,211 @@ function updateLoading(text) {
 
 function showError(msg) {
   document.getElementById('error-area').innerHTML = `<div class="error-msg">${msg}</div>`;
+}
+
+// ============================================================
+// APPLE HEALTH DATA (fetched from repo via iOS Shortcut push)
+// ============================================================
+const HEALTH_DATA_URL = 'https://jtwarta.github.io/WorkoutPlanner/health-data.json';
+const HEALTH_STALE_HOURS = 48; // consider data stale after 48h
+
+async function fetchHealthData() {
+  try {
+    const resp = await fetch(HEALTH_DATA_URL + '?t=' + Date.now(), { cache: 'no-store' });
+    if (!resp.ok) {
+      healthStatus = 'missing';
+      healthData = null;
+      return;
+    }
+    const data = await resp.json();
+    healthData = data;
+
+    // Check freshness
+    if (data.updated) {
+      const updatedAt = new Date(data.updated);
+      const ageHours = (Date.now() - updatedAt.getTime()) / (1000 * 60 * 60);
+      healthStatus = ageHours <= HEALTH_STALE_HOURS ? 'ok' : 'stale';
+    } else {
+      healthStatus = 'stale';
+    }
+  } catch (e) {
+    console.warn('Health data fetch failed:', e.message);
+    healthStatus = 'missing';
+    healthData = null;
+  }
+}
+
+function getHealthStatusTitle() {
+  if (healthStatus === 'ok') {
+    const ago = healthData && healthData.updated
+      ? Math.round((Date.now() - new Date(healthData.updated).getTime()) / (1000 * 60 * 60)) + 'h ago'
+      : '';
+    return `Apple Health: synced ${ago}`;
+  }
+  if (healthStatus === 'stale') return 'Apple Health: data is stale (>48h)';
+  if (healthStatus === 'missing') return 'Apple Health: no data found';
+  return 'Apple Health: loading...';
+}
+
+// ============================================================
+// VO2 MAX / CARDIO FITNESS PERCENTILES
+// ACSM norms for males, interpolated for age
+// Percentile: [10th, 25th, 50th, 75th, 90th]
+// ============================================================
+const VO2_NORMS_MALE = {
+  '20-29': [33.0, 36.5, 42.5, 46.8, 52.4],
+  '30-39': [30.2, 34.0, 38.5, 43.0, 48.0],
+  '40-49': [27.0, 31.0, 35.5, 39.5, 44.0],
+  '50-59': [24.0, 28.0, 32.5, 36.5, 41.0],
+};
+
+function getVO2AgeGroup(age) {
+  if (age < 30) return '20-29';
+  if (age < 40) return '30-39';
+  if (age < 50) return '40-49';
+  return '50-59';
+}
+
+function estimateVO2Percentile(vo2, age) {
+  const group = getVO2AgeGroup(age);
+  const norms = VO2_NORMS_MALE[group];
+  if (!norms) return null;
+
+  const pctiles = [10, 25, 50, 75, 90];
+  if (vo2 <= norms[0]) return Math.max(1, Math.round((vo2 / norms[0]) * 10));
+  if (vo2 >= norms[4]) return Math.min(99, 90 + Math.round(((vo2 - norms[4]) / (norms[4] * 0.15)) * 9));
+
+  for (let i = 0; i < norms.length - 1; i++) {
+    if (vo2 >= norms[i] && vo2 <= norms[i + 1]) {
+      const frac = (vo2 - norms[i]) / (norms[i + 1] - norms[i]);
+      return Math.round(pctiles[i] + frac * (pctiles[i + 1] - pctiles[i]));
+    }
+  }
+  return 50;
+}
+
+function getVO2Category(percentile) {
+  if (percentile >= 80) return { label: 'Excellent', color: 'var(--accent)' };
+  if (percentile >= 60) return { label: 'Good', color: 'var(--blue)' };
+  if (percentile >= 40) return { label: 'Fair', color: 'var(--warn)' };
+  if (percentile >= 20) return { label: 'Below Avg', color: 'var(--danger)' };
+  return { label: 'Low', color: 'var(--danger)' };
+}
+
+function getRHRCategory(rhr) {
+  if (rhr < 60) return { label: 'Athletic', color: 'var(--accent)' };
+  if (rhr <= 70) return { label: 'Good', color: 'var(--blue)' };
+  if (rhr <= 80) return { label: 'Normal', color: 'var(--text-mid)' };
+  return { label: 'Elevated', color: 'var(--danger)' };
+}
+
+function getRecoveryCategory(recovery) {
+  if (recovery >= 30) return { label: 'Excellent', color: 'var(--accent)' };
+  if (recovery >= 20) return { label: 'Good', color: 'var(--blue)' };
+  if (recovery >= 12) return { label: 'Normal', color: 'var(--text-mid)' };
+  return { label: 'Low', color: 'var(--danger)' };
+}
+
+// ============================================================
+// RENDER HEALTH VITALS
+// ============================================================
+function renderHealthVitals() {
+  const card = document.getElementById('health-vitals-card');
+  if (!healthData || healthStatus === 'missing') {
+    card.style.display = 'none';
+    return;
+  }
+  card.style.display = 'block';
+
+  // Sync time
+  const syncEl = document.getElementById('health-sync-time');
+  if (healthData.updated) {
+    const hrs = Math.round((Date.now() - new Date(healthData.updated).getTime()) / (1000 * 60 * 60));
+    syncEl.textContent = hrs <= 1 ? 'just now' : `${hrs}h ago`;
+    syncEl.style.color = healthStatus === 'ok' ? 'var(--accent)' : 'var(--warn)';
+  }
+
+  // Cardio Fitness Score (VO2 Max)
+  const vo2 = healthData.cardio_fitness;
+  if (vo2 && vo2 > 0) {
+    const pctile = estimateVO2Percentile(vo2, PROFILE.age);
+    const cat = getVO2Category(pctile);
+    const barPct = Math.min(Math.max((pctile / 100) * 100, 3), 97);
+
+    document.getElementById('cardio-score-value').textContent = vo2.toFixed(1);
+    const labelEl = document.getElementById('cardio-score-label');
+    labelEl.textContent = `${pctile}th %ile \u00b7 ${cat.label}`;
+    labelEl.style.color = cat.color;
+
+    const bar = document.getElementById('cardio-score-bar');
+    bar.style.width = barPct + '%';
+    bar.style.background = cat.color;
+
+    document.getElementById('cardio-score-row').style.display = 'block';
+  } else {
+    document.getElementById('cardio-score-row').style.display = 'none';
+  }
+
+  // Vitals Grid
+  const grid = document.getElementById('vitals-grid');
+  let html = '';
+
+  // RHR
+  const rhr = healthData.resting_heart_rate;
+  if (rhr && rhr > 0) {
+    const rhrCat = getRHRCategory(rhr);
+    html += `<div class="vital-cell">
+      <div class="vital-label">Resting HR</div>
+      <div class="vital-value">${Math.round(rhr)}<span class="vital-unit">bpm</span></div>
+      <div class="vital-context" style="color:${rhrCat.color}">${rhrCat.label}</div>
+    </div>`;
+  }
+
+  // Cardio Recovery
+  const recovery = healthData.cardio_recovery;
+  if (recovery && recovery > 0) {
+    const recCat = getRecoveryCategory(recovery);
+    html += `<div class="vital-cell">
+      <div class="vital-label">HR Recovery</div>
+      <div class="vital-value">${Math.round(recovery)}<span class="vital-unit">bpm</span></div>
+      <div class="vital-context" style="color:${recCat.color}">${recCat.label}</div>
+    </div>`;
+  }
+
+  // Steps (7-day avg)
+  const steps = healthData.steps;
+  if (steps && steps > 0) {
+    const stepsK = steps >= 1000 ? (steps / 1000).toFixed(1) + 'k' : Math.round(steps);
+    const stepsColor = steps >= 10000 ? 'var(--accent)' : steps >= 7000 ? 'var(--blue)' : 'var(--text-mid)';
+    html += `<div class="vital-cell">
+      <div class="vital-label">Steps/Day</div>
+      <div class="vital-value">${stepsK}</div>
+      <div class="vital-context" style="color:${stepsColor}">${steps >= 10000 ? 'Active' : steps >= 7000 ? 'Moderate' : 'Low'}</div>
+    </div>`;
+  }
+
+  // Active Calories
+  const cal = healthData.active_energy_kcal;
+  if (cal && cal > 0) {
+    html += `<div class="vital-cell">
+      <div class="vital-label">Active Cal</div>
+      <div class="vital-value">${Math.round(cal)}<span class="vital-unit">kcal</span></div>
+      <div class="vital-context">7-day avg</div>
+    </div>`;
+  }
+
+  // Walking HR
+  const whr = healthData.walking_heart_rate_avg;
+  if (whr && whr > 0) {
+    const whrColor = whr < 100 ? 'var(--accent)' : whr <= 110 ? 'var(--text-mid)' : 'var(--warn)';
+    html += `<div class="vital-cell">
+      <div class="vital-label">Walking HR</div>
+      <div class="vital-value">${Math.round(whr)}<span class="vital-unit">bpm</span></div>
+      <div class="vital-context" style="color:${whrColor}">${whr < 100 ? 'Good' : whr <= 110 ? 'Normal' : 'Elevated'}</div>
+    </div>`;
+  }
+
+  grid.innerHTML = html;
 }
 
 // Render dashboard from workouts data (shared by cache + fresh load)
@@ -2246,8 +2590,8 @@ function renderDashboard(workouts) {
   showScreen('dashboard');
 
   const now = new Date();
-  document.getElementById('last-updated').textContent =
-    `v1.1 \u00b7 ${now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}`;
+  document.getElementById('last-updated').innerHTML =
+    `v1.2 \u00b7 ${now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })} <span class="health-dot ${healthStatus}" title="${getHealthStatusTitle()}"></span>`;
 
   renderRecommendations(recs);
   renderConstraintChips();
@@ -2255,13 +2599,14 @@ function renderDashboard(workouts) {
   renderMuscleGrid(pp.muscleStats);
   renderHeatmap(pp.heatmapDayMuscle, pp.heatmapDayWorkouts);
   renderWeightChart();
+  renderHealthVitals();
 }
 
 async function refreshData() {
   showScreen('loading-screen');
   try {
     updateLoading('Refreshing...');
-    const workouts = await fetchWorkouts(10, 10);
+    const [workouts] = await Promise.all([fetchWorkouts(10, 10), fetchHealthData()]);
     workoutCache = workouts;
     setCachedWorkouts(workouts);
     renderDashboard(workouts);
@@ -2275,12 +2620,16 @@ async function refreshData() {
 async function loadDashboard() {
   showScreen('loading-screen');
 
+  // Start health data fetch in parallel (non-blocking)
+  const healthPromise = fetchHealthData();
+
   try {
     // v1.1 Task 7: Try cache first for instant load
     const cached = getCachedWorkouts();
     if (cached && cached.data && cached.data.length > 0) {
       updateLoading('Loading from cache...');
       workoutCache = cached.data;
+      await healthPromise; // ensure health status is ready
       renderDashboard(cached.data);
 
       // If stale, refresh in background
@@ -2301,6 +2650,7 @@ async function loadDashboard() {
     const workouts = await fetchWorkouts(10, 10);
     workoutCache = workouts;
     setCachedWorkouts(workouts);
+    await healthPromise;
     renderDashboard(workouts);
   } catch (err) {
     console.error(err);
