@@ -65,9 +65,6 @@ background: #0a0a0a;
 
 /* Header */
 .header {
-display: flex;
-align-items: center;
-justify-content: space-between;
 padding: 8px 0 16px;
 margin-bottom: 20px;
 border-bottom: 1px solid var(–border);
@@ -82,24 +79,6 @@ color: var(–text);
 font-size: 12px;
 color: var(–text-dim);
 font-family: ‘Space Grotesk’, sans-serif;
-margin-top: 2px;
-}
-.btn-refresh {
-padding: 7px 14px;
-font-size: 13px;
-font-weight: 500;
-background: var(–surface2);
-color: var(–text-mid);
-border: 1px solid var(–border);
-border-radius: 8px;
-cursor: pointer;
-font-family: ‘Figtree’, sans-serif;
-transition: all 0.2s ease;
--webkit-tap-highlight-color: transparent;
-}
-.btn-refresh:active {
-background: var(–surface3);
-transform: scale(0.97);
 }
 
 /* Cards */
@@ -931,11 +910,10 @@ opacity: 0.7;
 
   <div id="dashboard" class="hidden">
     <div class="header">
-      <div>
+      <div style="display:flex;align-items:baseline;gap:10px;">
         <h1>Workout Advisor</h1>
-        <div class="subtitle" id="last-updated">v1.2</div>
+        <div class="subtitle" id="last-updated">v1.3</div>
       </div>
-      <button class="btn-refresh" onclick="refreshData()">Refresh</button>
     </div>
 
 ```
@@ -950,13 +928,13 @@ opacity: 0.7;
 
 <!-- Today Tab -->
 <div id="tab-today">
-  <div class="card">
+  <div class="card" style="border:1px solid #2a2a2e;">
     <div class="card-title">Today's Session</div>
     <div id="constraints-row" class="constraints-row"></div>
     <div id="session-summary"></div>
     <div id="suggested-exercises"></div>
   </div>
-  <div class="card" id="cardio-card">
+  <div class="card" id="cardio-card" style="border:1px solid #2a2a2e;">
     <div class="card-title">Cardio Plan</div>
     <div id="cardio-summary"></div>
     <div id="cardio-prescriptions"></div>
@@ -3142,8 +3120,8 @@ function renderDashboard(workouts) {
   showScreen('dashboard');
 
   const now = new Date();
-  document.getElementById('last-updated').innerHTML =
-    `v1.2 \u00b7 ${now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })} <span class="health-dot ${healthStatus}" title="${getHealthStatusTitle()}"></span>`;
+  document.getElementById('last-updated').textContent =
+    `v1.3 \u00b7 ${now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}`;
 
   renderConstraintChips();
   renderTimedSession(recs);
