@@ -1534,7 +1534,10 @@ function renderConstraintChips() {
   row.innerHTML = CHIP_DEFS.map(def => {
     const current = sessionPrefs[def.key];
     const isNonDefault = current !== PREFS_DEFAULTS[def.key];
-    return `<div class="constraint-chip${isNonDefault ? ' active' : ''}" data-key="${def.key}" onclick="cycleChip('${def.key}')">${def.label(current)}</div>`;
+    const chipStyle = isNonDefault
+      ? 'background:rgba(74,222,128,0.12);color:#4ade80;border:1px solid rgba(74,222,128,0.3);padding:5px 10px;font-size:12px;font-weight:500;font-family:Space Grotesk,sans-serif;border-radius:6px;cursor:pointer;user-select:none;'
+      : 'background:#1a1a1e;color:#8e8e98;border:1px solid #2a2a2e;padding:5px 10px;font-size:12px;font-weight:500;font-family:Space Grotesk,sans-serif;border-radius:6px;cursor:pointer;user-select:none;';
+    return `<div class="constraint-chip${isNonDefault ? ' active' : ''}" style="${chipStyle}" data-key="${def.key}" onclick="cycleChip('${def.key}')">${def.label(current)}</div>`;
   }).join('');
 }
 
@@ -2375,8 +2378,8 @@ function renderTimedSession(recs) {
 
   document.getElementById('session-summary').innerHTML = `
     <div class="session-summary">
-      <div class="session-time">~${totalMin} min</div>
-      <div class="session-count">${exercises.length} exercises</div>
+      <div class="session-time" style="color:#4ade80">~${totalMin} min</div>
+      <div class="session-count" style="color:#8e8e98">${exercises.length} exercises</div>
     </div>
   `;
 
@@ -2398,9 +2401,9 @@ function renderTimedSession(recs) {
       const timeMin = (ex.timeSec / 60).toFixed(0);
       exHtml += `
         <div class="ex-row">
-          <div class="ex-name">${ex.name}</div>
-          <div class="ex-prescription">${rx}</div>
-          <div class="ex-time">${timeMin}m</div>
+          <div class="ex-name" style="color:#f4f4f6">${ex.name}</div>
+          <div class="ex-prescription" style="color:#4ade80">${rx}</div>
+          <div class="ex-time" style="color:#8e8e98">${timeMin}m</div>
         </div>`;
     }
     exHtml += `</div>`;
