@@ -7,7 +7,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#0a0a0a">
-<title>Workout Advisor</title>
+<title>LiftScript</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
@@ -829,8 +829,8 @@ padding: 8px 0;
   <div id="dashboard" class="hidden">
     <div class="header">
       <div style="display:flex;align-items:baseline;gap:10px;">
-        <h1>Workout Advisor</h1>
-        <div class="subtitle" id="last-updated">v1.5</div>
+        <h1>LiftScript</h1>
+        <div class="subtitle" id="last-updated">v1.7</div>
       </div>
     </div>
 
@@ -898,7 +898,7 @@ padding: 8px 0;
         <span class="weight-unit">lbs</span>
       </div>
     </div>
-    <!-- v1.5: Compact strength detail (Option A) -->
+    <!-- v1.7: Compact strength detail (Option A) -->
     <div id="strength-detail" style="margin-bottom:14px;"></div>
     <div class="weight-chart">
       <canvas id="weight-canvas"></canvas>
@@ -934,6 +934,17 @@ padding: 8px 0;
     <!-- Vitals Grid -->
     <div class="vitals-grid" id="vitals-grid"></div>
   </div>
+
+  <!-- Body Measurements Card (v1.7) -->
+  <div class="card" id="measurements-card">
+    <div class="card-title" style="display:flex;align-items:center;justify-content:space-between;">
+      <span>Body Measurements</span>
+      <button class="btn-log-weight" onclick="toggleMeasureForm()">+ Measure</button>
+    </div>
+    <div id="measure-input-form" style="display:none;padding:12px;background:#1a1a1e;border-radius:10px;border:1px solid #2a2a2e;margin-bottom:14px;"></div>
+    <div id="measurements-display"></div>
+    <div id="proportions-display" style="margin-top:14px;"></div>
+  </div>
 </div>
 ```
 
@@ -942,7 +953,7 @@ padding: 8px 0;
 
 <script>
 // ============================================================
-// WORKOUT ADVISOR v1.5
+// LIFTSCRIPT v1.7
 // ============================================================
 // SCIENTIFIC FOUNDATION
 // PILLAR 1: Volume-Hypertrophy Targets
@@ -1002,6 +1013,8 @@ const MUSCLE_KEY_LIFTS = {
   triceps:    { standard: 'skull_crusher',  patterns: [/skullcrusher/i, /skull crusher/i, /tricep extension/i, /triceps extension/i, /triceps pushdown/i, /tricep pushdown/i] },
   calves:     { standard: 'calf_raise',     patterns: [/calf raise/i, /calf extension/i] },
   core:       { standard: 'plank_equivalent', patterns: [] },
+  neck:       { standard: null, patterns: [] },
+  forearms:   { standard: null, patterns: [] },
 };
 
 // ============================================================
@@ -1140,7 +1153,7 @@ const EXERCISE_MUSCLE_MAP = [
   { pattern: /rack pull/i, primary: 'back', secondary: ['hamstrings'] },
   { pattern: /back extension/i, primary: 'back', secondary: ['glutes'] },
   { pattern: /good morning/i, primary: 'back', secondary: ['hamstrings', 'glutes'] },
-  { pattern: /shrug/i, primary: 'back', secondary: [] },
+  { pattern: /shrug/i, primary: 'back', secondary: ['neck'] },
   { pattern: /row/i, primary: 'back', secondary: ['biceps'] },
 
   // Shoulders
@@ -1195,6 +1208,25 @@ const EXERCISE_MUSCLE_MAP = [
   { pattern: /\bab\b/i, primary: 'core', secondary: [] },
   { pattern: /russian twist/i, primary: 'core', secondary: [] },
   { pattern: /woodchop/i, primary: 'core', secondary: [] },
+
+  // Neck
+  { pattern: /neck curl/i, primary: 'neck', secondary: [] },
+  { pattern: /neck extension/i, primary: 'neck', secondary: [] },
+  { pattern: /neck flexion/i, primary: 'neck', secondary: [] },
+  { pattern: /neck lateral/i, primary: 'neck', secondary: [] },
+  { pattern: /neck harness/i, primary: 'neck', secondary: [] },
+  { pattern: /iron neck/i, primary: 'neck', secondary: [] },
+
+  // Forearms
+  { pattern: /wrist curl/i, primary: 'forearms', secondary: [] },
+  { pattern: /reverse curl/i, primary: 'forearms', secondary: ['biceps'] },
+  { pattern: /wrist extension/i, primary: 'forearms', secondary: [] },
+  { pattern: /wrist roller/i, primary: 'forearms', secondary: [] },
+  { pattern: /farmer.?carry/i, primary: 'forearms', secondary: ['back'] },
+  { pattern: /farmer.?walk/i, primary: 'forearms', secondary: ['back'] },
+  { pattern: /grip.?train/i, primary: 'forearms', secondary: [] },
+  { pattern: /dead hang/i, primary: 'forearms', secondary: ['back'] },
+  { pattern: /plate pinch/i, primary: 'forearms', secondary: [] },
 ];
 
 const CARDIO_PATTERNS = [
@@ -1226,6 +1258,8 @@ const MUSCLE_GROUPS = {
   glutes:     { name: 'Glutes',     idealFreqDays: 5, color: '#a78bfa', idealSetsPerWeek: 12 },
   calves:     { name: 'Calves',     idealFreqDays: 5, color: '#2dd4bf', idealSetsPerWeek: 10 },
   core:       { name: 'Core',       idealFreqDays: 3, color: '#e879f9', idealSetsPerWeek: 10 },
+  neck:       { name: 'Neck',       idealFreqDays: 3, color: '#f59e0b', idealSetsPerWeek: 8 },
+  forearms:   { name: 'Forearms',   idealFreqDays: 3, color: '#06b6d4', idealSetsPerWeek: 8 },
 };
 
 // ============================================================
@@ -1306,6 +1340,22 @@ const EXERCISE_DB = {
   'Sit Up': { muscle: 'core', type: 'isolation', benchmarkLbs: 0, sets: 3, reps: '15-20', note: 'bodyweight' },
   'Leg Raise Parallel Bars': { muscle: 'core', type: 'isolation', benchmarkLbs: 0, sets: 3, reps: '10-15', note: 'bodyweight' },
   'Knee Raise Parallel Bars': { muscle: 'core', type: 'isolation', benchmarkLbs: 0, sets: 3, reps: '12-15', note: 'bodyweight' },
+
+  // Neck
+  'Neck Curl (Plate)': { muscle: 'neck', type: 'isolation', benchmarkLbs: 25, sets: 3, reps: '15-20' },
+  'Neck Extension (Plate)': { muscle: 'neck', type: 'isolation', benchmarkLbs: 25, sets: 3, reps: '15-20' },
+  'Neck Curl (Harness)': { muscle: 'neck', type: 'isolation', benchmarkLbs: 35, sets: 3, reps: '12-15' },
+  'Neck Extension (Harness)': { muscle: 'neck', type: 'isolation', benchmarkLbs: 35, sets: 3, reps: '12-15' },
+  'Neck Lateral Flexion': { muscle: 'neck', type: 'isolation', benchmarkLbs: 15, sets: 2, reps: '12-15', note: 'per side' },
+
+  // Forearms
+  'Wrist Curl (Barbell)': { muscle: 'forearms', type: 'isolation', benchmarkLbs: 60, sets: 3, reps: '15-20' },
+  'Wrist Curl (Dumbbell)': { muscle: 'forearms', type: 'isolation', benchmarkLbs: 25, sets: 3, reps: '15-20', note: 'per hand' },
+  'Reverse Wrist Curl (Barbell)': { muscle: 'forearms', type: 'isolation', benchmarkLbs: 35, sets: 3, reps: '12-15' },
+  'Reverse Curl (Barbell)': { muscle: 'forearms', type: 'isolation', benchmarkLbs: 50, sets: 3, reps: '10-12' },
+  'Reverse Curl (Dumbbell)': { muscle: 'forearms', type: 'isolation', benchmarkLbs: 20, sets: 3, reps: '10-12', note: 'per hand' },
+  'Farmer Carry (Dumbbell)': { muscle: 'forearms', type: 'compound', benchmarkLbs: 60, sets: 3, reps: '40-60s', note: 'per hand' },
+  'Dead Hang': { muscle: 'forearms', type: 'isolation', benchmarkLbs: 0, sets: 3, reps: '30-60s', note: 'bodyweight' },
 };
 
 const MUSCLE_EXERCISE_PICKS = {
@@ -1319,6 +1369,8 @@ const MUSCLE_EXERCISE_PICKS = {
   glutes:     ['Hip Thrust (Barbell)', 'Glute Kickback (Machine)', 'Hip Abduction (Machine)'],
   calves:     ['Standing Calf Raise', 'Seated Calf Raise'],
   core:       ['Hanging Leg Raise', 'Crunch (Machine)', 'Plank'],
+  neck:       ['Neck Curl (Plate)', 'Neck Extension (Plate)', 'Neck Lateral Flexion'],
+  forearms:   ['Wrist Curl (Barbell)', 'Reverse Curl (Barbell)', 'Farmer Carry (Dumbbell)'],
 };
 
 // ============================================================
@@ -1369,6 +1421,163 @@ function getMergedWeightData() {
     .map(([date, value]) => ({ date, value }))
     .sort((a, b) => b.date.localeCompare(a.date));
 }
+
+// ============================================================
+// BODY MEASUREMENTS SYSTEM (v1.7 — Phases 2-4)
+// ============================================================
+// SCIENTIFIC FOUNDATION
+// Pillar 6: Anthropometric Proportions
+// Source: McRobert (2005) "Build Muscle, Lose Fat, Look Great" — ideal
+//   proportional targets for natural lifters based on wrist/ankle bone structure
+// Source: Butt (2010) "Your Muscular Potential" — circumference-based
+//   proportions correlated with lean mass development
+// Source: Katch & McArdle (1983) — limb girth norms for athletic males
+//
+// Target ratio philosophy:
+// - Neck ≈ Calf circumference (classic proportion)
+// - Forearm ≈ 0.80× Bicep circumference (flexed)
+// - Waist < 0.45× Height (health marker — WHO guideline)
+// - Chest circumference tracked for development trend
+
+const MEASUREMENTS_KEY = 'bodyMeasurements_v1';
+
+// All supported measurement fields
+const MEASUREMENT_FIELDS = [
+  { key: 'neck_in',    label: 'Neck',     unit: 'in', placeholder: '15.5' },
+  { key: 'forearm_in', label: 'Forearm',  unit: 'in', placeholder: '12.0' },
+  { key: 'bicep_in',   label: 'Bicep',    unit: 'in', placeholder: '14.5' },
+  { key: 'chest_in',   label: 'Chest',    unit: 'in', placeholder: '40.0' },
+  { key: 'waist_in',   label: 'Waist',    unit: 'in', placeholder: '32.0' },
+  { key: 'calf_in',    label: 'Calf',     unit: 'in', placeholder: '15.0' },
+];
+
+// ---- Phase 3+4: Proportion targets mapping measurements → muscle priority ----
+// Each rule: if measurement ratio deviates from target, boost that muscle's score
+// deficit > 0 means the muscle needs MORE work
+const PROPORTION_RULES = [
+  {
+    // Neck should ≈ calf circumference
+    muscle: 'neck',
+    requires: ['neck_in', 'calf_in'],
+    targetRatio: 1.0, // neck / calf
+    compute: (m) => m.neck_in / m.calf_in,
+    label: 'Neck ÷ Calf',
+  },
+  {
+    // Forearm should be ≈ 80% of bicep
+    muscle: 'forearms',
+    requires: ['forearm_in', 'bicep_in'],
+    targetRatio: 0.80,
+    compute: (m) => m.forearm_in / m.bicep_in,
+    label: 'Forearm ÷ Bicep',
+  },
+  {
+    // Bicep growth tracking — compare to wrist-based genetic potential
+    // Simplified: bicep should be ≈ 2.5× wrist, but we don't have wrist.
+    // Instead use bicep ÷ forearm — target 1.25 (inverse of forearm rule)
+    muscle: 'biceps',
+    requires: ['bicep_in', 'forearm_in'],
+    targetRatio: 1.25,
+    compute: (m) => m.bicep_in / m.forearm_in,
+    label: 'Bicep ÷ Forearm',
+  },
+  {
+    // Waist health — smaller is better; deficit if waist is too large
+    // WHO: waist < 0.45 × height. For 5'10 (70"), target < 31.5"
+    // We use a fixed target since we have height in profile
+    muscle: 'core',
+    requires: ['waist_in'],
+    targetRatio: null, // absolute target, not a ratio
+    compute: (m) => {
+      const heightIn = 70; // 5'10" — could be made dynamic
+      const targetMax = heightIn * 0.45;
+      // Return a "score" where < 1.0 means good, > 1.0 means over target
+      return m.waist_in / targetMax;
+    },
+    label: 'Waist ÷ Target',
+  },
+  {
+    // Calf should ≈ neck circumference
+    muscle: 'calves',
+    requires: ['calf_in', 'neck_in'],
+    targetRatio: 1.0,
+    compute: (m) => m.calf_in / m.neck_in,
+    label: 'Calf ÷ Neck',
+  },
+  {
+    // Chest development — tracked as trend; compare to waist for V-taper
+    // Target chest:waist ratio ≈ 1.3 for aesthetic V-taper
+    muscle: 'chest',
+    requires: ['chest_in', 'waist_in'],
+    targetRatio: 1.30,
+    compute: (m) => m.chest_in / m.waist_in,
+    label: 'Chest ÷ Waist',
+  },
+];
+
+function getStoredMeasurements() {
+  try {
+    const raw = localStorage.getItem(MEASUREMENTS_KEY);
+    if (!raw) return [];
+    return JSON.parse(raw);
+  } catch (e) { return []; }
+}
+
+function saveMeasurementEntry(entry) {
+  const entries = getStoredMeasurements();
+  entries.push(entry);
+  localStorage.setItem(MEASUREMENTS_KEY, JSON.stringify(entries));
+}
+
+function getLatestMeasurements() {
+  const entries = getStoredMeasurements();
+  if (entries.length === 0) return null;
+  // Merge all entries — latest value per field wins
+  const latest = {};
+  const dates = {};
+  // Sort chronologically so later entries overwrite
+  const sorted = [...entries].sort((a, b) => (a.date || '').localeCompare(b.date || ''));
+  for (const entry of sorted) {
+    for (const field of MEASUREMENT_FIELDS) {
+      if (entry[field.key] != null && entry[field.key] !== '' && !isNaN(entry[field.key])) {
+        latest[field.key] = parseFloat(entry[field.key]);
+        dates[field.key] = entry.date;
+      }
+    }
+  }
+  if (Object.keys(latest).length === 0) return null;
+  latest._dates = dates;
+  return latest;
+}
+
+// ---- Phase 3: Compute proportion deficit scores ----
+function computeProportionDeficits(measurements) {
+  if (!measurements) return {};
+  const deficits = {};
+
+  for (const rule of PROPORTION_RULES) {
+    const hasDeps = rule.requires.every(k => measurements[k] != null && measurements[k] > 0);
+    if (!hasDeps) continue;
+
+    const actual = rule.compute(measurements);
+    const target = rule.targetRatio || 1.0;
+
+    // deficit: how far below target. 0 = on target, positive = needs work
+    // For waist/core, logic is inverted: higher actual = worse
+    if (rule.muscle === 'core') {
+      // Over target = deficit for core (waist too big)
+      deficits[rule.muscle] = Math.max(0, actual - 1.0);
+    } else {
+      // Under target = deficit
+      deficits[rule.muscle] = Math.max(0, 1 - (actual / target));
+    }
+  }
+  return deficits;
+}
+
+// Global state for proportion data
+let latestMeasurements = null;
+let proportionDeficits = {};
 
 // ============================================================
 // STATE
@@ -2061,12 +2270,25 @@ function generateRecommendations(muscleStats) {
     if (ratio > maxRatio) maxRatio = ratio;
   }
 
+  // Phase 3: proportion deficit scores (0 if no measurements)
+  const hasProportions = Object.keys(proportionDeficits).length > 0;
+  const proportionWeight = hasProportions ? 0.15 : 0;
+  // Rebalance weights when proportions are available
+  const recencyW   = hasProportions ? 0.35 : 0.40;
+  const volumeW    = hasProportions ? 0.25 : 0.30;
+  const imbalanceW = hasProportions ? 0.25 : 0.30;
+
   for (const [key, stat] of Object.entries(muscleStats)) {
     const recencyScore = Math.min(stat.daysSinceTrained / stat.idealFreqDays, 3);
     const idealSets30d = stat.idealSetsPerWeek * 4.3;
     const volumeDeficit = Math.max(0, 1 - (stat.totalSets30d / idealSets30d));
     const imbalanceScore = maxRatio > 0 ? Math.max(0, 1 - (volumeRatios[key] / maxRatio)) : 0;
-    const score = (recencyScore * 0.4) + (volumeDeficit * 0.3) + (imbalanceScore * 0.3);
+    const propDeficit = proportionDeficits[key] || 0;
+
+    const score = (recencyScore * recencyW)
+               + (volumeDeficit * volumeW)
+               + (imbalanceScore * imbalanceW)
+               + (propDeficit * proportionWeight);
 
     let urgency = 'low';
     if (stat.daysSinceTrained >= stat.idealFreqDays * 2 || (volumeDeficit > 0.6 && imbalanceScore > 0.5)) {
@@ -2095,6 +2317,12 @@ function generateRecommendations(muscleStats) {
         const topMuscle = Object.entries(volumeRatios).sort((a, b) => b[1] - a[1])[0];
         if (topMuscle[0] !== key) {
           parts.push(`Lagging behind your ${muscleStats[topMuscle[0]].name.toLowerCase()} proportionally \u2014 focus here to balance out`);
+        }
+      }
+      if (propDeficit > 0.05) {
+        const rule = PROPORTION_RULES.find(r => r.muscle === key);
+        if (rule) {
+          parts.push(`Measurement-based proportion (<strong>${rule.label}</strong>) is ${Math.round(propDeficit * 100)}% below target`);
         }
       }
       if (parts.length === 0) {
@@ -2252,7 +2480,7 @@ function buildTimedSession(recs, prefs) {
 // ============================================================
 // RENDERING
 // ============================================================
-// renderRecommendations removed in v1.5 — replaced by renderTimedSession
+// renderRecommendations removed in v1.7 — replaced by renderTimedSession
 
 function renderTimedSession(recs) {
   const { exercises, totalSec } = buildTimedSession(recs);
@@ -2439,7 +2667,7 @@ function toggleMuscleDetail(key) {
 }
 
 // ============================================================
-// HEATMAP (v1.5: 12 days, no scroll, no direction row)
+// HEATMAP (v1.7: 12 days, no scroll, no direction row)
 // ============================================================
 let heatmapDayWorkouts = {};
 let selectedHeatmapDay = null;
@@ -2447,10 +2675,10 @@ let selectedHeatmapDay = null;
 function renderHeatmap(dayMuscleMap, dayWorkoutsMap) {
   heatmapDayWorkouts = dayWorkoutsMap;
   const container = document.getElementById('heatmap-container');
-  const muscleKeys = ['chest', 'back', 'shoulders', 'quads', 'hamstrings', 'glutes', 'biceps', 'triceps', 'calves', 'core'];
-  const muscleLabels = ['Chest', 'Back', 'Shldr', 'Quads', 'Hams', 'Glts', 'Bis', 'Tris', 'Calves', 'Core'];
+  const muscleKeys = ['chest', 'back', 'shoulders', 'quads', 'hamstrings', 'glutes', 'biceps', 'triceps', 'calves', 'core', 'neck', 'forearms'];
+  const muscleLabels = ['Chest', 'Back', 'Shldr', 'Quads', 'Hams', 'Glts', 'Bis', 'Tris', 'Calves', 'Core', 'Neck', 'F.Arms'];
 
-  // v1.5: 12 days lookback, no scroll
+  // v1.7: 12 days lookback, no scroll
   const now = new Date();
   const days = [];
   const numDays = 12;
@@ -2815,6 +3043,170 @@ function saveWeight() {
 }
 
 // ============================================================
+// BODY MEASUREMENTS UI (v1.7 Phase 2)
+// ============================================================
+
+function toggleMeasureForm() {
+  const formEl = document.getElementById('measure-input-form');
+  const isOpen = formEl.style.display === 'block';
+  if (isOpen) {
+    formEl.style.display = 'none';
+    return;
+  }
+
+  const latest = getLatestMeasurements();
+  let html = `<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">`;
+
+  for (const field of MEASUREMENT_FIELDS) {
+    const prev = latest ? latest[field.key] : null;
+    const prefill = prev ? prev.toFixed(1) : '';
+    html += `<div>
+      <label style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:#8e8e98;font-family:'Space Grotesk',sans-serif;display:block;margin-bottom:4px;">${field.label}</label>
+      <input type="number" id="meas-${field.key}" value="${prefill}" placeholder="${field.placeholder}" step="0.1" inputmode="decimal"
+        style="width:100%;padding:7px 10px;font-size:15px;font-family:'Space Grotesk',sans-serif;background:#131315;color:#f4f4f6;border:1px solid #2a2a2e;border-radius:7px;outline:none;-webkit-appearance:none;">
+    </div>`;
+  }
+
+  html += `</div>`;
+  html += `<div style="display:flex;gap:8px;margin-top:12px;justify-content:flex-end;">
+    <button onclick="toggleMeasureForm()" style="padding:7px 10px;font-size:13px;background:none;color:#8e8e98;border:none;cursor:pointer;font-family:'Figtree',sans-serif;">Cancel</button>
+    <button onclick="saveMeasurements()" style="padding:7px 14px;font-size:13px;font-weight:600;background:#4ade80;color:#0a0a0a;border:none;border-radius:7px;cursor:pointer;font-family:'Figtree',sans-serif;">Save</button>
+  </div>`;
+
+  formEl.innerHTML = html;
+  formEl.style.display = 'block';
+}
+
+function saveMeasurements() {
+  const today = new Date().toISOString().split('T')[0];
+  const entry = { date: today };
+  let hasValue = false;
+
+  for (const field of MEASUREMENT_FIELDS) {
+    const input = document.getElementById(`meas-${field.key}`);
+    if (!input) continue;
+    const val = parseFloat(input.value);
+    if (!isNaN(val) && val > 0 && val < 100) {
+      entry[field.key] = val;
+      hasValue = true;
+    }
+  }
+
+  if (!hasValue) return;
+
+  saveMeasurementEntry(entry);
+  toggleMeasureForm();
+
+  // Refresh proportion data and re-render
+  latestMeasurements = getLatestMeasurements();
+  proportionDeficits = computeProportionDeficits(latestMeasurements);
+  renderMeasurementsDisplay();
+  renderProportionsDisplay();
+
+  // Re-run recommendations since proportion data changed
+  if (workoutCache && muscleAnalysis) {
+    const recs = generateRecommendations(muscleAnalysis);
+    LAST_RECS = recs;
+    renderTimedSession(recs);
+    renderMuscleGrid(muscleAnalysis, recs);
+  }
+}
+
+function renderMeasurementsDisplay() {
+  const container = document.getElementById('measurements-display');
+  if (!container) return;
+  const latest = latestMeasurements;
+
+  if (!latest) {
+    container.innerHTML = `<div style="font-size:13px;color:#8e8e98;font-family:'Space Grotesk',sans-serif;padding:4px 0;">No measurements logged yet. Tap "+ Measure" to start tracking.</div>`;
+    return;
+  }
+
+  let html = `<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;">`;
+  let hasAny = false;
+  for (const field of MEASUREMENT_FIELDS) {
+    const val = latest[field.key];
+    if (!val) continue;
+    hasAny = true;
+    const dateStr = latest._dates ? latest._dates[field.key] : '';
+    const daysAgo = dateStr ? Math.floor((Date.now() - new Date(dateStr + 'T12:00:00').getTime()) / (1000 * 60 * 60 * 24)) : null;
+    const stale = daysAgo !== null && daysAgo > 90;
+    const ageLabel = daysAgo === 0 ? 'today' : daysAgo !== null ? `${daysAgo}d ago` : '';
+    const ageColor = stale ? '#fb923c' : '#6e6e78';
+
+    html += `<div style="padding:10px;border-radius:8px;border:1px solid #2a2a2e;background:#1a1a1e;">
+      <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:#8e8e98;font-family:'Space Grotesk',sans-serif;margin-bottom:4px;">${field.label}</div>
+      <div style="font-family:'Space Grotesk',sans-serif;font-size:20px;font-weight:700;color:#f4f4f6;line-height:1.2;">${val.toFixed(1)}<span style="font-size:11px;font-weight:400;color:#8e8e98;margin-left:2px;">${field.unit}</span></div>
+      <div style="font-size:10px;font-family:'Space Grotesk',sans-serif;color:${ageColor};margin-top:2px;">${ageLabel}</div>
+    </div>`;
+  }
+  html += `</div>`;
+
+  if (!hasAny) {
+    container.innerHTML = `<div style="font-size:13px;color:#8e8e98;font-family:'Space Grotesk',sans-serif;padding:4px 0;">No measurements logged yet. Tap "+ Measure" to start tracking.</div>`;
+    return;
+  }
+  container.innerHTML = html;
+}
+
+function renderProportionsDisplay() {
+  const container = document.getElementById('proportions-display');
+  if (!container) return;
+  const latest = latestMeasurements;
+  const deficits = proportionDeficits;
+
+  if (!latest || Object.keys(deficits).length === 0) {
+    container.innerHTML = '';
+    return;
+  }
+
+  let html = `<div style="padding-top:12px;border-top:1px solid #2a2a2e;">
+    <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:1.5px;color:#8e8e98;margin-bottom:10px;font-family:'Space Grotesk',sans-serif;">Proportion Analysis</div>`;
+
+  for (const rule of PROPORTION_RULES) {
+    const hasDeps = rule.requires.every(k => latest[k] != null && latest[k] > 0);
+    if (!hasDeps) continue;
+
+    const actual = rule.compute(latest);
+    const target = rule.targetRatio || 1.0;
+    const deficit = deficits[rule.muscle] || 0;
+
+    let statusColor, statusLabel;
+    if (deficit <= 0.05) { statusColor = '#4ade80'; statusLabel = 'Balanced'; }
+    else if (deficit <= 0.15) { statusColor = '#fb923c'; statusLabel = 'Slight gap'; }
+    else { statusColor = '#f87171'; statusLabel = 'Lagging'; }
+
+    const muscleName = MUSCLE_GROUPS[rule.muscle] ? MUSCLE_GROUPS[rule.muscle].name : rule.muscle;
+    const barPct = Math.max(3, Math.min(100, Math.round((1 - deficit) * 100)));
+
+    // Show actual values for context
+    const vals = rule.requires.map(k => {
+      const f = MEASUREMENT_FIELDS.find(mf => mf.key === k);
+      return `${f ? f.label : k}: ${latest[k].toFixed(1)}"`;
+    }).join(' · ');
+
+    html += `<div style="padding:8px 0;border-bottom:1px solid #1a1a1e;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+        <span style="font-size:13px;font-weight:600;color:#f4f4f6;">${muscleName}</span>
+        <span style="font-size:11px;font-weight:600;font-family:'Space Grotesk',sans-serif;color:${statusColor};">${statusLabel}</span>
+      </div>
+      <div style="height:4px;border-radius:2px;background:#222226;overflow:hidden;">
+        <div style="height:100%;width:${barPct}%;border-radius:2px;background:${statusColor};transition:width 0.4s ease;"></div>
+      </div>
+      <div style="font-size:11px;font-family:'Space Grotesk',sans-serif;color:#6e6e78;margin-top:3px;">${rule.label}: ${actual.toFixed(2)} (target ${target.toFixed(2)}) · ${vals}</div>
+    </div>`;
+  }
+
+  html += `</div>`;
+  container.innerHTML = html;
+}
+
+function renderMeasurementsCard() {
+  renderMeasurementsDisplay();
+  renderProportionsDisplay();
+}
+
+// ============================================================
 // APPLE HEALTH DATA (fetched from repo via iOS Shortcut push)
 // ============================================================
 const HEALTH_DATA_URL = 'https://jtwarta.github.io/WorkoutPlanner/health-data.json';
@@ -3034,6 +3426,7 @@ function switchTab(tab) {
   if (tab === 'weight') {
     setTimeout(renderWeightChart, 50);
     setTimeout(renderHealthVitals, 50);
+    setTimeout(renderMeasurementsCard, 50);
   }
 }
 
@@ -3069,6 +3462,10 @@ function renderDashboard(workouts) {
   WEIGHT_DATA = getMergedWeightData();
   if (WEIGHT_DATA.length > 0) PROFILE.bodyweightLbs = WEIGHT_DATA[0].value;
 
+  // v1.7: Load measurements and compute proportion deficits before recommendations
+  latestMeasurements = getLatestMeasurements();
+  proportionDeficits = computeProportionDeficits(latestMeasurements);
+
   // v1.1 Task 6: unified preprocess pipeline
   const pp = preprocessWorkouts(workouts, PROFILE.bodyweightLbs);
 
@@ -3086,7 +3483,7 @@ function renderDashboard(workouts) {
   const syncColor = (hevyStatus === 'ok' && healthStatus === 'ok') ? '#4ade80'
     : (hevyStatus === 'error' || healthStatus === 'missing') ? '#8e8e98' : '#fb923c';
   document.getElementById('last-updated').innerHTML =
-    `v1.5 \u00b7 ${now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })} <span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${syncColor};margin-left:5px;vertical-align:middle;position:relative;top:-1px;"></span>`;
+    `v1.7 \u00b7 ${now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })} <span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${syncColor};margin-left:5px;vertical-align:middle;position:relative;top:-1px;"></span>`;
 
   renderConstraintChips();
   renderTimedSession(recs);
@@ -3094,6 +3491,7 @@ function renderDashboard(workouts) {
   renderHeatmap(pp.heatmapDayMuscle, pp.heatmapDayWorkouts);
   renderWeightChart();
   renderHealthVitals();
+  renderMeasurementsCard();
   renderCardioPlan(workouts);
 }
 
