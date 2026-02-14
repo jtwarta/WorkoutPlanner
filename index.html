@@ -59,24 +59,24 @@ line-height: 1.5;
 max-width: 480px;
 margin: 0 auto;
 padding: 20px 18px;
-padding-bottom: 40px;
+padding-bottom: 120px;
 background: #0a0a0a;
 }
 
 /* Header */
 .header {
 padding: 8px 0 12px;
-margin-bottom: 0;
-border-bottom: none;
+margin-bottom: 12px;
+border-bottom: 1px solid var(–border);
 }
 .header h1 {
-font-size: 22px;
+font-size: 26px;
 font-weight: 700;
 letter-spacing: -0.5px;
 color: var(–text);
 }
 .header .subtitle {
-font-size: 12px;
+font-size: 13px;
 color: var(–text-dim);
 font-family: ‘Space Grotesk’, sans-serif;
 }
@@ -90,7 +90,7 @@ padding: 18px;
 margin-bottom: 14px;
 }
 .card-title {
-font-size: 12px;
+font-size: 13px;
 font-weight: 600;
 text-transform: uppercase;
 letter-spacing: 1.5px;
@@ -102,7 +102,6 @@ margin-bottom: 14px;
 .tabs {
 display: flex;
 gap: 4px;
-margin-top: 10px;
 margin-bottom: 18px;
 background: var(–surface);
 border-radius: 12px;
@@ -113,7 +112,7 @@ border: 1px solid var(–border);
 flex: 1;
 padding: 9px 6px;
 text-align: center;
-font-size: 14px;
+font-size: 16px;
 font-weight: 600;
 border-radius: 9px;
 cursor: pointer;
@@ -293,7 +292,7 @@ align-items: center;
 justify-content: space-between;
 }
 .muscle-name {
-font-size: 14px;
+font-size: 16px;
 font-weight: 600;
 }
 .muscle-urgency {
@@ -380,7 +379,7 @@ margin-bottom: 14px;
 }
 .constraint-chip {
 padding: 5px 10px;
-font-size: 12px;
+font-size: 13px;
 font-weight: 500;
 font-family: ‘Space Grotesk’, sans-serif;
 background: var(–surface2);
@@ -722,6 +721,95 @@ font-family: ‘Space Grotesk’, sans-serif;
 color: var(–text-dim);
 }
 
+/* ===================== */
+/* CARDIO PLAN           */
+/* ===================== */
+.cardio-week-bar {
+display: flex;
+align-items: center;
+gap: 10px;
+margin-bottom: 14px;
+padding-bottom: 12px;
+border-bottom: 1px solid var(–border);
+}
+.cardio-week-done {
+font-family: ‘Space Grotesk’, sans-serif;
+font-size: 14px;
+color: var(–text-mid);
+}
+.cardio-week-bar-track {
+flex: 1;
+height: 5px;
+border-radius: 3px;
+background: var(–surface3);
+overflow: hidden;
+}
+.cardio-week-bar-fill {
+height: 100%;
+border-radius: 3px;
+background: var(–blue);
+transition: width 0.4s ease;
+}
+.cardio-week-target {
+font-family: ‘Space Grotesk’, sans-serif;
+font-size: 12px;
+color: var(–text-dim);
+white-space: nowrap;
+}
+.cardio-rx {
+padding: 12px 0;
+border-bottom: 1px solid var(–border);
+}
+.cardio-rx:last-child { border-bottom: none; }
+.cardio-rx-header {
+display: flex;
+align-items: center;
+justify-content: space-between;
+margin-bottom: 6px;
+}
+.cardio-rx-zone {
+font-size: 11px;
+font-weight: 600;
+padding: 3px 8px;
+border-radius: 5px;
+font-family: ‘Space Grotesk’, sans-serif;
+text-transform: uppercase;
+letter-spacing: 0.5px;
+}
+.zone-2 { background: var(–blue-dim); color: var(–blue); }
+.zone-4 { background: var(–warn-dim); color: var(–warn); }
+.zone-5 { background: var(–danger-dim); color: var(–danger); }
+.cardio-rx-time {
+font-family: ‘Space Grotesk’, sans-serif;
+font-size: 13px;
+color: var(–text-dim);
+}
+.cardio-rx-name {
+font-size: 15px;
+font-weight: 600;
+color: var(–text);
+margin-bottom: 4px;
+}
+.cardio-rx-detail {
+font-size: 13px;
+font-family: ‘Space Grotesk’, sans-serif;
+color: var(–text-mid);
+line-height: 1.5;
+}
+.cardio-rx-hr {
+display: inline-block;
+margin-top: 4px;
+font-size: 12px;
+font-family: ‘Space Grotesk’, sans-serif;
+color: var(–blue);
+}
+.cardio-done-msg {
+font-size: 14px;
+color: var(–accent);
+font-family: ‘Space Grotesk’, sans-serif;
+padding: 8px 0;
+}
+
 .hidden { display: none; }
 </style>
 
@@ -742,18 +830,18 @@ color: var(–text-dim);
     <div class="header">
       <div style="display:flex;align-items:baseline;gap:10px;">
         <h1>Workout Advisor</h1>
-        <div class="subtitle" id="last-updated">v1.4</div>
+        <div class="subtitle" id="last-updated">v1.5</div>
       </div>
     </div>
-    <div class="tabs">
-      <button class="tab active" data-tab="today" onclick="switchTab('today')">Today</button>
-      <button class="tab" data-tab="muscles" onclick="switchTab('muscles')">Muscles</button>
-      <button class="tab" data-tab="history" onclick="switchTab('history')">History</button>
-      <button class="tab" data-tab="weight" onclick="switchTab('weight')">Body</button>
-    </div>
-    <div id="error-area"></div>
 
 ```
+<div class="tabs">
+  <button class="tab active" data-tab="today" onclick="switchTab('today')">Today</button>
+  <button class="tab" data-tab="muscles" onclick="switchTab('muscles')">Muscles</button>
+  <button class="tab" data-tab="history" onclick="switchTab('history')">History</button>
+  <button class="tab" data-tab="weight" onclick="switchTab('weight')">Body</button>
+</div>
+
 <!-- Today Tab -->
 <div id="tab-today">
   <div class="card" style="border:1px solid #2a2a2e;">
@@ -810,7 +898,7 @@ color: var(–text-dim);
         <span class="weight-unit">lbs</span>
       </div>
     </div>
-    <!-- v1.4: Compact strength detail (Option A) -->
+    <!-- v1.5: Compact strength detail (Option A) -->
     <div id="strength-detail" style="margin-bottom:14px;"></div>
     <div class="weight-chart">
       <canvas id="weight-canvas"></canvas>
@@ -854,7 +942,7 @@ color: var(–text-dim);
 
 <script>
 // ============================================================
-// WORKOUT ADVISOR v1.1
+// WORKOUT ADVISOR v1.5
 // ============================================================
 // SCIENTIFIC FOUNDATION
 // PILLAR 1: Volume-Hypertrophy Targets
@@ -1641,10 +1729,10 @@ const STRENGTH_INDEX_LIFTS = {
 // Source 2: Seiler (2010) "What is Best Practice for Training Intensity and Duration
 //   Distribution in Endurance Athletes?" - polarized 80/20 model
 // Source 3: Tanaka et al. (2001) "Age-predicted maximal heart rate revisited"
-//   - HRmax = 208 - 0.7 × age (more accurate than 220-age)
+//   - HRmax = 208 - 0.7 Ã— age (more accurate than 220-age)
 // Source 4: Karvonen (1957) "Heart Rate Reserve" method for HR zones
-//   - Target HR = ((HRmax - HRrest) × %intensity) + HRrest
-// Source 5: Stöggl & Sperlich (2014) "Polarized training has greater impact on key
+//   - Target HR = ((HRmax - HRrest) Ã— %intensity) + HRrest
+// Source 5: StÃ¶ggl & Sperlich (2014) "Polarized training has greater impact on key
 //   endurance variables than threshold, high-intensity, or high-volume training"
 
 // HR Zone calculations
@@ -1871,14 +1959,14 @@ function renderCardioPlan(workouts) {
   const summaryEl = document.getElementById('cardio-summary');
   const rxEl = document.getElementById('cardio-prescriptions');
 
-  // Week progress bar - inline styled
+  // Week progress bar
   const donePct = Math.min(100, Math.round(((result.targetMin - result.remainingMin) / result.targetMin) * 100));
   const doneMin = result.targetMin - result.remainingMin;
-  const barColor = donePct >= 100 ? '#4ade80' : donePct >= 60 ? '#60a5fa' : '#fb923c';
+  const barColor = donePct >= 100 ? '#4ade80' : donePct >= 50 ? '#60a5fa' : '#fb923c';
 
   summaryEl.innerHTML = `
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid #2a2a2e;">
-      <div style="font-family:'Space Grotesk',sans-serif;font-size:15px;font-weight:600;color:${barColor};">${Math.round(doneMin)}/${result.targetMin}m</div>
+      <div style="font-family:'Space Grotesk',sans-serif;font-size:14px;color:#4ade80;font-weight:600;white-space:nowrap;">${Math.round(doneMin)}/${result.targetMin}m</div>
       <div style="flex:1;height:5px;border-radius:3px;background:#222226;overflow:hidden;">
         <div style="height:100%;border-radius:3px;background:${barColor};width:${donePct}%;transition:width 0.4s ease;"></div>
       </div>
@@ -1890,25 +1978,26 @@ function renderCardioPlan(workouts) {
     return;
   }
 
-  const zoneColors = {
-    2: { color: '#60a5fa', bg: 'rgba(96,165,250,0.12)', label: 'Zone 2' },
-    4: { color: '#fb923c', bg: 'rgba(251,146,60,0.12)', label: 'Zone 4' },
-    5: { color: '#f87171', bg: 'rgba(248,113,113,0.12)', label: 'Zone 5' },
+  // Zone colors matching urgency badge style
+  const zoneStyles = {
+    2: { bg: 'rgba(96,165,250,0.12)', color: '#60a5fa', label: 'Zone 2' },
+    4: { bg: 'rgba(251,146,60,0.12)', color: '#fb923c', label: 'Zone 4' },
+    5: { bg: 'rgba(248,113,113,0.12)', color: '#f87171', label: 'Zone 5' },
   };
 
   let html = '';
   for (const rx of result.prescriptions) {
-    const z = zoneColors[rx.zone] || zoneColors[2];
+    const zs = zoneStyles[rx.zone] || zoneStyles[2];
 
-    html += `<div style="padding:12px 0;border-bottom:1px solid #2a2a2e;">
+    html += `<div style="padding:12px 0;border-bottom:1px solid #1a1a1e;">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
-        <span style="font-size:11px;font-weight:600;padding:3px 8px;border-radius:5px;font-family:'Space Grotesk',sans-serif;text-transform:uppercase;letter-spacing:0.5px;background:${z.bg};color:${z.color};">${z.label}</span>
+        <span style="font-size:11px;font-weight:600;padding:3px 8px;border-radius:5px;font-family:'Space Grotesk',sans-serif;text-transform:uppercase;letter-spacing:0.5px;background:${zs.bg};color:${zs.color};">${zs.label}</span>
         <span style="font-family:'Space Grotesk',sans-serif;font-size:13px;color:#4ade80;font-weight:600;">${rx.durationMin} min</span>
       </div>
       <div style="font-size:15px;font-weight:600;color:#f4f4f6;margin-bottom:4px;">${rx.name}</div>
       <div style="font-size:13px;font-family:'Space Grotesk',sans-serif;color:#bcbcc4;line-height:1.5;">${rx.detail}</div>
       <div style="font-size:12px;font-family:'Space Grotesk',sans-serif;color:#8e8e98;margin-top:2px;">${rx.notes}</div>
-      <div style="display:inline-block;margin-top:5px;font-size:12px;font-family:'Space Grotesk',sans-serif;color:${z.color};">\u2661 HR: ${rx.hrRange} bpm</div>
+      <div style="display:inline-block;margin-top:6px;font-size:12px;font-family:'Space Grotesk',sans-serif;color:${zs.color};padding:2px 8px;border-radius:4px;background:${zs.bg};">\u2661 ${rx.hrRange} bpm</div>
     </div>`;
   }
 
@@ -2163,26 +2252,7 @@ function buildTimedSession(recs, prefs) {
 // ============================================================
 // RENDERING
 // ============================================================
-function renderRecommendations(recs) {
-  const container = document.getElementById('recommendations');
-  const top = recs.slice(0, 6);
-
-  container.innerHTML = top.map((r, i) => `
-    <div class="rec-item" onclick="toggleExplainer(this)">
-      <div class="rec-row">
-        <div class="rec-rank">${i + 1}</div>
-        <div class="rec-info">
-          <div class="rec-name">${r.name}</div>
-          <div class="rec-detail">${r.detail}</div>
-        </div>
-        <div class="rec-urgency urgency-${r.urgency}">${r.urgency}</div>
-      </div>
-      <div class="rec-expand">
-        <div class="rec-explainer">${r.explainer}</div>
-      </div>
-    </div>
-  `).join('');
-}
+// renderRecommendations removed in v1.5 — replaced by renderTimedSession
 
 function renderTimedSession(recs) {
   const { exercises, totalSec } = buildTimedSession(recs);
@@ -2364,12 +2434,12 @@ function toggleMuscleDetail(key) {
   });
   const idx = entries.findIndex(([k]) => k === key);
   if (idx >= 0 && cells[idx]) {
-    cells[idx].style.outline = '1.5px solid var(--accent)';
+    cells[idx].style.outline = '1.5px solid #4ade80';
   }
 }
 
 // ============================================================
-// HEATMAP (v1.1 Task 1: 10 days, no scroll, no direction row)
+// HEATMAP (v1.5: 12 days, no scroll, no direction row)
 // ============================================================
 let heatmapDayWorkouts = {};
 let selectedHeatmapDay = null;
@@ -2380,7 +2450,7 @@ function renderHeatmap(dayMuscleMap, dayWorkoutsMap) {
   const muscleKeys = ['chest', 'back', 'shoulders', 'quads', 'hamstrings', 'glutes', 'biceps', 'triceps', 'calves', 'core'];
   const muscleLabels = ['Chest', 'Back', 'Shldr', 'Quads', 'Hams', 'Glts', 'Bis', 'Tris', 'Calves', 'Core'];
 
-  // v1.1: 10 days lookback, no scroll
+  // v1.5: 12 days lookback, no scroll
   const now = new Date();
   const days = [];
   const numDays = 12;
@@ -2429,7 +2499,7 @@ function renderHeatmap(dayMuscleMap, dayWorkoutsMap) {
     for (const day of days) {
       const sets = (dayMuscleMap[day] && dayMuscleMap[day][mKey]) || 0;
       const opacity = sets > 0 ? Math.max(0.25, Math.min(sets / maxSets, 1)) : 0;
-      const bgColor = sets > 0 ? `rgba(74, 222, 128, ${opacity})` : 'var(--surface2)';
+      const bgColor = sets > 0 ? `rgba(74, 222, 128, ${opacity})` : '#1a1a1e';
       html += `<div class="heatmap-cell" style="background:${bgColor}" data-day="${day}" onclick="selectHeatmapDay('${day}')" title="${day}: ${formatSets(sets)} sets"></div>`;
     }
   }
@@ -2471,7 +2541,7 @@ function selectHeatmapDay(day) {
   const dateStr = dateObj.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
 
   if (exercises.length === 0) {
-    innerEl.innerHTML = `<div class="detail-date">${dateStr}</div><div style="color:var(--text-dim);font-size:12px;">Rest day</div>`;
+    innerEl.innerHTML = `<div class="detail-date">${dateStr}</div><div style="color:#8e8e98;font-size:12px;">Rest day</div>`;
   } else {
     let html = `<div class="detail-date">${dateStr}</div>`;
     for (const ex of exercises) {
@@ -2488,7 +2558,7 @@ function selectHeatmapDay(day) {
   detailEl.style.maxHeight = innerEl.scrollHeight + 24 + 'px';
 
   document.querySelectorAll('.heatmap-cell').forEach(cell => {
-    cell.style.outline = cell.dataset.day === day ? '1.5px solid var(--accent)' : 'none';
+    cell.style.outline = cell.dataset.day === day ? '1.5px solid #4ade80' : 'none';
   });
 }
 
@@ -2518,7 +2588,7 @@ function renderWeightChart() {
   document.getElementById('weight-current').textContent = current.toFixed(1);
   const deltaEl = document.getElementById('weight-delta');
   deltaEl.textContent = `${delta >= 0 ? '+' : ''}${delta.toFixed(1)}`;
-  deltaEl.style.color = delta <= 0 ? 'var(--accent)' : 'var(--warn)';
+  deltaEl.style.color = delta <= 0 ? '#4ade80' : '#fb923c';
 
   // Canvas
   const canvas = document.getElementById('weight-canvas');
@@ -2627,6 +2697,33 @@ function renderWeightChart() {
 }
 
 // v1.1: Populate SI detail content (always called, even if weight data is empty)
+let activeStrengthTooltip = null;
+
+function showStrengthPctile(el) {
+  dismissStrengthTooltip();
+  const tip = el.querySelector('[data-pctile-tip]');
+  if (tip) {
+    tip.style.opacity = '1';
+    tip.style.transform = 'translate(-50%,-50%) scale(1)';
+    activeStrengthTooltip = tip;
+  }
+}
+
+function dismissStrengthTooltip() {
+  if (activeStrengthTooltip) {
+    activeStrengthTooltip.style.opacity = '0';
+    activeStrengthTooltip.style.transform = 'translate(-50%,-50%) scale(0.7)';
+    activeStrengthTooltip = null;
+  }
+}
+
+// Click-outside listener for strength tooltips
+document.addEventListener('click', function(e) {
+  if (activeStrengthTooltip && !e.target.closest('[data-str-bar]')) {
+    dismissStrengthTooltip();
+  }
+});
+
 function populateStrengthDetail() {
   const container = document.getElementById('strength-detail');
 
@@ -2647,19 +2744,18 @@ function populateStrengthDetail() {
 
   // Header
   let html = `<div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid #2a2a2e;">
-    <div style="font-family:'Space Grotesk',sans-serif;font-size:28px;font-weight:700;color:#818cf8;">${latestSI ? latestSI.index.toFixed(2) : '--'}</div>
+    <div style="font-family:'Space Grotesk',sans-serif;font-size:32px;font-weight:700;color:#818cf8;">${latestSI ? latestSI.index.toFixed(2) : '--'}</div>
     <div style="font-family:'Space Grotesk',sans-serif;font-size:13px;color:#8e8e98;">Strength Score</div>
   </div>`;
 
-  // Column labels
+  // Column labels (no %ile column)
   html += `<div style="display:flex;align-items:center;gap:10px;padding:0 0 6px 0;">
-    <div style="width:62px;font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#8e8e98;font-family:'Space Grotesk',sans-serif;flex-shrink:0;">Lift</div>
-    <div style="flex:1;font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#8e8e98;font-family:'Space Grotesk',sans-serif;text-align:center;">Percentile</div>
-    <div style="width:56px;font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#8e8e98;font-family:'Space Grotesk',sans-serif;text-align:right;flex-shrink:0;">Est 1RM</div>
+    <div style="width:58px;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#8e8e98;font-family:'Space Grotesk',sans-serif;flex-shrink:0;">Lift</div>
+    <div style="flex:1;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#8e8e98;font-family:'Space Grotesk',sans-serif;text-align:center;">Percentile</div>
+    <div style="width:56px;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#8e8e98;font-family:'Space Grotesk',sans-serif;text-align:right;flex-shrink:0;">Est 1RM</div>
   </div>`;
 
-  // Lift rows — tap bar to reveal percentile
-  let rowIdx = 0;
+  // Lift rows
   for (const [key, info] of Object.entries(liftBenchmarks)) {
     const lift = latestSI ? latestSI.lifts[key] : null;
     const hasData = lift && lift.rm > 0;
@@ -2676,58 +2772,20 @@ function populateStrengthDetail() {
     }
 
     const markerLeft = hasData ? Math.max(2, Math.min(98, pctile)) : 0;
-    const rid = 'str-row-' + rowIdx;
 
-    html += `<div style="padding:9px 0;border-bottom:1px solid #1a1a1e;">
-      <div style="display:flex;align-items:center;gap:10px;cursor:pointer;-webkit-tap-highlight-color:transparent;" onclick="toggleStrPctile('${rid}')">
-        <div style="width:62px;font-size:14px;font-weight:600;color:#f4f4f6;flex-shrink:0;">${info.label}</div>
-        <div style="flex:1;height:6px;border-radius:3px;background:#222226;position:relative;overflow:visible;">
-          <div style="height:100%;border-radius:3px;background:linear-gradient(90deg,#f87171 0%,#fb923c 40%,#4ade80 100%);opacity:0.3;width:100%;"></div>
-          ${hasData ? `<div style="position:absolute;top:50%;left:${markerLeft}%;width:10px;height:10px;border-radius:50%;background:${markerColor};transform:translate(-50%,-50%);border:1.5px solid #131315;"></div>` : ''}
-        </div>
-        <div style="width:56px;font-family:'Space Grotesk',sans-serif;font-size:13px;color:#bcbcc4;text-align:right;flex-shrink:0;">${weightStr}<span style="font-size:10px;color:#6e6e78;"> lbs</span></div>
+    html += `<div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid #1a1a1e;">
+      <div style="width:58px;font-size:16px;font-weight:600;color:#f4f4f6;flex-shrink:0;">${info.label}</div>
+      <div data-str-bar style="flex:1;height:14px;border-radius:3px;background:#222226;position:relative;overflow:visible;cursor:pointer;-webkit-tap-highlight-color:transparent;" onclick="showStrengthPctile(this)">
+        <div style="position:absolute;top:4px;left:0;right:0;height:6px;border-radius:3px;background:linear-gradient(90deg,#f87171 0%,#fb923c 40%,#4ade80 100%);opacity:0.3;"></div>
+        ${hasData ? `<div style="position:absolute;top:50%;left:${markerLeft}%;width:10px;height:10px;border-radius:50%;background:${markerColor};transform:translate(-50%,-50%);border:1.5px solid #131315;pointer-events:none;"></div>` : ''}
+        ${hasData ? `<div data-pctile-tip style="position:absolute;top:50%;left:${markerLeft}%;background:${pctColor};color:#0a0a0a;font-family:'Space Grotesk',sans-serif;font-size:11px;font-weight:700;padding:2px 6px;border-radius:4px;pointer-events:none;white-space:nowrap;opacity:0;transform:translate(-50%,-50%) scale(0.7);transition:opacity 0.2s ease,transform 0.2s ease;z-index:5;">${pctile}th</div>` : ''}
       </div>
-      <div id="${rid}" style="overflow:hidden;max-height:0;opacity:0;transition:max-height 0.25s ease,opacity 0.2s ease;">
-        <div style="padding:6px 0 2px 62px;font-family:'Space Grotesk',sans-serif;font-size:13px;">
-          ${hasData
-            ? `<span style="color:${pctColor};font-weight:600;">${pctile}th percentile</span><span style="color:#6e6e78;"> \u00b7 ${lift.mult}\u00d7 BW</span>`
-            : `<span style="color:#6e6e78;">No data yet</span>`}
-        </div>
-      </div>
+      <div style="width:56px;font-family:'Space Grotesk',sans-serif;font-size:12px;color:#8e8e98;text-align:right;flex-shrink:0;">${weightStr}<span style="font-size:10px;color:#6e6e78;"> lbs</span></div>
     </div>`;
-    rowIdx++;
   }
 
   container.innerHTML = html;
 }
-
-// Toggle percentile detail on strength row tap
-let _activeStrRow = null;
-function toggleStrPctile(id) {
-  const el = document.getElementById(id);
-  if (!el) return;
-  if (_activeStrRow && _activeStrRow !== id) {
-    const prev = document.getElementById(_activeStrRow);
-    if (prev) { prev.style.maxHeight = '0'; prev.style.opacity = '0'; }
-  }
-  const isOpen = el.style.maxHeight !== '0px' && el.style.maxHeight !== '0' && el.style.maxHeight !== '';
-  if (isOpen) {
-    el.style.maxHeight = '0'; el.style.opacity = '0';
-    _activeStrRow = null;
-  } else {
-    el.style.maxHeight = '40px'; el.style.opacity = '1';
-    _activeStrRow = id;
-  }
-}
-
-// Click outside strength rows to dismiss
-document.addEventListener('click', function(e) {
-  if (_activeStrRow && !e.target.closest('#strength-detail')) {
-    const prev = document.getElementById(_activeStrRow);
-    if (prev) { prev.style.maxHeight = '0'; prev.style.opacity = '0'; }
-    _activeStrRow = null;
-  }
-});
 
 // ============================================================
 // WEIGHT INPUT
@@ -2746,8 +2804,8 @@ function saveWeight() {
   const input = document.getElementById('weight-input');
   const val = parseFloat(input.value);
   if (isNaN(val) || val < 50 || val > 500) {
-    input.style.borderColor = 'var(--danger)';
-    setTimeout(() => { input.style.borderColor = 'var(--border)'; }, 1500);
+    input.style.borderColor = '#f87171';
+    setTimeout(() => { input.style.borderColor = '#2a2a2e'; }, 1500);
     return;
   }
   const today = new Date().toISOString().split('T')[0];
@@ -2841,25 +2899,25 @@ function estimateVO2Percentile(vo2, age) {
 }
 
 function getVO2Category(percentile) {
-  if (percentile >= 80) return { label: 'Excellent', color: 'var(--accent)' };
-  if (percentile >= 60) return { label: 'Good', color: 'var(--blue)' };
-  if (percentile >= 40) return { label: 'Fair', color: 'var(--warn)' };
-  if (percentile >= 20) return { label: 'Below Avg', color: 'var(--danger)' };
-  return { label: 'Low', color: 'var(--danger)' };
+  if (percentile >= 80) return { label: 'Excellent', color: '#4ade80' };
+  if (percentile >= 60) return { label: 'Good', color: '#60a5fa' };
+  if (percentile >= 40) return { label: 'Fair', color: '#fb923c' };
+  if (percentile >= 20) return { label: 'Below Avg', color: '#f87171' };
+  return { label: 'Low', color: '#f87171' };
 }
 
 function getRHRCategory(rhr) {
-  if (rhr < 60) return { label: 'Athletic', color: 'var(--accent)' };
-  if (rhr <= 70) return { label: 'Good', color: 'var(--blue)' };
-  if (rhr <= 80) return { label: 'Normal', color: 'var(--text-mid)' };
-  return { label: 'Elevated', color: 'var(--danger)' };
+  if (rhr < 60) return { label: 'Athletic', color: '#4ade80' };
+  if (rhr <= 70) return { label: 'Good', color: '#60a5fa' };
+  if (rhr <= 80) return { label: 'Normal', color: '#bcbcc4' };
+  return { label: 'Elevated', color: '#f87171' };
 }
 
 function getRecoveryCategory(recovery) {
-  if (recovery >= 30) return { label: 'Excellent', color: 'var(--accent)' };
-  if (recovery >= 20) return { label: 'Good', color: 'var(--blue)' };
-  if (recovery >= 12) return { label: 'Normal', color: 'var(--text-mid)' };
-  return { label: 'Low', color: 'var(--danger)' };
+  if (recovery >= 30) return { label: 'Excellent', color: '#4ade80' };
+  if (recovery >= 20) return { label: 'Good', color: '#60a5fa' };
+  if (recovery >= 12) return { label: 'Normal', color: '#bcbcc4' };
+  return { label: 'Low', color: '#f87171' };
 }
 
 // ============================================================
@@ -2878,7 +2936,7 @@ function renderHealthVitals() {
   if (healthData.updated) {
     const hrs = Math.round((Date.now() - new Date(healthData.updated).getTime()) / (1000 * 60 * 60));
     syncEl.textContent = hrs <= 1 ? 'just now' : `${hrs}h ago`;
-    syncEl.style.color = healthStatus === 'ok' ? 'var(--accent)' : 'var(--warn)';
+    syncEl.style.color = healthStatus === 'ok' ? '#4ade80' : '#fb923c';
   }
 
   // Cardio Fitness Score (VO2 Max)
@@ -2886,7 +2944,7 @@ function renderHealthVitals() {
   if (vo2 && vo2 > 0) {
     const pctile = estimateVO2Percentile(vo2, PROFILE.age);
     const cat = getVO2Category(pctile);
-    const barPct = Math.min(Math.max((pctile / 100) * 100, 3), 97);
+    const barPct = Math.min(Math.max(pctile, 3), 97);
 
     document.getElementById('cardio-score-value').textContent = vo2.toFixed(1);
     const labelEl = document.getElementById('cardio-score-label');
@@ -2932,7 +2990,7 @@ function renderHealthVitals() {
   const steps = healthData.steps;
   if (steps && steps > 0) {
     const stepsK = steps >= 1000 ? (steps / 1000).toFixed(1) + 'k' : Math.round(steps);
-    const stepsColor = steps >= 10000 ? 'var(--accent)' : steps >= 7000 ? 'var(--blue)' : 'var(--text-mid)';
+    const stepsColor = steps >= 10000 ? '#4ade80' : steps >= 7000 ? '#60a5fa' : '#bcbcc4';
     html += `<div class="vital-cell">
       <div class="vital-label">Steps/Day</div>
       <div class="vital-value">${stepsK}</div>
@@ -2953,7 +3011,7 @@ function renderHealthVitals() {
   // Walking HR
   const whr = healthData.walking_heart_rate_avg;
   if (whr && whr > 0) {
-    const whrColor = whr < 100 ? 'var(--accent)' : whr <= 110 ? 'var(--text-mid)' : 'var(--warn)';
+    const whrColor = whr < 100 ? '#4ade80' : whr <= 110 ? '#bcbcc4' : '#fb923c';
     html += `<div class="vital-cell">
       <div class="vital-label">Walking HR</div>
       <div class="vital-value">${Math.round(whr)}<span class="vital-unit">bpm</span></div>
@@ -2993,7 +3051,17 @@ function updateLoading(text) {
 }
 
 function showError(msg) {
-  document.getElementById('error-area').innerHTML = `<div class="error-msg">${msg}</div>`;
+  const tabs = document.querySelector('.tabs');
+  // Remove any existing error
+  const existing = document.getElementById('inline-error');
+  if (existing) existing.remove();
+  // Insert error after tabs
+  const errDiv = document.createElement('div');
+  errDiv.id = 'inline-error';
+  errDiv.className = 'error-msg';
+  errDiv.innerHTML = msg;
+  errDiv.style.margin = '0 0 14px 0';
+  tabs.insertAdjacentElement('afterend', errDiv);
 }
 
 // Render dashboard from workouts data (shared by cache + fresh load)
@@ -3018,7 +3086,7 @@ function renderDashboard(workouts) {
   const syncColor = (hevyStatus === 'ok' && healthStatus === 'ok') ? '#4ade80'
     : (hevyStatus === 'error' || healthStatus === 'missing') ? '#8e8e98' : '#fb923c';
   document.getElementById('last-updated').innerHTML =
-    `v1.4 \u00b7 ${now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })} <span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${syncColor};margin-left:5px;vertical-align:middle;position:relative;top:-1px;"></span>`;
+    `v1.5 \u00b7 ${now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })} <span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${syncColor};margin-left:5px;vertical-align:middle;position:relative;top:-1px;"></span>`;
 
   renderConstraintChips();
   renderTimedSession(recs);
@@ -3098,4 +3166,4 @@ loadDashboard();
 </script>
 
 </body>
-</html> 
+</html>
