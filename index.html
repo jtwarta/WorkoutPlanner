@@ -1420,20 +1420,20 @@ function getMergedWeightData() {
 }
 
 // ============================================================
-// BODY MEASUREMENTS SYSTEM (v1.7 â€” Phases 2-4)
+// BODY MEASUREMENTS SYSTEM (v1.7 — Phases 2-4)
 // ============================================================
 // SCIENTIFIC FOUNDATION
 // Pillar 6: Anthropometric Proportions
-// Source: McRobert (2005) "Build Muscle, Lose Fat, Look Great" â€” ideal
+// Source: McRobert (2005) "Build Muscle, Lose Fat, Look Great" — ideal
 //   proportional targets for natural lifters based on wrist/ankle bone structure
-// Source: Butt (2010) "Your Muscular Potential" â€” circumference-based
+// Source: Butt (2010) "Your Muscular Potential" — circumference-based
 //   proportions correlated with lean mass development
-// Source: Katch & McArdle (1983) â€” limb girth norms for athletic males
+// Source: Katch & McArdle (1983) — limb girth norms for athletic males
 //
 // Target ratio philosophy:
-// - Neck â‰ˆ Calf circumference (classic proportion)
-// - Forearm â‰ˆ 0.80Ã— Bicep circumference (flexed)
-// - Waist < 0.45Ã— Height (health marker â€” WHO guideline)
+// - Neck ≈ Calf circumference (classic proportion)
+// - Forearm ≈ 0.80× Bicep circumference (flexed)
+// - Waist < 0.45× Height (health marker — WHO guideline)
 // - Chest circumference tracked for development trend
 
 const MEASUREMENTS_KEY = 'bodyMeasurements_v1';
@@ -1448,39 +1448,39 @@ const MEASUREMENT_FIELDS = [
   { key: 'calf_in',    label: 'Calf',     unit: 'in', placeholder: '15.0' },
 ];
 
-// ---- Phase 3+4: Proportion targets mapping measurements â†’ muscle priority ----
+// ---- Phase 3+4: Proportion targets mapping measurements → muscle priority ----
 // Each rule: if measurement ratio deviates from target, boost that muscle's score
 // deficit > 0 means the muscle needs MORE work
 const PROPORTION_RULES = [
   {
-    // Neck should â‰ˆ calf circumference
+    // Neck should ≈ calf circumference
     muscle: 'neck',
     requires: ['neck_in', 'calf_in'],
     targetRatio: 1.0, // neck / calf
     compute: (m) => m.neck_in / m.calf_in,
-    label: 'Neck Ã· Calf',
+    label: 'Neck ÷ Calf',
   },
   {
-    // Forearm should be â‰ˆ 80% of bicep
+    // Forearm should be ≈ 80% of bicep
     muscle: 'forearms',
     requires: ['forearm_in', 'bicep_in'],
     targetRatio: 0.80,
     compute: (m) => m.forearm_in / m.bicep_in,
-    label: 'Forearm Ã· Bicep',
+    label: 'Forearm ÷ Bicep',
   },
   {
-    // Bicep growth tracking â€” compare to wrist-based genetic potential
-    // Simplified: bicep should be â‰ˆ 2.5Ã— wrist, but we don't have wrist.
-    // Instead use bicep Ã· forearm â€” target 1.25 (inverse of forearm rule)
+    // Bicep growth tracking — compare to wrist-based genetic potential
+    // Simplified: bicep should be ≈ 2.5× wrist, but we don't have wrist.
+    // Instead use bicep ÷ forearm — target 1.25 (inverse of forearm rule)
     muscle: 'biceps',
     requires: ['bicep_in', 'forearm_in'],
     targetRatio: 1.25,
     compute: (m) => m.bicep_in / m.forearm_in,
-    label: 'Bicep Ã· Forearm',
+    label: 'Bicep ÷ Forearm',
   },
   {
-    // Waist health â€” smaller is better; deficit if waist is too large
-    // WHO: waist < 0.45 Ã— height. For 5'10 (70"), target < 31.5"
+    // Waist health — smaller is better; deficit if waist is too large
+    // WHO: waist < 0.45 × height. For 5'10 (70"), target < 31.5"
     // We use a fixed target since we have height in profile
     muscle: 'core',
     requires: ['waist_in'],
@@ -1491,24 +1491,24 @@ const PROPORTION_RULES = [
       // Return a "score" where < 1.0 means good, > 1.0 means over target
       return m.waist_in / targetMax;
     },
-    label: 'Waist Ã· Target',
+    label: 'Waist ÷ Target',
   },
   {
-    // Calf should â‰ˆ neck circumference
+    // Calf should ≈ neck circumference
     muscle: 'calves',
     requires: ['calf_in', 'neck_in'],
     targetRatio: 1.0,
     compute: (m) => m.calf_in / m.neck_in,
-    label: 'Calf Ã· Neck',
+    label: 'Calf ÷ Neck',
   },
   {
-    // Chest development â€” tracked as trend; compare to waist for V-taper
-    // Target chest:waist ratio â‰ˆ 1.3 for aesthetic V-taper
+    // Chest development — tracked as trend; compare to waist for V-taper
+    // Target chest:waist ratio ≈ 1.3 for aesthetic V-taper
     muscle: 'chest',
     requires: ['chest_in', 'waist_in'],
     targetRatio: 1.30,
     compute: (m) => m.chest_in / m.waist_in,
-    label: 'Chest Ã· Waist',
+    label: 'Chest ÷ Waist',
   },
 ];
 
@@ -1529,7 +1529,7 @@ function saveMeasurementEntry(entry) {
 function getLatestMeasurements() {
   const entries = getStoredMeasurements();
   if (entries.length === 0) return null;
-  // Merge all entries â€” latest value per field wins
+  // Merge all entries — latest value per field wins
   const latest = {};
   const dates = {};
   // Sort chronologically so later entries overwrite
@@ -1944,10 +1944,10 @@ const STRENGTH_INDEX_LIFTS = {
 // Source 2: Seiler (2010) "What is Best Practice for Training Intensity and Duration
 //   Distribution in Endurance Athletes?" - polarized 80/20 model
 // Source 3: Tanaka et al. (2001) "Age-predicted maximal heart rate revisited"
-//   - HRmax = 208 - 0.7 Ãƒâ€” age (more accurate than 220-age)
+//   - HRmax = 208 - 0.7 × age (more accurate than 220-age)
 // Source 4: Karvonen (1957) "Heart Rate Reserve" method for HR zones
-//   - Target HR = ((HRmax - HRrest) Ãƒâ€” %intensity) + HRrest
-// Source 5: StÃƒÂ¶ggl & Sperlich (2014) "Polarized training has greater impact on key
+//   - Target HR = ((HRmax - HRrest) × %intensity) + HRrest
+// Source 5: Stöggl & Sperlich (2014) "Polarized training has greater impact on key
 //   endurance variables than threshold, high-intensity, or high-volume training"
 
 // HR Zone calculations
@@ -2290,7 +2290,7 @@ function generateRecommendations(muscleStats) {
   const imbalanceW = hasProportions ? 0.25 : 0.30;
 
   for (const [key, stat] of Object.entries(muscleStats)) {
-    // Recency uses PRIMARY training date â€” secondary stimulus (e.g. RDLs for back)
+    // Recency uses PRIMARY training date — secondary stimulus (e.g. RDLs for back)
     // doesn't reset the clock. This prevents back from being deprioritized when
     // only indirect work has been done recently.
     const recencyScore = Math.min(stat.daysSincePrimary / stat.idealFreqDays, 3);
@@ -2321,7 +2321,7 @@ function generateRecommendations(muscleStats) {
     if (stat.daysSincePrimary === Infinity && stat.daysSinceAny === Infinity) {
       explainer = `No ${stat.name.toLowerCase()} training found in your history. This muscle group needs attention to build a balanced physique.`;
     } else if (stat.daysSincePrimary === Infinity) {
-      explainer = `No direct ${stat.name.toLowerCase()} work found â€” only indirect stimulus (${stat.daysSinceAny}d ago). Add dedicated exercises to develop this muscle group.`;
+      explainer = `No direct ${stat.name.toLowerCase()} work found — only indirect stimulus (${stat.daysSinceAny}d ago). Add dedicated exercises to develop this muscle group.`;
     } else {
       const parts = [];
       if (stat.daysSincePrimary >= stat.idealFreqDays * 2) {
@@ -2504,7 +2504,7 @@ function buildTimedSession(recs, prefs) {
 // ============================================================
 // RENDERING
 // ============================================================
-// renderRecommendations removed in v1.7 â€” replaced by renderTimedSession
+// renderRecommendations removed in v1.7 — replaced by renderTimedSession
 
 // B2: Sort mode state for Today tab — 'urgency' (default) or 'anatomy'
 let todaySortMode = 'urgency';
@@ -3298,7 +3298,7 @@ function renderProportionsDisplay() {
     const vals = rule.requires.map(k => {
       const f = MEASUREMENT_FIELDS.find(mf => mf.key === k);
       return `${f ? f.label : k}: ${latest[k].toFixed(1)}"`;
-    }).join(' Â· ');
+    }).join(' · ');
 
     html += `<div style="padding:8px 0;border-bottom:1px solid #1a1a1e;">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
@@ -3308,7 +3308,7 @@ function renderProportionsDisplay() {
       <div style="height:4px;border-radius:2px;background:#222226;overflow:hidden;">
         <div style="height:100%;width:${barPct}%;border-radius:2px;background:${statusColor};transition:width 0.4s ease;"></div>
       </div>
-      <div style="font-size:11px;font-family:'Space Grotesk',sans-serif;color:#6e6e78;margin-top:3px;">${rule.label}: ${actual.toFixed(2)} (target ${target.toFixed(2)}) Â· ${vals}</div>
+      <div style="font-size:11px;font-family:'Space Grotesk',sans-serif;color:#6e6e78;margin-top:3px;">${rule.label}: ${actual.toFixed(2)} (target ${target.toFixed(2)}) · ${vals}</div>
     </div>`;
   }
 
