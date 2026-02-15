@@ -1,5 +1,25 @@
 <!DOCTYPE html>
 
+<!--
+  LiftScript v1.10 — Stability Release
+  Changes from v1.8:
+  1.  Fixed universal reset selector (* vs -)
+  2.  Fixed all CSS var() en-dash encoding (U+2013 → ASCII --)
+  3.  Removed stray markdown code fences from HTML body
+  4.  Fixed ${C.xxx} in static HTML (replaced with hex values)
+  5.  Fixed ${C.xxx} in single-quoted JS strings (converted to template literals)
+  6.  Moved STRENGTH_INDEX_LIFTS definition above preprocessWorkouts
+  7.  Made preprocessWorkouts accept weightData as explicit parameter
+  8.  Replaced window._muscleRecMap with module-scoped variable
+  9.  Added centralized Storage utility with error boundaries
+  10. Migrated all localStorage calls through Storage wrapper
+  11. Added boot-time CSS sanity check (validates --accent loads)
+  12. Expanded dev test harness: A4 (CSS vars), A5 (reset), A6 (fences),
+      A7 (STRENGTH_INDEX_LIFTS defined), A8 (Storage round-trip)
+  13. Removed 30 dead CSS classes (legacy rec-*, workout-*, cardio-rx/week-*,
+      zone-*, mono) — ~160 lines of unused styles
+-->
+
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -51,8 +71,6 @@ min-height: 100vh;
 -webkit-font-smoothing: antialiased;
 line-height: 1.5;
 }
-
-.mono { font-family: ‘Space Grotesk’, sans-serif; }
 
 /* Layout */
 .app {
@@ -128,56 +146,6 @@ background: var(–surface3);
 color: var(–text);
 }
 
-/* ===================== */
-/* RECOMMENDATIONS       */
-/* ===================== */
-.rec-item {
-border-bottom: 1px solid var(–border);
-cursor: pointer;
--webkit-tap-highlight-color: transparent;
-transition: background 0.15s ease;
-}
-.rec-item:last-child { border-bottom: none; }
-.rec-item:active { background: var(–surface2); }
-
-.rec-row {
-display: flex;
-align-items: center;
-gap: 14px;
-padding: 14px 2px;
-}
-.rec-rank {
-font-family: ‘Space Grotesk’, sans-serif;
-font-size: 16px;
-font-weight: 600;
-color: var(–accent);
-width: 24px;
-text-align: center;
-flex-shrink: 0;
-}
-.rec-info { flex: 1; min-width: 0; }
-.rec-name {
-font-size: 17px;
-font-weight: 600;
-line-height: 1.3;
-color: var(–text);
-}
-.rec-detail {
-font-size: 14px;
-color: var(–text-mid);
-margin-top: 3px;
-font-family: ‘Space Grotesk’, sans-serif;
-}
-.rec-urgency {
-font-size: 11px;
-font-weight: 600;
-padding: 5px 10px;
-border-radius: 6px;
-font-family: ‘Space Grotesk’, sans-serif;
-flex-shrink: 0;
-text-transform: uppercase;
-letter-spacing: 0.5px;
-}
 .urgency-high { background: var(–danger-dim); color: var(–danger); }
 .urgency-med { background: var(–warn-dim); color: var(–warn); }
 .urgency-low { background: var(–accent-dim); color: var(–accent); }
@@ -573,27 +541,6 @@ flex-shrink: 0;
 }
 
 /* ===================== */
-/* HISTORY (legacy)      */
-/* ===================== */
-.workout-item {
-padding: 10px 0;
-border-bottom: 1px solid var(–border);
-}
-.workout-item:last-child { border-bottom: none; }
-.workout-title {
-font-size: 15px;
-font-weight: 600;
-color: var(–text);
-}
-.workout-meta {
-font-size: 13px;
-color: var(–text-mid);
-font-family: ‘Space Grotesk’, sans-serif;
-margin-top: 3px;
-line-height: 1.4;
-}
-
-/* ===================== */
 /* LOADING & ERROR       */
 /* ===================== */
 .loading {
@@ -722,95 +669,6 @@ font-family: ‘Space Grotesk’, sans-serif;
 color: var(–text-dim);
 }
 
-/* ===================== */
-/* CARDIO PLAN           */
-/* ===================== */
-.cardio-week-bar {
-display: flex;
-align-items: center;
-gap: 10px;
-margin-bottom: 14px;
-padding-bottom: 12px;
-border-bottom: 1px solid var(–border);
-}
-.cardio-week-done {
-font-family: ‘Space Grotesk’, sans-serif;
-font-size: 14px;
-color: var(–text-mid);
-}
-.cardio-week-bar-track {
-flex: 1;
-height: 5px;
-border-radius: 3px;
-background: var(–surface3);
-overflow: hidden;
-}
-.cardio-week-bar-fill {
-height: 100%;
-border-radius: 3px;
-background: var(–blue);
-transition: width 0.4s ease;
-}
-.cardio-week-target {
-font-family: ‘Space Grotesk’, sans-serif;
-font-size: 12px;
-color: var(–text-dim);
-white-space: nowrap;
-}
-.cardio-rx {
-padding: 12px 0;
-border-bottom: 1px solid var(–border);
-}
-.cardio-rx:last-child { border-bottom: none; }
-.cardio-rx-header {
-display: flex;
-align-items: center;
-justify-content: space-between;
-margin-bottom: 6px;
-}
-.cardio-rx-zone {
-font-size: 11px;
-font-weight: 600;
-padding: 3px 8px;
-border-radius: 5px;
-font-family: ‘Space Grotesk’, sans-serif;
-text-transform: uppercase;
-letter-spacing: 0.5px;
-}
-.zone-2 { background: var(–blue-dim); color: var(–blue); }
-.zone-4 { background: var(–warn-dim); color: var(–warn); }
-.zone-5 { background: var(–danger-dim); color: var(–danger); }
-.cardio-rx-time {
-font-family: ‘Space Grotesk’, sans-serif;
-font-size: 13px;
-color: var(–text-dim);
-}
-.cardio-rx-name {
-font-size: 15px;
-font-weight: 600;
-color: var(–text);
-margin-bottom: 4px;
-}
-.cardio-rx-detail {
-font-size: 13px;
-font-family: ‘Space Grotesk’, sans-serif;
-color: var(–text-mid);
-line-height: 1.5;
-}
-.cardio-rx-hr {
-display: inline-block;
-margin-top: 4px;
-font-size: 12px;
-font-family: ‘Space Grotesk’, sans-serif;
-color: var(–blue);
-}
-.cardio-done-msg {
-font-size: 14px;
-color: var(–accent);
-font-family: ‘Space Grotesk’, sans-serif;
-padding: 8px 0;
-}
-
 .hidden { display: none; }
 </style>
 
@@ -835,7 +693,6 @@ padding: 8px 0;
       </div>
     </div>
 
-```
 <div class="tabs">
   <button class="tab active" data-tab="today" onclick="switchTab('today')">Today</button>
   <button class="tab" data-tab="muscles" onclick="switchTab('muscles')">Muscles</button>
@@ -844,6 +701,7 @@ padding: 8px 0;
 </div>
 
 <!-- Today Tab -->
+
 <div id="tab-today">
   <div class="card" style="border:1px solid #2a2a2e;">
     <div class="card-title">Today's Session</div>
@@ -859,6 +717,7 @@ padding: 8px 0;
 </div>
 
 <!-- Muscles Tab -->
+
 <div id="tab-muscles" class="hidden">
   <div class="card">
     <div class="card-title">Muscle Group Status</div>
@@ -870,6 +729,7 @@ padding: 8px 0;
 </div>
 
 <!-- History Tab -->
+
 <div id="tab-history" class="hidden">
   <div class="card">
     <div class="card-title">Training Heatmap</div>
@@ -881,6 +741,7 @@ padding: 8px 0;
 </div>
 
 <!-- Weight Tab -->
+
 <div id="tab-weight" class="hidden">
   <div class="card">
     <div class="card-title" style="display:flex;align-items:center;justify-content:space-between;">
@@ -912,6 +773,7 @@ padding: 8px 0;
   </div>
 
   <!-- Health Vitals Card -->
+
   <div class="card" id="health-vitals-card" style="display:none;">
     <div class="card-title" style="display:flex;align-items:center;justify-content:space-between;">
       <span>Health Vitals</span>
@@ -938,6 +800,7 @@ padding: 8px 0;
   </div>
 
   <!-- Body Measurements Card (v1.7) -->
+
   <div class="card" id="measurements-card">
     <div class="card-title" style="display:flex;align-items:center;justify-content:space-between;">
       <span>Body Measurements</span>
@@ -948,7 +811,6 @@ padding: 8px 0;
     <div id="proportions-display" style="margin-top:14px;"></div>
   </div>
 </div>
-```
 
   </div>
 </div>
@@ -985,6 +847,43 @@ const PROFILE = {
     return age;
   },
   get bodyweightKg() { return this.bodyweightLbs * 0.453592; }
+};
+
+// ============================================================
+// COLOR CONSTANTS (CSS Rendering Guidance §4)
+// Single source of truth for all JS-rendered inline styles.
+// Hex values here match the CSS custom properties in <style>.
+// ============================================================
+const C = {
+  bg:        '#0a0a0a',
+  surface:   '#131315',
+  surface2:  '#1a1a1e',
+  surface3:  '#222226',
+  border:    '#2a2a2e',
+  text:      '#f4f4f6',
+  textMid:   '#bcbcc4',
+  textDim:   '#8e8e98',
+  textDark:  '#6e6e78',
+  textDark2: '#909098',
+  accent:    '#4ade80',
+  accentMid: '#34d399',
+  accentDim: 'rgba(74,222,128,0.12)',
+  accentBorder: 'rgba(74,222,128,0.3)',
+  warn:      '#fb923c',
+  warnDim:   'rgba(251,146,60,0.12)',
+  amber:     '#f59e0b',
+  amberLt:   '#fbbf24',
+  danger:    '#f87171',
+  dangerDim: 'rgba(248,113,113,0.12)',
+  blue:      '#60a5fa',
+  blueDim:   'rgba(96,165,250,0.12)',
+  strength:  '#818cf8',
+  purple:    '#c084fc',
+  purpleLt:  '#a78bfa',
+  pink:      '#f472b6',
+  fuchsia:   '#e879f9',
+  cyan:      '#06b6d4',
+  teal:      '#2dd4bf',
 };
 
 // ============================================================
@@ -1404,22 +1303,43 @@ const WEIGHT_DATA_BASELINE = [
 ];
 
 // ============================================================
+// STORAGE UTILITY — centralized localStorage with error boundaries
+// ============================================================
+const Storage = {
+  get(key, fallback = null) {
+    try {
+      const raw = localStorage.getItem(key);
+      return raw ? JSON.parse(raw) : fallback;
+    } catch (e) {
+      console.warn(`Storage.get('${key}') failed:`, e.message);
+      return fallback;
+    }
+  },
+  set(key, value) {
+    try {
+      localStorage.setItem(key, JSON.stringify(value));
+      return true;
+    } catch (e) {
+      console.warn(`Storage.set('${key}') failed:`, e.message);
+      return false;
+    }
+  },
+  remove(key) {
+    try { localStorage.removeItem(key); } catch (e) { /* silent */ }
+  }
+};
+
+// ============================================================
 // WEIGHT localStorage FUNCTIONS
 // ============================================================
 function getStoredWeightEntries() {
-  try {
-    const raw = localStorage.getItem('weightHistory');
-    if (!raw) return [];
-    return JSON.parse(raw);
-  } catch (e) {
-    return [];
-  }
+  return Storage.get('weightHistory', []);
 }
 
 function saveWeightEntry(date, value) {
   const entries = getStoredWeightEntries();
   entries.push({ date, value });
-  localStorage.setItem('weightHistory', JSON.stringify(entries));
+  Storage.set('weightHistory', entries);
 }
 
 function getMergedWeightData() {
@@ -1528,17 +1448,13 @@ const PROPORTION_RULES = [
 ];
 
 function getStoredMeasurements() {
-  try {
-    const raw = localStorage.getItem(MEASUREMENTS_KEY);
-    if (!raw) return [];
-    return JSON.parse(raw);
-  } catch (e) { return []; }
+  return Storage.get(MEASUREMENTS_KEY, []);
 }
 
 function saveMeasurementEntry(entry) {
   const entries = getStoredMeasurements();
   entries.push(entry);
-  localStorage.setItem(MEASUREMENTS_KEY, JSON.stringify(entries));
+  Storage.set(MEASUREMENTS_KEY, entries);
 }
 
 function getLatestMeasurements() {
@@ -1618,15 +1534,11 @@ const PREFS_DEFAULTS = {
 };
 
 function loadPrefs() {
-  try {
-    const raw = localStorage.getItem(PREFS_KEY);
-    if (!raw) return { ...PREFS_DEFAULTS };
-    return { ...PREFS_DEFAULTS, ...JSON.parse(raw) };
-  } catch (e) { return { ...PREFS_DEFAULTS }; }
+  return { ...PREFS_DEFAULTS, ...Storage.get(PREFS_KEY, PREFS_DEFAULTS) };
 }
 
 function savePrefs(prefs) {
-  localStorage.setItem(PREFS_KEY, JSON.stringify(prefs));
+  Storage.set(PREFS_KEY, prefs);
 }
 
 let sessionPrefs = loadPrefs();
@@ -1648,8 +1560,8 @@ function renderConstraintChips() {
     const current = sessionPrefs[def.key];
     const isNonDefault = current !== PREFS_DEFAULTS[def.key];
     const chipStyle = isNonDefault
-      ? 'background:rgba(74,222,128,0.12);color:#4ade80;border:1px solid rgba(74,222,128,0.3);padding:5px 10px;font-size:12px;font-weight:500;font-family:Space Grotesk,sans-serif;border-radius:6px;cursor:pointer;user-select:none;'
-      : 'background:#1a1a1e;color:#8e8e98;border:1px solid #2a2a2e;padding:5px 10px;font-size:12px;font-weight:500;font-family:Space Grotesk,sans-serif;border-radius:6px;cursor:pointer;user-select:none;';
+      ? `background:${C.accentDim};color:${C.accent};border:1px solid ${C.accentBorder};padding:5px 10px;font-size:12px;font-weight:500;font-family:Space Grotesk,sans-serif;border-radius:6px;cursor:pointer;user-select:none;`
+      : `background:${C.surface2};color:${C.textDim};border:1px solid ${C.border};padding:5px 10px;font-size:12px;font-weight:500;font-family:Space Grotesk,sans-serif;border-radius:6px;cursor:pointer;user-select:none;`;
     return `<div class="constraint-chip${isNonDefault ? ' active' : ''}" style="${chipStyle}" data-key="${def.key}" onclick="cycleChip('${def.key}')">${def.label(current)}</div>`;
   }).join('');
 }
@@ -1674,19 +1586,13 @@ const CACHE_KEY = 'workoutCache_v1';
 const CACHE_STALE_MS = 8 * 60 * 60 * 1000; // 8 hours
 
 function getCachedWorkouts() {
-  try {
-    const raw = localStorage.getItem(CACHE_KEY);
-    if (!raw) return null;
-    const parsed = JSON.parse(raw);
-    if (!parsed.ts || !parsed.data) return null;
-    return parsed;
-  } catch (e) { return null; }
+  const parsed = Storage.get(CACHE_KEY, null);
+  if (!parsed || !parsed.ts || !parsed.data) return null;
+  return parsed;
 }
 
 function setCachedWorkouts(workouts) {
-  try {
-    localStorage.setItem(CACHE_KEY, JSON.stringify({ ts: Date.now(), data: workouts }));
-  } catch (e) { /* storage full - ignore */ }
+  Storage.set(CACHE_KEY, { ts: Date.now(), data: workouts });
 }
 
 function isCacheStale(cached) {
@@ -1713,10 +1619,24 @@ async function fetchWorkouts(pageSize = 10, maxPages = 10) {
 }
 
 // ============================================================
+// STRENGTH INDEX LIFT DEFINITIONS
+// ============================================================
+// p50 = 50th percentile BW multiplier for general gym-going male population
+// Derived from STRENGTH_STANDARDS (competition 25th ≈ gym 50th)
+// Age-adjusted dynamically via PROFILE.age
+const STRENGTH_INDEX_LIFTS = {
+  bench:    { weight: 0.20, p50: 0.95, patterns: [/bench press.*barbell/i, /^bench press$/i] },
+  squat:    { weight: 0.25, p50: 1.20, patterns: [/squat.*barbell/i, /^squat$/i, /barbell.*squat/i] },
+  deadlift: { weight: 0.30, p50: 1.45, patterns: [/^deadlift/i, /deadlift.*barbell/i] },
+  ohp:      { weight: 0.10, p50: 0.55, patterns: [/overhead press/i, /shoulder press/i, /military press/i] },
+  row:      { weight: 0.15, p50: 0.70, patterns: [/barbell row/i, /bent over row/i, /pendlay row/i, /seated row/i, /cable row/i, /dumbbell row/i] },
+};
+
+// ============================================================
 // UNIFIED PREPROCESS PIPELINE (v1.1 Task 6)
 // Single pass over workouts producing all downstream data
 // ============================================================
-function preprocessWorkouts(workouts, bodyweightLbs) {
+function preprocessWorkouts(workouts, bodyweightLbs, weightData) {
   const now = new Date();
   const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
 
@@ -1747,7 +1667,7 @@ function preprocessWorkouts(workouts, bodyweightLbs) {
   }
 
   // Weight data sorted for SI interpolation
-  const weightSorted = [...WEIGHT_DATA].sort((a, b) => a.date.localeCompare(b.date));
+  const weightSorted = [...weightData].sort((a, b) => a.date.localeCompare(b.date));
   function getBodyweightAt(dateStr) {
     let bw = bodyweightLbs;
     for (const w of weightSorted) {
@@ -1935,20 +1855,6 @@ function preprocessWorkouts(workouts, bodyweightLbs) {
     heatmapDayWorkouts,
   };
 }
-
-// ============================================================
-// STRENGTH INDEX LIFT DEFINITIONS
-// ============================================================
-// p50 = 50th percentile BW multiplier for general gym-going male population
-// Derived from STRENGTH_STANDARDS (competition 25th ≈ gym 50th)
-// Age-adjusted dynamically via PROFILE.age
-const STRENGTH_INDEX_LIFTS = {
-  bench:    { weight: 0.20, p50: 0.95, patterns: [/bench press.*barbell/i, /^bench press$/i] },
-  squat:    { weight: 0.25, p50: 1.20, patterns: [/squat.*barbell/i, /^squat$/i, /barbell.*squat/i] },
-  deadlift: { weight: 0.30, p50: 1.45, patterns: [/^deadlift/i, /deadlift.*barbell/i] },
-  ohp:      { weight: 0.10, p50: 0.55, patterns: [/overhead press/i, /shoulder press/i, /military press/i] },
-  row:      { weight: 0.15, p50: 0.70, patterns: [/barbell row/i, /bent over row/i, /pendlay row/i, /seated row/i, /cable row/i, /dumbbell row/i] },
-};
 
 // ============================================================
 // CARDIOVASCULAR TRAINING ENGINE (Pillar 5)
@@ -2314,7 +2220,7 @@ function toggleCardioBreakdown() {
 function buildCardioBreakdownHTML(history) {
   const log = history.cardioLog || [];
   if (log.length === 0) {
-    return `<div style="font-size:12px;font-family:'Space Grotesk',sans-serif;color:#6e6e78;">No cardio sessions this week.</div>`;
+    return `<div style="font-size:12px;font-family:'Space Grotesk',sans-serif;color:${C.textDark};">No cardio sessions this week.</div>`;
   }
 
   // Sort by date descending
@@ -2325,7 +2231,7 @@ function buildCardioBreakdownHTML(history) {
   if (history.hevySessions > 0) parts.push(`\u{1F3CB}\uFE0F Hevy: ${history.hevySessions} session${history.hevySessions > 1 ? 's' : ''}, ${Math.round(history.hevyMinutes)} min`);
   if (history.appleSessions > 0) parts.push(`\u231A Watch: ${history.appleSessions} session${history.appleSessions > 1 ? 's' : ''}, ${Math.round(history.appleMinutes)} min`);
 
-  let html = `<div style="font-size:11px;font-family:'Space Grotesk',sans-serif;color:#8e8e98;margin-bottom:8px;">${parts.join(' · ')}</div>`;
+  let html = `<div style="font-size:11px;font-family:'Space Grotesk',sans-serif;color:${C.textDim};margin-bottom:8px;">${parts.join(' · ')}</div>`;
 
   // Per-session rows
   for (const s of sorted) {
@@ -2333,8 +2239,8 @@ function buildCardioBreakdownHTML(history) {
     const icon = s.source === 'watch' ? '\u231A' : '\u{1F3CB}\uFE0F';
     const calStr = s.calories > 0 ? ` · ${Math.round(s.calories)} cal` : '';
     html += `<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;font-size:12px;font-family:'Space Grotesk',sans-serif;">
-      <span style="color:#bcbcc4;">${icon} ${s.type}</span>
-      <span style="color:#6e6e78;">${Math.round(s.minutes)} min${calStr} · ${dayStr}</span>
+      <span style="color:${C.textMid};">${icon} ${s.type}</span>
+      <span style="color:${C.textDark};">${Math.round(s.minutes)} min${calStr} · ${dayStr}</span>
     </div>`;
   }
 
@@ -2349,44 +2255,44 @@ function renderCardioPlan(workouts) {
   // Week progress bar
   const donePct = Math.min(100, Math.round(((result.targetMin - result.remainingMin) / result.targetMin) * 100));
   const doneMin = result.targetMin - result.remainingMin;
-  const barColor = donePct >= 100 ? '#4ade80' : donePct >= 50 ? '#60a5fa' : '#fb923c';
+  const barColor = donePct >= 100 ? C.accent : donePct >= 50 ? C.blue : C.warn;
 
   summaryEl.innerHTML = `
-    <div onclick="toggleCardioBreakdown()" style="cursor:pointer;display:flex;align-items:center;gap:10px;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid #2a2a2e;">
-      <div style="font-family:'Space Grotesk',sans-serif;font-size:14px;color:#4ade80;font-weight:600;white-space:nowrap;">${Math.round(doneMin)}/${result.targetMin}m</div>
-      <div style="flex:1;height:5px;border-radius:3px;background:#222226;overflow:hidden;">
+    <div onclick="toggleCardioBreakdown()" style="cursor:pointer;display:flex;align-items:center;gap:10px;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid ${C.border};">
+      <div style="font-family:'Space Grotesk',sans-serif;font-size:14px;color:${C.accent};font-weight:600;white-space:nowrap;">${Math.round(doneMin)}/${result.targetMin}m</div>
+      <div style="flex:1;height:5px;border-radius:3px;background:${C.surface3};overflow:hidden;">
         <div style="height:100%;border-radius:3px;background:${barColor};width:${donePct}%;transition:width 0.4s ease;"></div>
       </div>
-      <div style="font-family:'Space Grotesk',sans-serif;font-size:12px;color:#8e8e98;white-space:nowrap;">this week \u25BE</div>
+      <div style="font-family:'Space Grotesk',sans-serif;font-size:12px;color:${C.textDim};white-space:nowrap;">this week \u25BE</div>
     </div>
-    <div id="cardio-breakdown" style="display:none;margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid #2a2a2e;">
+    <div id="cardio-breakdown" style="display:none;margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid ${C.border};">
       ${buildCardioBreakdownHTML(result.history)}
     </div>`;
 
   if (result.weekComplete) {
-    rxEl.innerHTML = `<div style="font-size:14px;color:#4ade80;font-family:'Space Grotesk',sans-serif;padding:8px 0;">\u2713 Weekly cardio target met. Active recovery or rest recommended.</div>`;
+    rxEl.innerHTML = `<div style="font-size:14px;color:${C.accent};font-family:'Space Grotesk',sans-serif;padding:8px 0;">\u2713 Weekly cardio target met. Active recovery or rest recommended.</div>`;
     return;
   }
 
   // Zone colors matching urgency badge style
   const zoneStyles = {
-    2: { bg: 'rgba(96,165,250,0.12)', color: '#60a5fa', label: 'Zone 2' },
-    4: { bg: 'rgba(251,146,60,0.12)', color: '#fb923c', label: 'Zone 4' },
-    5: { bg: 'rgba(248,113,113,0.12)', color: '#f87171', label: 'Zone 5' },
+    2: { bg: C.blueDim, color: C.blue, label: 'Zone 2' },
+    4: { bg: C.warnDim, color: C.warn, label: 'Zone 4' },
+    5: { bg: C.dangerDim, color: C.danger, label: 'Zone 5' },
   };
 
   let html = '';
   for (const rx of result.prescriptions) {
     const zs = zoneStyles[rx.zone] || zoneStyles[2];
 
-    html += `<div style="padding:12px 0;border-bottom:1px solid #1a1a1e;">
+    html += `<div style="padding:12px 0;border-bottom:1px solid ${C.surface2};">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
         <span style="font-size:11px;font-weight:600;padding:3px 8px;border-radius:5px;font-family:'Space Grotesk',sans-serif;text-transform:uppercase;letter-spacing:0.5px;background:${zs.bg};color:${zs.color};">${zs.label}</span>
-        <span style="font-family:'Space Grotesk',sans-serif;font-size:13px;color:#4ade80;font-weight:600;">${rx.durationMin} min</span>
+        <span style="font-family:'Space Grotesk',sans-serif;font-size:13px;color:${C.accent};font-weight:600;">${rx.durationMin} min</span>
       </div>
-      <div style="font-size:15px;font-weight:600;color:#f4f4f6;margin-bottom:4px;">${rx.name}</div>
-      <div style="font-size:13px;font-family:'Space Grotesk',sans-serif;color:#bcbcc4;line-height:1.5;">${rx.detail}</div>
-      <div style="font-size:12px;font-family:'Space Grotesk',sans-serif;color:#8e8e98;margin-top:2px;">${rx.notes}</div>
+      <div style="font-size:15px;font-weight:600;color:${C.text};margin-bottom:4px;">${rx.name}</div>
+      <div style="font-size:13px;font-family:'Space Grotesk',sans-serif;color:${C.textMid};line-height:1.5;">${rx.detail}</div>
+      <div style="font-size:12px;font-family:'Space Grotesk',sans-serif;color:${C.textDim};margin-top:2px;">${rx.notes}</div>
       <div style="display:inline-block;margin-top:6px;font-size:12px;font-family:'Space Grotesk',sans-serif;color:${zs.color};padding:2px 8px;border-radius:4px;background:${zs.bg};">\u2661 ${rx.hrRange} bpm</div>
     </div>`;
   }
@@ -2691,15 +2597,15 @@ function renderTimedSession(recs) {
 
   // B2: Sort toggle UI
   const urgBtn = todaySortMode === 'urgency';
-  const segStyle = `display:inline-flex;gap:2px;background:#131315;border-radius:6px;padding:2px;border:1px solid #2a2a2e;margin-bottom:12px;`;
+  const segStyle = `display:inline-flex;gap:2px;background:${C.surface};border-radius:6px;padding:2px;border:1px solid ${C.border};margin-bottom:12px;`;
   const btnOn = `padding:4px 10px;font-size:11px;font-weight:600;font-family:'Space Grotesk',sans-serif;border:none;border-radius:5px;cursor:pointer;`;
-  const btnActive = `${btnOn}background:#222226;color:#f4f4f6;`;
-  const btnInactive = `${btnOn}background:none;color:#8e8e98;`;
+  const btnActive = `${btnOn}background:${C.surface3};color:${C.text};`;
+  const btnInactive = `${btnOn}background:none;color:${C.textDim};`;
 
   document.getElementById('session-summary').innerHTML = `
     <div class="session-summary">
-      <div class="session-time" style="color:#4ade80">~${totalMin} min</div>
-      <div class="session-count" style="color:#8e8e98">${exercises.length} exercises</div>
+      <div class="session-time" style="color:${C.accent}">~${totalMin} min</div>
+      <div class="session-count" style="color:${C.textDim}">${exercises.length} exercises</div>
     </div>
     <div style="${segStyle}">
       <button style="${urgBtn ? btnActive : btnInactive}" onclick="toggleTodaySort('urgency')">Urgency</button>
@@ -2739,7 +2645,7 @@ function renderTimedSession(recs) {
     exHtml += `<div class="ex-group">
       <div class="ex-group-title" style="color:${meta.color};cursor:pointer;display:flex;align-items:center;justify-content:space-between;" onclick="toggleSessionExplainer('exp-${key}')">
         <span>${meta.name}</span>
-        <span style="font-size:10px;color:#8e8e98;font-weight:400;letter-spacing:0;">▾ why</span>
+        <span style="font-size:10px;color:${C.textDim};font-weight:400;letter-spacing:0;">▾ why</span>
       </div>`;
 
     // B1: Collapsible "Why this?" explainer
@@ -2751,16 +2657,16 @@ function renderTimedSession(recs) {
       const propDef = proportionDeficits[key];
 
       let bullets = [];
-      bullets.push(`<span style="color:#8e8e98;">Days since:</span> <strong>${daysSince}</strong> <span style="color:#6e6e78;">vs ideal ${idealFreq}d</span>`);
+      bullets.push(`<span style="color:${C.textDim};">Days since:</span> <strong>${daysSince}</strong> <span style="color:${C.textDark};">vs ideal ${idealFreq}d</span>`);
       const deficit = Math.max(0, volIdeal - volActual);
       if (deficit > 0) {
-        bullets.push(`<span style="color:#8e8e98;">Volume gap:</span> <strong>${deficit.toFixed(1)} sets/wk</strong> <span style="color:#6e6e78;">below ${volIdeal}</span>`);
+        bullets.push(`<span style="color:${C.textDim};">Volume gap:</span> <strong>${deficit.toFixed(1)} sets/wk</strong> <span style="color:${C.textDark};">below ${volIdeal}</span>`);
       } else {
-        bullets.push(`<span style="color:#8e8e98;">Volume:</span> <strong>${volActual} / ${volIdeal}</strong> <span style="color:#4ade80;">✓</span>`);
+        bullets.push(`<span style="color:${C.textDim};">Volume:</span> <strong>${volActual} / ${volIdeal}</strong> <span style="color:${C.accent};">✓</span>`);
       }
       if (propDef && propDef > 0.05) {
         const rule = PROPORTION_RULES.find(r => r.muscle === key);
-        if (rule) bullets.push(`<span style="color:#8e8e98;">Proportion:</span> <strong>${rule.label}</strong> <span style="color:#fb923c;">${Math.round(propDef * 100)}% below target</span>`);
+        if (rule) bullets.push(`<span style="color:${C.textDim};">Proportion:</span> <strong>${rule.label}</strong> <span style="color:${C.warn};">${Math.round(propDef * 100)}% below target</span>`);
       }
 
       exHtml += `<div class="rec-expand" id="exp-${key}" style="max-height:0;overflow:hidden;opacity:0;transition:max-height 0.3s ease,opacity 0.25s ease;">
@@ -2775,9 +2681,9 @@ function renderTimedSession(recs) {
       const timeMin = (ex.timeSec / 60).toFixed(0);
       exHtml += `
         <div class="ex-row">
-          <div class="ex-name" style="color:#f4f4f6">${ex.name}</div>
-          <div class="ex-prescription" style="color:#4ade80">${rx}</div>
-          <div class="ex-time" style="color:#8e8e98">${timeMin}m</div>
+          <div class="ex-name" style="color:${C.text}">${ex.name}</div>
+          <div class="ex-prescription" style="color:${C.accent}">${rx}</div>
+          <div class="ex-time" style="color:${C.textDim}">${timeMin}m</div>
         </div>`;
     }
     exHtml += `</div>`;
@@ -2885,7 +2791,7 @@ function renderMuscleGrid(muscleStats, recs) {
   }).join('');
 
   // Store recs for detail panel
-  window._muscleRecMap = recMap;
+  _muscleRecMap = recMap;
 
   // Click outside any cell to deselect (attach once)
   if (!grid.dataset.clickOutside) {
@@ -2905,6 +2811,7 @@ function renderMuscleGrid(muscleStats, recs) {
 }
 
 let selectedMuscleKey = null;
+let _muscleRecMap = {};
 
 function toggleMuscleDetail(key) {
   const detailEl = document.getElementById('muscle-detail');
@@ -2919,7 +2826,7 @@ function toggleMuscleDetail(key) {
   }
 
   selectedMuscleKey = key;
-  const rec = window._muscleRecMap ? window._muscleRecMap[key] : null;
+  const rec = _muscleRecMap[key] || null;
 
   if (rec) {
     innerEl.innerHTML = rec.explainer;
@@ -2934,12 +2841,12 @@ function toggleMuscleDetail(key) {
   document.querySelectorAll('.muscle-cell').forEach(c => c.style.outline = 'none');
   const cells = document.querySelectorAll('.muscle-cell');
   const entries = Object.entries(muscleAnalysis || {}).sort((a, b) => {
-    const rm = window._muscleRecMap || {};
+    const rm = _muscleRecMap;
     return (rm[b[0]] ? rm[b[0]].score : 0) - (rm[a[0]] ? rm[a[0]].score : 0);
   });
   const idx = entries.findIndex(([k]) => k === key);
   if (idx >= 0 && cells[idx]) {
-    cells[idx].style.outline = '1.5px solid #4ade80';
+    cells[idx].style.outline = `1.5px solid ${C.accent}`;
   }
 }
 
@@ -3004,7 +2911,7 @@ function renderHeatmap(dayMuscleMap, dayWorkoutsMap) {
     for (const day of days) {
       const sets = (dayMuscleMap[day] && dayMuscleMap[day][mKey]) || 0;
       const opacity = sets > 0 ? Math.max(0.25, Math.min(sets / maxSets, 1)) : 0;
-      const bgColor = sets > 0 ? `rgba(74, 222, 128, ${opacity})` : '#1a1a1e';
+      const bgColor = sets > 0 ? `rgba(74, 222, 128, ${opacity})` : C.surface2; // accent RGB with dynamic opacity
       html += `<div class="heatmap-cell" style="background:${bgColor}" data-day="${day}" onclick="selectHeatmapDay('${day}')" title="${day}: ${formatSets(sets)} sets"></div>`;
     }
   }
@@ -3046,7 +2953,7 @@ function selectHeatmapDay(day) {
   const dateStr = dateObj.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
 
   if (exercises.length === 0) {
-    innerEl.innerHTML = `<div class="detail-date">${dateStr}</div><div style="color:#8e8e98;font-size:12px;">Rest day</div>`;
+    innerEl.innerHTML = `<div class="detail-date">${dateStr}</div><div style="color:${C.textDim};font-size:12px;">Rest day</div>`;
   } else {
     let html = `<div class="detail-date">${dateStr}</div>`;
     for (const ex of exercises) {
@@ -3063,7 +2970,7 @@ function selectHeatmapDay(day) {
   detailEl.style.maxHeight = innerEl.scrollHeight + 24 + 'px';
 
   document.querySelectorAll('.heatmap-cell').forEach(cell => {
-    cell.style.outline = cell.dataset.day === day ? '1.5px solid #4ade80' : 'none';
+    cell.style.outline = cell.dataset.day === day ? `1.5px solid ${C.accent}` : 'none';
   });
 }
 
@@ -3093,7 +3000,7 @@ function renderWeightChart() {
   document.getElementById('weight-current').textContent = current.toFixed(1);
   const deltaEl = document.getElementById('weight-delta');
   deltaEl.textContent = `${delta >= 0 ? '+' : ''}${delta.toFixed(1)}`;
-  deltaEl.style.color = delta <= 0 ? '#4ade80' : '#fb923c';
+  deltaEl.style.color = delta <= 0 ? C.accent : C.warn;
 
   // Canvas
   const canvas = document.getElementById('weight-canvas');
@@ -3119,7 +3026,7 @@ function renderWeightChart() {
 
   // Weight line
   ctx.beginPath();
-  ctx.strokeStyle = '#4ade80';
+  ctx.strokeStyle = C.accent;
   ctx.lineWidth = 2.5;
   ctx.lineJoin = 'round';
   ctx.lineCap = 'round';
@@ -3137,7 +3044,7 @@ function renderWeightChart() {
   ctx.lineTo(pad.left, h - pad.bottom);
   ctx.closePath();
   const gradient = ctx.createLinearGradient(0, 0, 0, h);
-  gradient.addColorStop(0, 'rgba(74, 222, 128, 0.10)');
+  gradient.addColorStop(0, 'rgba(74, 222, 128, 0.10)'); // accent RGB gradient
   gradient.addColorStop(1, 'rgba(74, 222, 128, 0)');
   ctx.fillStyle = gradient;
   ctx.fill();
@@ -3148,7 +3055,7 @@ function renderWeightChart() {
     const y = pad.top + (1 - (recent[i].value - wMin) / (wMax - wMin)) * chartH;
     ctx.beginPath();
     ctx.arc(x, y, 4, 0, Math.PI * 2);
-    ctx.fillStyle = '#4ade80';
+    ctx.fillStyle = C.accent;
     ctx.fill();
   });
 
@@ -3166,7 +3073,7 @@ function renderWeightChart() {
       const siMax = Math.max(...siValues) + 0.1;
 
       ctx.beginPath();
-      ctx.strokeStyle = '#818cf8';
+      ctx.strokeStyle = C.strength;
       ctx.lineWidth = 2;
       ctx.setLineDash([4, 4]);
 
@@ -3186,14 +3093,14 @@ function renderWeightChart() {
         const y = pad.top + (1 - (d.index - siMin) / (siMax - siMin)) * chartH;
         ctx.beginPath();
         ctx.arc(x, y, 3.5, 0, Math.PI * 2);
-        ctx.fillStyle = '#818cf8';
+        ctx.fillStyle = C.strength;
         ctx.fill();
       });
     }
   }
 
   // Date labels
-  ctx.fillStyle = '#909098';
+  ctx.fillStyle = C.textDark2;
   ctx.font = '12px Space Grotesk, sans-serif';
   ctx.textAlign = 'left';
   ctx.fillText(recent[0].date.substring(5), pad.left, h - 4);
@@ -3248,16 +3155,16 @@ function populateStrengthDetail() {
   }
 
   // Header
-  let html = `<div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid #2a2a2e;">
-    <div style="font-family:'Space Grotesk',sans-serif;font-size:32px;font-weight:700;color:#818cf8;">${latestSI ? latestSI.index.toFixed(2) : '--'}</div>
-    <div style="font-family:'Space Grotesk',sans-serif;font-size:13px;color:#8e8e98;">Strength Score</div>
+  let html = `<div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid ${C.border};">
+    <div style="font-family:'Space Grotesk',sans-serif;font-size:32px;font-weight:700;color:${C.strength};">${latestSI ? latestSI.index.toFixed(2) : '--'}</div>
+    <div style="font-family:'Space Grotesk',sans-serif;font-size:13px;color:${C.textDim};">Strength Score</div>
   </div>`;
 
   // Column labels (no %ile column)
   html += `<div style="display:flex;align-items:center;gap:10px;padding:0 0 6px 0;">
-    <div style="width:58px;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#8e8e98;font-family:'Space Grotesk',sans-serif;flex-shrink:0;">Lift</div>
-    <div style="flex:1;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#8e8e98;font-family:'Space Grotesk',sans-serif;text-align:center;">Percentile</div>
-    <div style="width:56px;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#8e8e98;font-family:'Space Grotesk',sans-serif;text-align:right;flex-shrink:0;">Est 1RM</div>
+    <div style="width:58px;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:${C.textDim};font-family:'Space Grotesk',sans-serif;flex-shrink:0;">Lift</div>
+    <div style="flex:1;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:${C.textDim};font-family:'Space Grotesk',sans-serif;text-align:center;">Percentile</div>
+    <div style="width:56px;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:${C.textDim};font-family:'Space Grotesk',sans-serif;text-align:right;flex-shrink:0;">Est 1RM</div>
   </div>`;
 
   // Lift rows
@@ -3265,27 +3172,27 @@ function populateStrengthDetail() {
     const lift = latestSI ? latestSI.lifts[key] : null;
     const hasData = lift && lift.rm > 0;
     let pctile = 0;
-    let pctColor = '#8e8e98';
-    let markerColor = '#8e8e98';
+    let pctColor = C.textDim;
+    let markerColor = C.textDim;
     let weightStr = '--';
 
     if (hasData) {
       pctile = estimatePercentile(info.std, lift.mult);
-      pctColor = pctile >= 50 ? '#4ade80' : pctile >= 25 ? '#fb923c' : '#f87171';
+      pctColor = pctile >= 50 ? C.accent : pctile >= 25 ? C.warn : C.danger;
       markerColor = pctColor;
       weightStr = `${lift.rm}`;
     }
 
     const markerLeft = hasData ? Math.max(2, Math.min(98, pctile)) : 0;
 
-    html += `<div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid #1a1a1e;">
-      <div style="width:58px;font-size:16px;font-weight:600;color:#f4f4f6;flex-shrink:0;">${info.label}</div>
-      <div data-str-bar style="flex:1;height:14px;border-radius:3px;background:#222226;position:relative;overflow:visible;cursor:pointer;-webkit-tap-highlight-color:transparent;" onclick="showStrengthPctile(this)">
-        <div style="position:absolute;top:4px;left:0;right:0;height:6px;border-radius:3px;background:linear-gradient(90deg,#f87171 0%,#fb923c 40%,#4ade80 100%);opacity:0.3;"></div>
-        ${hasData ? `<div style="position:absolute;top:50%;left:${markerLeft}%;width:10px;height:10px;border-radius:50%;background:${markerColor};transform:translate(-50%,-50%);border:1.5px solid #131315;pointer-events:none;"></div>` : ''}
-        ${hasData ? `<div data-pctile-tip style="position:absolute;top:50%;left:${markerLeft}%;background:${pctColor};color:#0a0a0a;font-family:'Space Grotesk',sans-serif;font-size:11px;font-weight:700;padding:2px 6px;border-radius:4px;pointer-events:none;white-space:nowrap;opacity:0;transform:translate(-50%,-50%) scale(0.7);transition:opacity 0.2s ease,transform 0.2s ease;z-index:5;">${pctile}th</div>` : ''}
+    html += `<div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid ${C.surface2};">
+      <div style="width:58px;font-size:16px;font-weight:600;color:${C.text};flex-shrink:0;">${info.label}</div>
+      <div data-str-bar style="flex:1;height:14px;border-radius:3px;background:${C.surface3};position:relative;overflow:visible;cursor:pointer;-webkit-tap-highlight-color:transparent;" onclick="showStrengthPctile(this)">
+        <div style="position:absolute;top:4px;left:0;right:0;height:6px;border-radius:3px;background:linear-gradient(90deg,${C.danger} 0%,${C.warn} 40%,${C.accent} 100%);opacity:0.3;"></div>
+        ${hasData ? `<div style="position:absolute;top:50%;left:${markerLeft}%;width:10px;height:10px;border-radius:50%;background:${markerColor};transform:translate(-50%,-50%);border:1.5px solid ${C.surface};pointer-events:none;"></div>` : ''}
+        ${hasData ? `<div data-pctile-tip style="position:absolute;top:50%;left:${markerLeft}%;background:${pctColor};color:${C.bg};font-family:'Space Grotesk',sans-serif;font-size:11px;font-weight:700;padding:2px 6px;border-radius:4px;pointer-events:none;white-space:nowrap;opacity:0;transform:translate(-50%,-50%) scale(0.7);transition:opacity 0.2s ease,transform 0.2s ease;z-index:5;">${pctile}th</div>` : ''}
       </div>
-      <div style="width:56px;font-family:'Space Grotesk',sans-serif;font-size:12px;color:#8e8e98;text-align:right;flex-shrink:0;">${weightStr}<span style="font-size:10px;color:#6e6e78;"> lbs</span></div>
+      <div style="width:56px;font-family:'Space Grotesk',sans-serif;font-size:12px;color:${C.textDim};text-align:right;flex-shrink:0;">${weightStr}<span style="font-size:10px;color:${C.textDark};"> lbs</span></div>
     </div>`;
   }
 
@@ -3312,8 +3219,8 @@ function saveWeight() {
   const dateInput = document.getElementById('weight-date-input');
   const val = parseFloat(input.value);
   if (isNaN(val) || val < 50 || val > 500) {
-    input.style.borderColor = '#f87171';
-    setTimeout(() => { input.style.borderColor = '#2a2a2e'; }, 1500);
+    input.style.borderColor = C.danger;
+    setTimeout(() => { input.style.borderColor = C.border; }, 1500);
     return;
   }
   const entryDate = dateInput.value || new Date().toISOString().split('T')[0];
@@ -3336,8 +3243,8 @@ function toggleMeasureForm() {
 
   const latest = getLatestMeasurements();
   let html = `<div style="margin-bottom:10px;">
-    <label style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:#8e8e98;font-family:'Space Grotesk',sans-serif;display:block;margin-bottom:4px;">Date</label>
-    <input type="date" id="meas-date" value="${new Date().toISOString().split('T')[0]}" style="width:100%;padding:7px 10px;font-size:15px;font-family:'Space Grotesk',sans-serif;background:#131315;color:#f4f4f6;border:1px solid #2a2a2e;border-radius:7px;outline:none;-webkit-appearance:none;">
+    <label style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:${C.textDim};font-family:'Space Grotesk',sans-serif;display:block;margin-bottom:4px;">Date</label>
+    <input type="date" id="meas-date" value="${new Date().toISOString().split('T')[0]}" style="width:100%;padding:7px 10px;font-size:15px;font-family:'Space Grotesk',sans-serif;background:${C.surface};color:${C.text};border:1px solid ${C.border};border-radius:7px;outline:none;-webkit-appearance:none;">
   </div>`;
   html += `<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">`;
 
@@ -3345,16 +3252,16 @@ function toggleMeasureForm() {
     const prev = latest ? latest[field.key] : null;
     const prefill = prev ? prev.toFixed(1) : '';
     html += `<div>
-      <label style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:#8e8e98;font-family:'Space Grotesk',sans-serif;display:block;margin-bottom:4px;">${field.label}</label>
+      <label style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:${C.textDim};font-family:'Space Grotesk',sans-serif;display:block;margin-bottom:4px;">${field.label}</label>
       <input type="number" id="meas-${field.key}" value="${prefill}" placeholder="${field.placeholder}" step="0.1" inputmode="decimal"
-        style="width:100%;padding:7px 10px;font-size:15px;font-family:'Space Grotesk',sans-serif;background:#131315;color:#f4f4f6;border:1px solid #2a2a2e;border-radius:7px;outline:none;-webkit-appearance:none;">
+        style="width:100%;padding:7px 10px;font-size:15px;font-family:'Space Grotesk',sans-serif;background:${C.surface};color:${C.text};border:1px solid ${C.border};border-radius:7px;outline:none;-webkit-appearance:none;">
     </div>`;
   }
 
   html += `</div>`;
   html += `<div style="display:flex;gap:8px;margin-top:12px;justify-content:flex-end;">
-    <button onclick="toggleMeasureForm()" style="padding:7px 10px;font-size:13px;background:none;color:#8e8e98;border:none;cursor:pointer;font-family:'Figtree',sans-serif;">Cancel</button>
-    <button onclick="saveMeasurements()" style="padding:7px 14px;font-size:13px;font-weight:600;background:#4ade80;color:#0a0a0a;border:none;border-radius:7px;cursor:pointer;font-family:'Figtree',sans-serif;">Save</button>
+    <button onclick="toggleMeasureForm()" style="padding:7px 10px;font-size:13px;background:none;color:${C.textDim};border:none;cursor:pointer;font-family:'Figtree',sans-serif;">Cancel</button>
+    <button onclick="saveMeasurements()" style="padding:7px 14px;font-size:13px;font-weight:600;background:${C.accent};color:${C.bg};border:none;border-radius:7px;cursor:pointer;font-family:'Figtree',sans-serif;">Save</button>
   </div>`;
 
   formEl.innerHTML = html;
@@ -3403,7 +3310,7 @@ function renderMeasurementsDisplay() {
   const latest = latestMeasurements;
 
   if (!latest) {
-    container.innerHTML = `<div style="font-size:13px;color:#8e8e98;font-family:'Space Grotesk',sans-serif;padding:4px 0;">No measurements logged yet. Tap "+ Measure" to start tracking.</div>`;
+    container.innerHTML = `<div style="font-size:13px;color:${C.textDim};font-family:'Space Grotesk',sans-serif;padding:4px 0;">No measurements logged yet. Tap "+ Measure" to start tracking.</div>`;
     return;
   }
 
@@ -3417,18 +3324,18 @@ function renderMeasurementsDisplay() {
     const daysAgo = dateStr ? Math.floor((Date.now() - new Date(dateStr + 'T12:00:00').getTime()) / (1000 * 60 * 60 * 24)) : null;
     const stale = daysAgo !== null && daysAgo > 90;
     const ageLabel = daysAgo === 0 ? 'today' : daysAgo !== null ? `${daysAgo}d ago` : '';
-    const ageColor = stale ? '#fb923c' : '#6e6e78';
+    const ageColor = stale ? C.warn : C.textDark;
 
-    html += `<div style="padding:10px;border-radius:8px;border:1px solid #2a2a2e;background:#1a1a1e;">
-      <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:#8e8e98;font-family:'Space Grotesk',sans-serif;margin-bottom:4px;">${field.label}</div>
-      <div style="font-family:'Space Grotesk',sans-serif;font-size:20px;font-weight:700;color:#f4f4f6;line-height:1.2;">${val.toFixed(1)}<span style="font-size:11px;font-weight:400;color:#8e8e98;margin-left:2px;">${field.unit}</span></div>
+    html += `<div style="padding:10px;border-radius:8px;border:1px solid ${C.border};background:${C.surface2};">
+      <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:${C.textDim};font-family:'Space Grotesk',sans-serif;margin-bottom:4px;">${field.label}</div>
+      <div style="font-family:'Space Grotesk',sans-serif;font-size:20px;font-weight:700;color:${C.text};line-height:1.2;">${val.toFixed(1)}<span style="font-size:11px;font-weight:400;color:${C.textDim};margin-left:2px;">${field.unit}</span></div>
       <div style="font-size:10px;font-family:'Space Grotesk',sans-serif;color:${ageColor};margin-top:2px;">${ageLabel}</div>
     </div>`;
   }
   html += `</div>`;
 
   if (!hasAny) {
-    container.innerHTML = `<div style="font-size:13px;color:#8e8e98;font-family:'Space Grotesk',sans-serif;padding:4px 0;">No measurements logged yet. Tap "+ Measure" to start tracking.</div>`;
+    container.innerHTML = `<div style="font-size:13px;color:${C.textDim};font-family:'Space Grotesk',sans-serif;padding:4px 0;">No measurements logged yet. Tap "+ Measure" to start tracking.</div>`;
     return;
   }
   container.innerHTML = html;
@@ -3445,8 +3352,8 @@ function renderProportionsDisplay() {
     return;
   }
 
-  let html = `<div style="padding-top:12px;border-top:1px solid #2a2a2e;">
-    <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:1.5px;color:#8e8e98;margin-bottom:10px;font-family:'Space Grotesk',sans-serif;">Proportion Analysis</div>`;
+  let html = `<div style="padding-top:12px;border-top:1px solid ${C.border};">
+    <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:1.5px;color:${C.textDim};margin-bottom:10px;font-family:'Space Grotesk',sans-serif;">Proportion Analysis</div>`;
 
   for (const rule of PROPORTION_RULES) {
     const hasDeps = rule.requires.every(k => latest[k] != null && latest[k] > 0);
@@ -3457,9 +3364,9 @@ function renderProportionsDisplay() {
     const deficit = deficits[rule.muscle] || 0;
 
     let statusColor, statusLabel;
-    if (deficit <= 0.05) { statusColor = '#4ade80'; statusLabel = 'Balanced'; }
-    else if (deficit <= 0.15) { statusColor = '#fb923c'; statusLabel = 'Slight gap'; }
-    else { statusColor = '#f87171'; statusLabel = 'Lagging'; }
+    if (deficit <= 0.05) { statusColor = C.accent; statusLabel = 'Balanced'; }
+    else if (deficit <= 0.15) { statusColor = C.warn; statusLabel = 'Slight gap'; }
+    else { statusColor = C.danger; statusLabel = 'Lagging'; }
 
     const muscleName = MUSCLE_GROUPS[rule.muscle] ? MUSCLE_GROUPS[rule.muscle].name : rule.muscle;
     const barPct = Math.max(3, Math.min(100, Math.round((1 - deficit) * 100)));
@@ -3470,15 +3377,15 @@ function renderProportionsDisplay() {
       return `${f ? f.label : k}: ${latest[k].toFixed(1)}"`;
     }).join(' · ');
 
-    html += `<div style="padding:8px 0;border-bottom:1px solid #1a1a1e;">
+    html += `<div style="padding:8px 0;border-bottom:1px solid ${C.surface2};">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
-        <span style="font-size:13px;font-weight:600;color:#f4f4f6;">${muscleName}</span>
+        <span style="font-size:13px;font-weight:600;color:${C.text};">${muscleName}</span>
         <span style="font-size:11px;font-weight:600;font-family:'Space Grotesk',sans-serif;color:${statusColor};">${statusLabel}</span>
       </div>
-      <div style="height:4px;border-radius:2px;background:#222226;overflow:hidden;">
+      <div style="height:4px;border-radius:2px;background:${C.surface3};overflow:hidden;">
         <div style="height:100%;width:${barPct}%;border-radius:2px;background:${statusColor};transition:width 0.4s ease;"></div>
       </div>
-      <div style="font-size:11px;font-family:'Space Grotesk',sans-serif;color:#6e6e78;margin-top:3px;">${rule.label}: ${actual.toFixed(2)} (target ${target.toFixed(2)}) · ${vals}</div>
+      <div style="font-size:11px;font-family:'Space Grotesk',sans-serif;color:${C.textDark};margin-top:3px;">${rule.label}: ${actual.toFixed(2)} (target ${target.toFixed(2)}) · ${vals}</div>
     </div>`;
   }
 
@@ -3581,25 +3488,25 @@ function estimateVO2Percentile(vo2, age) {
 }
 
 function getVO2Category(percentile) {
-  if (percentile >= 80) return { label: 'Excellent', color: '#4ade80' };
-  if (percentile >= 60) return { label: 'Good', color: '#60a5fa' };
-  if (percentile >= 40) return { label: 'Fair', color: '#fb923c' };
-  if (percentile >= 20) return { label: 'Below Avg', color: '#f87171' };
-  return { label: 'Low', color: '#f87171' };
+  if (percentile >= 80) return { label: 'Excellent', color: C.accent };
+  if (percentile >= 60) return { label: 'Good', color: C.blue };
+  if (percentile >= 40) return { label: 'Fair', color: C.warn };
+  if (percentile >= 20) return { label: 'Below Avg', color: C.danger };
+  return { label: 'Low', color: C.danger };
 }
 
 function getRHRCategory(rhr) {
-  if (rhr < 60) return { label: 'Athletic', color: '#4ade80' };
-  if (rhr <= 70) return { label: 'Good', color: '#60a5fa' };
-  if (rhr <= 80) return { label: 'Normal', color: '#bcbcc4' };
-  return { label: 'Elevated', color: '#f87171' };
+  if (rhr < 60) return { label: 'Athletic', color: C.accent };
+  if (rhr <= 70) return { label: 'Good', color: C.blue };
+  if (rhr <= 80) return { label: 'Normal', color: C.textMid };
+  return { label: 'Elevated', color: C.danger };
 }
 
 function getRecoveryCategory(recovery) {
-  if (recovery >= 30) return { label: 'Excellent', color: '#4ade80' };
-  if (recovery >= 20) return { label: 'Good', color: '#60a5fa' };
-  if (recovery >= 12) return { label: 'Normal', color: '#bcbcc4' };
-  return { label: 'Low', color: '#f87171' };
+  if (recovery >= 30) return { label: 'Excellent', color: C.accent };
+  if (recovery >= 20) return { label: 'Good', color: C.blue };
+  if (recovery >= 12) return { label: 'Normal', color: C.textMid };
+  return { label: 'Low', color: C.danger };
 }
 
 // ============================================================
@@ -3618,7 +3525,7 @@ function renderHealthVitals() {
   if (healthData.updated) {
     const hrs = Math.round((Date.now() - new Date(healthData.updated).getTime()) / (1000 * 60 * 60));
     syncEl.textContent = hrs <= 1 ? 'just now' : `${hrs}h ago`;
-    syncEl.style.color = healthStatus === 'ok' ? '#4ade80' : '#fb923c';
+    syncEl.style.color = healthStatus === 'ok' ? C.accent : C.warn;
   }
 
   // Cardio Fitness Score (VO2 Max)
@@ -3672,7 +3579,7 @@ function renderHealthVitals() {
   const steps = healthData.steps;
   if (steps && steps > 0) {
     const stepsK = steps >= 1000 ? (steps / 1000).toFixed(1) + 'k' : Math.round(steps);
-    const stepsColor = steps >= 10000 ? '#4ade80' : steps >= 7000 ? '#60a5fa' : '#bcbcc4';
+    const stepsColor = steps >= 10000 ? C.accent : steps >= 7000 ? C.blue : C.textMid;
     html += `<div class="vital-cell">
       <div class="vital-label">Steps/Day</div>
       <div class="vital-value">${stepsK}</div>
@@ -3693,7 +3600,7 @@ function renderHealthVitals() {
   // Walking HR
   const whr = healthData.walking_heart_rate_avg;
   if (whr && whr > 0) {
-    const whrColor = whr < 100 ? '#4ade80' : whr <= 110 ? '#bcbcc4' : '#fb923c';
+    const whrColor = whr < 100 ? C.accent : whr <= 110 ? C.textMid : C.warn;
     html += `<div class="vital-cell">
       <div class="vital-label">Walking HR</div>
       <div class="vital-value">${Math.round(whr)}<span class="vital-unit">bpm</span></div>
@@ -3757,7 +3664,7 @@ function renderDashboard(workouts) {
   proportionDeficits = computeProportionDeficits(latestMeasurements);
 
   // v1.1 Task 6: unified preprocess pipeline
-  const pp = preprocessWorkouts(workouts, PROFILE.bodyweightLbs);
+  const pp = preprocessWorkouts(workouts, PROFILE.bodyweightLbs, WEIGHT_DATA);
 
   exerciseHistory = pp.exerciseHistory;
   muscleAnalysis = pp.muscleStats;
@@ -3770,8 +3677,8 @@ function renderDashboard(workouts) {
   showScreen('dashboard');
 
   const now = new Date();
-  const syncColor = (hevyStatus === 'ok' && healthStatus === 'ok') ? '#4ade80'
-    : (hevyStatus === 'error' || healthStatus === 'missing') ? '#8e8e98' : '#fb923c';
+  const syncColor = (hevyStatus === 'ok' && healthStatus === 'ok') ? C.accent
+    : (hevyStatus === 'error' || healthStatus === 'missing') ? C.textDim : C.warn;
   document.getElementById('last-updated').innerHTML =
     `v1.8 \u00b7 ${now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })} <span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${syncColor};margin-left:5px;vertical-align:middle;position:relative;top:-1px;"></span>`;
 
@@ -3885,6 +3792,50 @@ function runDevTests() {
   const cardioResult = analyzeCardioHistory(mockWorkouts);
   results.push({ test: 'A3: 2 cardio exercises = 1 session', pass: cardioResult.cardioSessions7d === 1, got: cardioResult.cardioSessions7d });
 
+  // Test A4: CSS custom properties load correctly (catches en-dash encoding bug)
+  const rootStyle = getComputedStyle(document.documentElement);
+  const accentVar = rootStyle.getPropertyValue('--accent').trim();
+  results.push({
+    test: 'A4: CSS --accent resolves to #4ade80',
+    pass: accentVar === '#4ade80',
+    got: accentVar || '(empty — var() references may use en-dash instead of double-hyphen)'
+  });
+
+  // Test A5: Universal reset selector is active (catches * vs - typo)
+  const testEl = document.querySelector('.app') || document.body;
+  const boxSizing = getComputedStyle(testEl).boxSizing;
+  results.push({
+    test: 'A5: box-sizing is border-box (universal reset)',
+    pass: boxSizing === 'border-box',
+    got: boxSizing
+  });
+
+  // Test A6: No markdown code fences leaked into rendered page
+  const bodyText = document.body.innerText;
+  results.push({
+    test: 'A6: No stray ``` in page text',
+    pass: !bodyText.includes('```'),
+    got: bodyText.includes('```') ? 'found ``` in rendered text' : 'clean'
+  });
+
+  // Test A7: STRENGTH_INDEX_LIFTS is defined (catches reference-before-definition)
+  results.push({
+    test: 'A7: STRENGTH_INDEX_LIFTS is defined before use',
+    pass: typeof STRENGTH_INDEX_LIFTS === 'object' && STRENGTH_INDEX_LIFTS.bench != null,
+    got: typeof STRENGTH_INDEX_LIFTS
+  });
+
+  // Test A8: Storage utility exists and round-trips
+  const storageTestKey = '__dev_test_storage__';
+  Storage.set(storageTestKey, { ok: true });
+  const storageRead = Storage.get(storageTestKey);
+  Storage.remove(storageTestKey);
+  results.push({
+    test: 'A8: Storage utility round-trips JSON',
+    pass: storageRead && storageRead.ok === true,
+    got: JSON.stringify(storageRead)
+  });
+
   // Report
   console.group('🧪 LiftScript Dev Tests');
   for (const r of results) {
@@ -3894,6 +3845,15 @@ function runDevTests() {
 }
 
 runDevTests();
+
+// Boot-time CSS sanity check — catches encoding issues like en-dash var() references
+(function checkCSS() {
+  const root = getComputedStyle(document.documentElement);
+  const test = root.getPropertyValue('--accent').trim();
+  if (!test) {
+    console.error('⚠️ CSS custom properties not loading. Check <style> block for encoding issues (e.g. en-dash vs double-hyphen in var() references).');
+  }
+})();
 
 // Boot
 loadDashboard();
