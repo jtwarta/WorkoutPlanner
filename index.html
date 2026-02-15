@@ -961,9 +961,10 @@ padding: 8px 0;
 // PILLAR 1: Volume-Hypertrophy Targets
 // Source: Schoenfeld et al. (2017) "Dose-response relationship between weekly resistance
 // training volume and increases in muscle mass"
+// Targets scaled to ~65% of Schoenfeld optimal for recreational gym-goers (3-4x/week)
 // PILLAR 2: Strength Standards / Percentile Benchmarks
-// Big Three: van den Hoek et al. (2024) "Normative data for the squat, bench press and
-// deadlift" - 809,986 drug-tested competition entries from OpenPowerlifting
+// Based on OpenPowerlifting data, shifted to general gym-going population norms:
+// competition 25th percentile ≈ gym-population 50th percentile
 // PILLAR 3: 1RM Estimation - Brzycki (1993), Epley (1985)
 // PILLAR 4: Progressive Overload - NSCA guideline: +2-10% when target reps achieved
 
@@ -988,20 +989,22 @@ const PROFILE = {
 
 // ============================================================
 // STRENGTH STANDARDS (Pillar 2)
-// BW multipliers for 1RM - male, ~75kg class, age 26-35
+// BW multipliers for 1RM - male, general gym-going population, age-adjusted
+// Shifted from OpenPowerlifting competition data to recreational lifter norms:
+// competition 25th ≈ gym-population 50th percentile
 // Percentile: [10th, 25th, 50th, 75th, 90th]
 // ============================================================
 const STRENGTH_STANDARDS = {
-  'bench_press':     { multipliers: [0.70, 0.95, 1.20, 1.50, 1.95], keyMuscle: 'chest' },
-  'squat':           { multipliers: [0.85, 1.20, 1.60, 2.10, 2.83], keyMuscle: 'quads' },
-  'deadlift':        { multipliers: [1.05, 1.45, 1.85, 2.50, 3.25], keyMuscle: 'back' },
-  'overhead_press':  { multipliers: [0.40, 0.55, 0.72, 0.90, 1.15], keyMuscle: 'shoulders' },
-  'barbell_row':     { multipliers: [0.50, 0.70, 0.90, 1.15, 1.45], keyMuscle: 'back' },
-  'barbell_curl':    { multipliers: [0.25, 0.35, 0.50, 0.65, 0.85], keyMuscle: 'biceps' },
-  'skull_crusher':   { multipliers: [0.20, 0.30, 0.40, 0.55, 0.70], keyMuscle: 'triceps' },
-  'leg_curl':        { multipliers: [0.25, 0.35, 0.50, 0.65, 0.80], keyMuscle: 'hamstrings' },
-  'hip_thrust':      { multipliers: [0.65, 0.95, 1.30, 1.75, 2.25], keyMuscle: 'glutes' },
-  'calf_raise':      { multipliers: [0.50, 0.75, 1.00, 1.40, 1.85], keyMuscle: 'calves' },
+  'bench_press':     { multipliers: [0.50, 0.70, 0.95, 1.20, 1.50], keyMuscle: 'chest' },
+  'squat':           { multipliers: [0.60, 0.85, 1.20, 1.60, 2.10], keyMuscle: 'quads' },
+  'deadlift':        { multipliers: [0.75, 1.05, 1.45, 1.85, 2.50], keyMuscle: 'back' },
+  'overhead_press':  { multipliers: [0.28, 0.40, 0.55, 0.72, 0.90], keyMuscle: 'shoulders' },
+  'barbell_row':     { multipliers: [0.35, 0.50, 0.70, 0.90, 1.15], keyMuscle: 'back' },
+  'barbell_curl':    { multipliers: [0.18, 0.25, 0.35, 0.50, 0.65], keyMuscle: 'biceps' },
+  'skull_crusher':   { multipliers: [0.15, 0.20, 0.30, 0.40, 0.55], keyMuscle: 'triceps' },
+  'leg_curl':        { multipliers: [0.18, 0.25, 0.35, 0.50, 0.65], keyMuscle: 'hamstrings' },
+  'hip_thrust':      { multipliers: [0.45, 0.65, 0.95, 1.30, 1.75], keyMuscle: 'glutes' },
+  'calf_raise':      { multipliers: [0.35, 0.50, 0.75, 1.00, 1.40], keyMuscle: 'calves' },
   'plank_equivalent': { multipliers: null, keyMuscle: 'core' },
 };
 
@@ -1250,95 +1253,100 @@ function classifyExercise(name) {
 
 // ============================================================
 // MUSCLE GROUP METADATA (Pillar 1)
+// Volume targets: effective range for recreational lifters training 3-4x/week
+// (Schoenfeld optimal ≈ 14-16 sets; these are ~65% of that — still productive)
+// Frequency: realistic for non-PPL splits (each muscle every 5-7 days)
 // ============================================================
 const MUSCLE_GROUPS = {
-  chest:      { name: 'Chest',      idealFreqDays: 4, color: '#f87171', idealSetsPerWeek: 14 },
-  back:       { name: 'Back',       idealFreqDays: 4, color: '#60a5fa', idealSetsPerWeek: 16 },
-  shoulders:  { name: 'Shoulders',  idealFreqDays: 4, color: '#c084fc', idealSetsPerWeek: 14 },
-  biceps:     { name: 'Biceps',     idealFreqDays: 5, color: '#34d399', idealSetsPerWeek: 10 },
-  triceps:    { name: 'Triceps',    idealFreqDays: 5, color: '#fbbf24', idealSetsPerWeek: 10 },
-  quads:      { name: 'Quads',      idealFreqDays: 4, color: '#fb923c', idealSetsPerWeek: 14 },
-  hamstrings: { name: 'Hamstrings', idealFreqDays: 5, color: '#f472b6', idealSetsPerWeek: 12 },
-  glutes:     { name: 'Glutes',     idealFreqDays: 5, color: '#a78bfa', idealSetsPerWeek: 12 },
-  calves:     { name: 'Calves',     idealFreqDays: 5, color: '#2dd4bf', idealSetsPerWeek: 10 },
-  core:       { name: 'Core',       idealFreqDays: 3, color: '#e879f9', idealSetsPerWeek: 10 },
-  neck:       { name: 'Neck',       idealFreqDays: 3, color: '#f59e0b', idealSetsPerWeek: 8 },
-  forearms:   { name: 'Forearms',   idealFreqDays: 3, color: '#06b6d4', idealSetsPerWeek: 8 },
+  chest:      { name: 'Chest',      idealFreqDays: 5, color: '#f87171', idealSetsPerWeek: 10 },
+  back:       { name: 'Back',       idealFreqDays: 5, color: '#60a5fa', idealSetsPerWeek: 12 },
+  shoulders:  { name: 'Shoulders',  idealFreqDays: 5, color: '#c084fc', idealSetsPerWeek: 10 },
+  biceps:     { name: 'Biceps',     idealFreqDays: 6, color: '#34d399', idealSetsPerWeek: 6 },
+  triceps:    { name: 'Triceps',    idealFreqDays: 6, color: '#fbbf24', idealSetsPerWeek: 6 },
+  quads:      { name: 'Quads',      idealFreqDays: 5, color: '#fb923c', idealSetsPerWeek: 10 },
+  hamstrings: { name: 'Hamstrings', idealFreqDays: 6, color: '#f472b6', idealSetsPerWeek: 8 },
+  glutes:     { name: 'Glutes',     idealFreqDays: 6, color: '#a78bfa', idealSetsPerWeek: 8 },
+  calves:     { name: 'Calves',     idealFreqDays: 6, color: '#2dd4bf', idealSetsPerWeek: 6 },
+  core:       { name: 'Core',       idealFreqDays: 4, color: '#e879f9', idealSetsPerWeek: 6 },
+  neck:       { name: 'Neck',       idealFreqDays: 5, color: '#f59e0b', idealSetsPerWeek: 4 },
+  forearms:   { name: 'Forearms',   idealFreqDays: 5, color: '#06b6d4', idealSetsPerWeek: 4 },
 };
 
 // ============================================================
 // EXERCISE DATABASE
+// Benchmark weights: average gym-going male (~75kg, mid-30s)
+// ~80% of previous competition-derived targets
 // ============================================================
 const EXERCISE_DB = {
-  'Bench Press (Barbell)': { muscle: 'chest', type: 'compound', benchmarkLbs: 185, sets: 4, reps: '6-8' },
-  'Incline Bench Press (Dumbbell)': { muscle: 'chest', type: 'compound', benchmarkLbs: 60, sets: 3, reps: '8-10', note: 'per hand' },
-  'Incline Bench Press (Barbell)': { muscle: 'chest', type: 'compound', benchmarkLbs: 155, sets: 4, reps: '6-8' },
-  'Chest Fly (Machine)': { muscle: 'chest', type: 'isolation', benchmarkLbs: 140, sets: 3, reps: '10-12' },
-  'Chest Fly (Dumbbell)': { muscle: 'chest', type: 'isolation', benchmarkLbs: 40, sets: 3, reps: '10-12', note: 'per hand' },
+  'Bench Press (Barbell)': { muscle: 'chest', type: 'compound', benchmarkLbs: 155, sets: 4, reps: '6-8' },
+  'Incline Bench Press (Dumbbell)': { muscle: 'chest', type: 'compound', benchmarkLbs: 50, sets: 3, reps: '8-10', note: 'per hand' },
+  'Incline Bench Press (Barbell)': { muscle: 'chest', type: 'compound', benchmarkLbs: 125, sets: 4, reps: '6-8' },
+  'Chest Fly (Machine)': { muscle: 'chest', type: 'isolation', benchmarkLbs: 115, sets: 3, reps: '10-12' },
+  'Chest Fly (Dumbbell)': { muscle: 'chest', type: 'isolation', benchmarkLbs: 30, sets: 3, reps: '10-12', note: 'per hand' },
   'Chest Dip': { muscle: 'chest', type: 'compound', benchmarkLbs: 0, sets: 3, reps: '8-12', note: 'bodyweight' },
-  'Cable Fly Crossovers': { muscle: 'chest', type: 'isolation', benchmarkLbs: 30, sets: 3, reps: '12-15', note: 'per side' },
-  'Chest Press (Machine)': { muscle: 'chest', type: 'compound', benchmarkLbs: 160, sets: 3, reps: '8-10' },
-  'Decline Bench Press (Barbell)': { muscle: 'chest', type: 'compound', benchmarkLbs: 195, sets: 3, reps: '6-8' },
+  'Cable Fly Crossovers': { muscle: 'chest', type: 'isolation', benchmarkLbs: 25, sets: 3, reps: '12-15', note: 'per side' },
+  'Chest Press (Machine)': { muscle: 'chest', type: 'compound', benchmarkLbs: 130, sets: 3, reps: '8-10' },
+  'Decline Bench Press (Barbell)': { muscle: 'chest', type: 'compound', benchmarkLbs: 160, sets: 3, reps: '6-8' },
 
-  'Bent Over Row (Barbell)': { muscle: 'back', type: 'compound', benchmarkLbs: 165, sets: 4, reps: '6-8' },
-  'Pull Up': { muscle: 'back', type: 'compound', benchmarkLbs: 0, sets: 4, reps: '6-10', note: 'bodyweight' },
-  'Chin Up': { muscle: 'back', type: 'compound', benchmarkLbs: 0, sets: 3, reps: '6-10', note: 'bodyweight' },
-  'Lat Pulldown (Cable)': { muscle: 'back', type: 'compound', benchmarkLbs: 140, sets: 3, reps: '8-10' },
-  'Lat Pulldown (Machine)': { muscle: 'back', type: 'compound', benchmarkLbs: 140, sets: 3, reps: '8-10' },
-  'Seated Row (Machine)': { muscle: 'back', type: 'compound', benchmarkLbs: 140, sets: 3, reps: '8-10' },
-  'Dumbbell Row': { muscle: 'back', type: 'compound', benchmarkLbs: 65, sets: 3, reps: '8-10', note: 'per hand' },
-  'Deadlift (Barbell)': { muscle: 'back', type: 'compound', benchmarkLbs: 275, sets: 3, reps: '5-6' },
-  'Pendlay Row (Barbell)': { muscle: 'back', type: 'compound', benchmarkLbs: 155, sets: 4, reps: '5-8' },
+  'Bent Over Row (Barbell)': { muscle: 'back', type: 'compound', benchmarkLbs: 135, sets: 4, reps: '6-8' },
+  'Pull Up': { muscle: 'back', type: 'compound', benchmarkLbs: 0, sets: 3, reps: '5-8', note: 'bodyweight' },
+  'Chin Up': { muscle: 'back', type: 'compound', benchmarkLbs: 0, sets: 3, reps: '5-8', note: 'bodyweight' },
+  'Lat Pulldown (Cable)': { muscle: 'back', type: 'compound', benchmarkLbs: 115, sets: 3, reps: '8-10' },
+  'Lat Pulldown (Machine)': { muscle: 'back', type: 'compound', benchmarkLbs: 115, sets: 3, reps: '8-10' },
+  'Seated Row (Machine)': { muscle: 'back', type: 'compound', benchmarkLbs: 115, sets: 3, reps: '8-10' },
+  'Dumbbell Row': { muscle: 'back', type: 'compound', benchmarkLbs: 50, sets: 3, reps: '8-10', note: 'per hand' },
+  'Deadlift (Barbell)': { muscle: 'back', type: 'compound', benchmarkLbs: 225, sets: 3, reps: '5-6' },
+  'Pendlay Row (Barbell)': { muscle: 'back', type: 'compound', benchmarkLbs: 125, sets: 4, reps: '5-8' },
 
-  'Overhead Press (Barbell)': { muscle: 'shoulders', type: 'compound', benchmarkLbs: 115, sets: 4, reps: '6-8' },
-  'Overhead Press (Dumbbell)': { muscle: 'shoulders', type: 'compound', benchmarkLbs: 45, sets: 3, reps: '8-10', note: 'per hand' },
-  'Lateral Raise (Dumbbell)': { muscle: 'shoulders', type: 'isolation', benchmarkLbs: 20, sets: 4, reps: '12-15', note: 'per hand' },
-  'Lateral Raise (Machine)': { muscle: 'shoulders', type: 'isolation', benchmarkLbs: 80, sets: 3, reps: '12-15' },
-  'Arnold Press (Dumbbell)': { muscle: 'shoulders', type: 'compound', benchmarkLbs: 40, sets: 3, reps: '8-10', note: 'per hand' },
-  'Seated Shoulder Press (Machine)': { muscle: 'shoulders', type: 'compound', benchmarkLbs: 120, sets: 3, reps: '8-10' },
-  'Shoulder Press (Dumbbell)': { muscle: 'shoulders', type: 'compound', benchmarkLbs: 45, sets: 3, reps: '8-10', note: 'per hand' },
-  'Standing Military Press (Barbell)': { muscle: 'shoulders', type: 'compound', benchmarkLbs: 115, sets: 4, reps: '6-8' },
+  'Overhead Press (Barbell)': { muscle: 'shoulders', type: 'compound', benchmarkLbs: 95, sets: 4, reps: '6-8' },
+  'Overhead Press (Dumbbell)': { muscle: 'shoulders', type: 'compound', benchmarkLbs: 35, sets: 3, reps: '8-10', note: 'per hand' },
+  'Lateral Raise (Dumbbell)': { muscle: 'shoulders', type: 'isolation', benchmarkLbs: 15, sets: 4, reps: '12-15', note: 'per hand' },
+  'Lateral Raise (Machine)': { muscle: 'shoulders', type: 'isolation', benchmarkLbs: 65, sets: 3, reps: '12-15' },
+  'Arnold Press (Dumbbell)': { muscle: 'shoulders', type: 'compound', benchmarkLbs: 30, sets: 3, reps: '8-10', note: 'per hand' },
+  'Seated Shoulder Press (Machine)': { muscle: 'shoulders', type: 'compound', benchmarkLbs: 95, sets: 3, reps: '8-10' },
+  'Shoulder Press (Dumbbell)': { muscle: 'shoulders', type: 'compound', benchmarkLbs: 35, sets: 3, reps: '8-10', note: 'per hand' },
+  'Standing Military Press (Barbell)': { muscle: 'shoulders', type: 'compound', benchmarkLbs: 95, sets: 4, reps: '6-8' },
 
-  'Bicep Curl (Barbell)': { muscle: 'biceps', type: 'isolation', benchmarkLbs: 75, sets: 3, reps: '8-10' },
-  'Bicep Curl (Dumbbell)': { muscle: 'biceps', type: 'isolation', benchmarkLbs: 30, sets: 3, reps: '10-12', note: 'per hand' },
-  'Hammer Curl (Dumbbell)': { muscle: 'biceps', type: 'isolation', benchmarkLbs: 35, sets: 3, reps: '10-12', note: 'per hand' },
-  'Hammer Curl (Cable)': { muscle: 'biceps', type: 'isolation', benchmarkLbs: 35, sets: 3, reps: '10-12', note: 'per side' },
-  'Concentration Curl': { muscle: 'biceps', type: 'isolation', benchmarkLbs: 25, sets: 3, reps: '10-12', note: 'per hand' },
+  'Bicep Curl (Barbell)': { muscle: 'biceps', type: 'isolation', benchmarkLbs: 60, sets: 3, reps: '8-10' },
+  'Bicep Curl (Dumbbell)': { muscle: 'biceps', type: 'isolation', benchmarkLbs: 25, sets: 3, reps: '10-12', note: 'per hand' },
+  'Hammer Curl (Dumbbell)': { muscle: 'biceps', type: 'isolation', benchmarkLbs: 30, sets: 3, reps: '10-12', note: 'per hand' },
+  'Hammer Curl (Cable)': { muscle: 'biceps', type: 'isolation', benchmarkLbs: 30, sets: 3, reps: '10-12', note: 'per side' },
+  'Concentration Curl': { muscle: 'biceps', type: 'isolation', benchmarkLbs: 20, sets: 3, reps: '10-12', note: 'per hand' },
 
-  'Triceps Pushdown': { muscle: 'triceps', type: 'isolation', benchmarkLbs: 60, sets: 3, reps: '10-12' },
-  'Triceps Rope Pushdown': { muscle: 'triceps', type: 'isolation', benchmarkLbs: 55, sets: 3, reps: '10-12' },
-  'Triceps Extension (Cable)': { muscle: 'triceps', type: 'isolation', benchmarkLbs: 50, sets: 3, reps: '10-12' },
-  'Triceps Extension (Dumbbell)': { muscle: 'triceps', type: 'isolation', benchmarkLbs: 30, sets: 3, reps: '10-12' },
-  'Skullcrusher (Dumbbell)': { muscle: 'triceps', type: 'isolation', benchmarkLbs: 25, sets: 3, reps: '10-12', note: 'per hand' },
+  'Triceps Pushdown': { muscle: 'triceps', type: 'isolation', benchmarkLbs: 50, sets: 3, reps: '10-12' },
+  'Triceps Rope Pushdown': { muscle: 'triceps', type: 'isolation', benchmarkLbs: 45, sets: 3, reps: '10-12' },
+  'Triceps Extension (Cable)': { muscle: 'triceps', type: 'isolation', benchmarkLbs: 40, sets: 3, reps: '10-12' },
+  'Triceps Extension (Dumbbell)': { muscle: 'triceps', type: 'isolation', benchmarkLbs: 25, sets: 3, reps: '10-12' },
+  'Skullcrusher (Dumbbell)': { muscle: 'triceps', type: 'isolation', benchmarkLbs: 20, sets: 3, reps: '10-12', note: 'per hand' },
   'Triceps Dip': { muscle: 'triceps', type: 'compound', benchmarkLbs: 0, sets: 3, reps: '8-12', note: 'bodyweight' },
 
-  'Squat (Barbell)': { muscle: 'quads', type: 'compound', benchmarkLbs: 225, sets: 4, reps: '5-8' },
+  'Squat (Barbell)': { muscle: 'quads', type: 'compound', benchmarkLbs: 185, sets: 4, reps: '5-8' },
   'Squat (Bodyweight)': { muscle: 'quads', type: 'compound', benchmarkLbs: 0, sets: 3, reps: '15-20', note: 'bodyweight' },
-  'Leg Press (Machine)': { muscle: 'quads', type: 'compound', benchmarkLbs: 360, sets: 4, reps: '8-10' },
-  'Front Squat': { muscle: 'quads', type: 'compound', benchmarkLbs: 175, sets: 3, reps: '6-8' },
-  'Goblet Squat': { muscle: 'quads', type: 'compound', benchmarkLbs: 60, sets: 3, reps: '10-12' },
-  'Lunge (Dumbbell)': { muscle: 'quads', type: 'compound', benchmarkLbs: 40, sets: 3, reps: '10-12', note: 'per hand' },
+  'Leg Press (Machine)': { muscle: 'quads', type: 'compound', benchmarkLbs: 290, sets: 4, reps: '8-10' },
+  'Front Squat': { muscle: 'quads', type: 'compound', benchmarkLbs: 140, sets: 3, reps: '6-8' },
+  'Goblet Squat': { muscle: 'quads', type: 'compound', benchmarkLbs: 50, sets: 3, reps: '10-12' },
+  'Lunge (Dumbbell)': { muscle: 'quads', type: 'compound', benchmarkLbs: 30, sets: 3, reps: '10-12', note: 'per hand' },
   'Lunge': { muscle: 'quads', type: 'compound', benchmarkLbs: 0, sets: 3, reps: '12-15', note: 'bodyweight' },
 
-  'Romanian Deadlift (Barbell)': { muscle: 'hamstrings', type: 'compound', benchmarkLbs: 205, sets: 4, reps: '8-10' },
-  'Romanian Deadlift (Dumbbell)': { muscle: 'hamstrings', type: 'compound', benchmarkLbs: 55, sets: 3, reps: '8-10', note: 'per hand' },
-  'Seated Leg Curl (Machine)': { muscle: 'hamstrings', type: 'isolation', benchmarkLbs: 110, sets: 3, reps: '10-12' },
+  'Romanian Deadlift (Barbell)': { muscle: 'hamstrings', type: 'compound', benchmarkLbs: 165, sets: 4, reps: '8-10' },
+  'Romanian Deadlift (Dumbbell)': { muscle: 'hamstrings', type: 'compound', benchmarkLbs: 45, sets: 3, reps: '8-10', note: 'per hand' },
+  'Seated Leg Curl (Machine)': { muscle: 'hamstrings', type: 'isolation', benchmarkLbs: 90, sets: 3, reps: '10-12' },
 
-  'Hip Thrust (Barbell)': { muscle: 'glutes', type: 'compound', benchmarkLbs: 225, sets: 4, reps: '8-10' },
-  'Hip Thrust (Machine)': { muscle: 'glutes', type: 'compound', benchmarkLbs: 225, sets: 3, reps: '8-10' },
+  'Hip Thrust (Barbell)': { muscle: 'glutes', type: 'compound', benchmarkLbs: 185, sets: 4, reps: '8-10' },
+  'Hip Thrust (Machine)': { muscle: 'glutes', type: 'compound', benchmarkLbs: 185, sets: 3, reps: '8-10' },
   'Hip Thrust': { muscle: 'glutes', type: 'compound', benchmarkLbs: 0, sets: 3, reps: '12-15', note: 'bodyweight' },
-  'Glute Kickback (Machine)': { muscle: 'glutes', type: 'isolation', benchmarkLbs: 80, sets: 3, reps: '12-15' },
-  'Hip Abduction (Machine)': { muscle: 'glutes', type: 'isolation', benchmarkLbs: 120, sets: 3, reps: '12-15' },
-  'Hip Adduction (Machine)': { muscle: 'glutes', type: 'isolation', benchmarkLbs: 120, sets: 3, reps: '12-15' },
+  'Glute Kickback (Machine)': { muscle: 'glutes', type: 'isolation', benchmarkLbs: 65, sets: 3, reps: '12-15' },
+  'Hip Abduction (Machine)': { muscle: 'glutes', type: 'isolation', benchmarkLbs: 100, sets: 3, reps: '12-15' },
+  'Hip Adduction (Machine)': { muscle: 'glutes', type: 'isolation', benchmarkLbs: 100, sets: 3, reps: '12-15' },
 
-  'Standing Calf Raise': { muscle: 'calves', type: 'isolation', benchmarkLbs: 180, sets: 4, reps: '12-15' },
-  'Seated Calf Raise': { muscle: 'calves', type: 'isolation', benchmarkLbs: 90, sets: 3, reps: '12-15' },
-  'Calf Extension (Machine)': { muscle: 'calves', type: 'isolation', benchmarkLbs: 140, sets: 3, reps: '12-15' },
+  'Standing Calf Raise': { muscle: 'calves', type: 'isolation', benchmarkLbs: 145, sets: 4, reps: '12-15' },
+  'Seated Calf Raise': { muscle: 'calves', type: 'isolation', benchmarkLbs: 70, sets: 3, reps: '12-15' },
+  'Calf Extension (Machine)': { muscle: 'calves', type: 'isolation', benchmarkLbs: 115, sets: 3, reps: '12-15' },
 
   'Hanging Leg Raise': { muscle: 'core', type: 'isolation', benchmarkLbs: 0, sets: 3, reps: '10-15', note: 'bodyweight' },
   'Hanging Knee Raise': { muscle: 'core', type: 'isolation', benchmarkLbs: 0, sets: 3, reps: '12-15', note: 'bodyweight' },
   'Crunch': { muscle: 'core', type: 'isolation', benchmarkLbs: 0, sets: 3, reps: '15-20', note: 'bodyweight' },
-  'Crunch (Machine)': { muscle: 'core', type: 'isolation', benchmarkLbs: 80, sets: 3, reps: '12-15' },
+  'Crunch (Machine)': { muscle: 'core', type: 'isolation', benchmarkLbs: 65, sets: 3, reps: '12-15' },
   'Decline Crunch': { muscle: 'core', type: 'isolation', benchmarkLbs: 0, sets: 3, reps: '12-15', note: 'bodyweight' },
   'Plank': { muscle: 'core', type: 'isolation', benchmarkLbs: 0, sets: 3, reps: '45-60s', note: 'hold' },
   'Sit Up': { muscle: 'core', type: 'isolation', benchmarkLbs: 0, sets: 3, reps: '15-20', note: 'bodyweight' },
@@ -1353,12 +1361,12 @@ const EXERCISE_DB = {
   'Neck Lateral Flexion': { muscle: 'neck', type: 'isolation', benchmarkLbs: 15, sets: 2, reps: '12-15', note: 'per side' },
 
   // Forearms
-  'Wrist Curl (Barbell)': { muscle: 'forearms', type: 'isolation', benchmarkLbs: 60, sets: 3, reps: '15-20' },
-  'Wrist Curl (Dumbbell)': { muscle: 'forearms', type: 'isolation', benchmarkLbs: 25, sets: 3, reps: '15-20', note: 'per hand' },
-  'Reverse Wrist Curl (Barbell)': { muscle: 'forearms', type: 'isolation', benchmarkLbs: 35, sets: 3, reps: '12-15' },
-  'Reverse Curl (Barbell)': { muscle: 'forearms', type: 'isolation', benchmarkLbs: 50, sets: 3, reps: '10-12' },
-  'Reverse Curl (Dumbbell)': { muscle: 'forearms', type: 'isolation', benchmarkLbs: 20, sets: 3, reps: '10-12', note: 'per hand' },
-  'Farmer Carry (Dumbbell)': { muscle: 'forearms', type: 'compound', benchmarkLbs: 60, sets: 3, reps: '40-60s', note: 'per hand' },
+  'Wrist Curl (Barbell)': { muscle: 'forearms', type: 'isolation', benchmarkLbs: 50, sets: 3, reps: '15-20' },
+  'Wrist Curl (Dumbbell)': { muscle: 'forearms', type: 'isolation', benchmarkLbs: 20, sets: 3, reps: '15-20', note: 'per hand' },
+  'Reverse Wrist Curl (Barbell)': { muscle: 'forearms', type: 'isolation', benchmarkLbs: 30, sets: 3, reps: '12-15' },
+  'Reverse Curl (Barbell)': { muscle: 'forearms', type: 'isolation', benchmarkLbs: 40, sets: 3, reps: '10-12' },
+  'Reverse Curl (Dumbbell)': { muscle: 'forearms', type: 'isolation', benchmarkLbs: 15, sets: 3, reps: '10-12', note: 'per hand' },
+  'Farmer Carry (Dumbbell)': { muscle: 'forearms', type: 'compound', benchmarkLbs: 50, sets: 3, reps: '40-60s', note: 'per hand' },
   'Dead Hang': { muscle: 'forearms', type: 'isolation', benchmarkLbs: 0, sets: 3, reps: '30-60s', note: 'bodyweight' },
 };
 
@@ -1878,7 +1886,7 @@ function preprocessWorkouts(workouts, bodyweightLbs) {
       }
     }
 
-    // Strength Score data point (normalized: 1.0 = 50th percentile for 36yo male)
+    // Strength Score data point (normalized: 1.0 = 50th percentile gym-goer for user's age)
     const hasData = Object.values(siRolling1RMs).some(v => v > 0);
     if (hasData) {
       const bw = getBodyweightAt(dateStr);
@@ -2467,9 +2475,9 @@ function generateRecommendations(muscleStats) {
                + (propDeficit * proportionWeight);
 
     let urgency = 'low';
-    if (stat.daysSincePrimary >= stat.idealFreqDays * 2 || (volumeDeficit > 0.6 && imbalanceScore > 0.5)) {
+    if (stat.daysSincePrimary >= stat.idealFreqDays * 2.5 || (volumeDeficit > 0.7 && imbalanceScore > 0.5)) {
       urgency = 'high';
-    } else if (stat.daysSincePrimary >= stat.idealFreqDays || volumeDeficit > 0.3) {
+    } else if (stat.daysSincePrimary >= stat.idealFreqDays * 1.5 || volumeDeficit > 0.5) {
       urgency = 'med';
     }
 
@@ -2486,16 +2494,16 @@ function generateRecommendations(muscleStats) {
       explainer = `No direct ${stat.name.toLowerCase()} work found — only indirect stimulus (${stat.daysSinceAny}d ago). Add dedicated exercises to develop this muscle group.`;
     } else {
       const parts = [];
-      if (stat.daysSincePrimary >= stat.idealFreqDays * 2) {
+      if (stat.daysSincePrimary >= stat.idealFreqDays * 2.5) {
         let msg = `Last direct work <strong>${stat.daysSincePrimary} days ago</strong> \u2014 ideally every ${stat.idealFreqDays} days for optimal growth`;
         if (hasIndirectOnly) msg += ` (indirect stimulus ${stat.daysSinceAny}d ago doesn\u2019t fully count)`;
         parts.push(msg);
-      } else if (stat.daysSincePrimary >= stat.idealFreqDays) {
+      } else if (stat.daysSincePrimary >= stat.idealFreqDays * 1.5) {
         let msg = `Directly trained ${stat.daysSincePrimary} days ago, slightly past the ${stat.idealFreqDays}-day window`;
         if (hasIndirectOnly) msg += ` (secondary-only work ${stat.daysSinceAny}d ago)`;
         parts.push(msg);
       }
-      if (volumeDeficit > 0.3) {
+      if (volumeDeficit > 0.4) {
         parts.push(`Volume is <strong>${weeklyActual} sets/week</strong> vs the ${weeklyIdeal} recommended \u2014 ${Math.round(volumeDeficit * 100)}% below target`);
       }
       if (imbalanceScore > 0.4) {
