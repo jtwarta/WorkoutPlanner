@@ -2177,15 +2177,19 @@ function analyzeCardioHistory(workouts) {
   }
 
   // --- Pass 2: Apple Health Watch workouts ---
-  // Everything in healthData.workouts[] was explicitly started on the Watch,
-  // so it ALL counts toward cardio. We tag modality for variety tracking
-  // but never skip a workout for having an unrecognized type.
+  // Everything in healthData.workouts[] was explicitly started on the Watch.
+  // We count all workout types EXCEPT strength/flexibility — those aren't cardio.
+  const WATCH_NON_CARDIO = /strength|weight\s*train|yoga|pilates|stretch|cool\s*down|flexibility|mind.*body|tai\s*chi/i;
+
   if (healthData && Array.isArray(healthData.workouts)) {
     for (const aw of healthData.workouts) {
       // Parse flexible date: ISO or Shortcuts format "Feb 14, 2026 at 5:10 PM"
       const startStr = (aw.start || '').replace(/\s+at\s+/i, ' ');
       const awDate = new Date(startStr);
       if (isNaN(awDate.getTime()) || awDate < sevenDaysAgo) continue;
+
+      // Skip non-cardio workout types (strength training, yoga, etc.)
+      if (WATCH_NON_CARDIO.test(aw.type || '')) continue;
 
       // Dedup: skip if a Hevy cardio session started within 30 min
       const DEDUP_WINDOW_MS = 30 * 60 * 1000;
