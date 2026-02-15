@@ -2135,6 +2135,7 @@ function analyzeCardioHistory(workouts) {
   let appleSessions = 0;
   let hevyMinutes = 0;
   let appleMinutes = 0;
+  const cardioLog = []; // per-session detail for breakdown
 
   // --- Pass 1: Hevy workouts ---
   for (const w of workouts) {
@@ -2142,6 +2143,8 @@ function analyzeCardioHistory(workouts) {
     if (wDate < sevenDaysAgo) continue;
 
     let workoutHasCardio = false;
+    let workoutCardioMin = 0;
+    let workoutCardioName = '';
 
     for (const ex of (w.exercises || [])) {
       const name = ex.title || '';
@@ -2149,6 +2152,7 @@ function analyzeCardioHistory(workouts) {
       if (!isCardio) continue;
 
       workoutHasCardio = true;
+      if (!workoutCardioName) workoutCardioName = name;
       let sessionMin = 0;
       for (const s of (ex.sets || [])) {
         if (s.duration_seconds && s.duration_seconds > 0) {
@@ -2160,6 +2164,7 @@ function analyzeCardioHistory(workouts) {
       }
       estimatedMinutes7d += sessionMin;
       hevyMinutes += sessionMin;
+      workoutCardioMin += sessionMin;
 
       const modality = name.toLowerCase();
       if (/treadmill|walk|run/i.test(modality)) recentModalities.push('treadmill');
@@ -2173,6 +2178,13 @@ function analyzeCardioHistory(workouts) {
       cardioSessions7d++;
       hevySessions++;
       hevyCardioTimestamps.push(wDate.getTime());
+      cardioLog.push({
+        source: 'hevy',
+        type: workoutCardioName,
+        date: wDate,
+        minutes: workoutCardioMin,
+        calories: 0,
+      });
     }
   }
 
@@ -2209,12 +2221,22 @@ function analyzeCardioHistory(workouts) {
       // Best-effort modality tag for variety tracking
       const modality = resolveAppleCardioModality(aw.type) || 'other';
       recentModalities.push(modality);
+
+      // Log for breakdown
+      cardioLog.push({
+        source: 'watch',
+        type: aw.type || 'Unknown',
+        date: awDate,
+        minutes: dur,
+        calories: parseFloat(aw.calories) || 0,
+      });
     }
   }
 
   return {
     cardioSessions7d, estimatedMinutes7d, recentModalities,
     hevySessions, appleSessions, hevyMinutes, appleMinutes,
+    cardioLog,
   };
 }
 
@@ -2275,6 +2297,42 @@ function generateCardioRecommendations(workouts) {
 // ============================================================
 // RENDER CARDIO PLAN
 // ============================================================
+function toggleCardioBreakdown() {
+  const el = document.getElementById('cardio-breakdown');
+  if (!el) return;
+  el.style.display = el.style.display === 'none' ? 'block' : 'none';
+}
+
+function buildCardioBreakdownHTML(history) {
+  const log = history.cardioLog || [];
+  if (log.length === 0) {
+    return `<div style="font-size:12px;font-family:'Space Grotesk',sans-serif;color:#6e6e78;">No cardio sessions this week.</div>`;
+  }
+
+  // Sort by date descending
+  const sorted = [...log].sort((a, b) => b.date - a.date);
+
+  // Source summary line
+  const parts = [];
+  if (history.hevySessions > 0) parts.push(`\u{1F3CB}\uFE0F Hevy: ${history.hevySessions} session${history.hevySessions > 1 ? 's' : ''}, ${Math.round(history.hevyMinutes)} min`);
+  if (history.appleSessions > 0) parts.push(`\u231A Watch: ${history.appleSessions} session${history.appleSessions > 1 ? 's' : ''}, ${Math.round(history.appleMinutes)} min`);
+
+  let html = `<div style="font-size:11px;font-family:'Space Grotesk',sans-serif;color:#8e8e98;margin-bottom:8px;">${parts.join(' · ')}</div>`;
+
+  // Per-session rows
+  for (const s of sorted) {
+    const dayStr = s.date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+    const icon = s.source === 'watch' ? '\u231A' : '\u{1F3CB}\uFE0F';
+    const calStr = s.calories > 0 ? ` · ${Math.round(s.calories)} cal` : '';
+    html += `<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;font-size:12px;font-family:'Space Grotesk',sans-serif;">
+      <span style="color:#bcbcc4;">${icon} ${s.type}</span>
+      <span style="color:#6e6e78;">${Math.round(s.minutes)} min${calStr} · ${dayStr}</span>
+    </div>`;
+  }
+
+  return html;
+}
+
 function renderCardioPlan(workouts) {
   const result = generateCardioRecommendations(workouts);
   const summaryEl = document.getElementById('cardio-summary');
@@ -2286,17 +2344,16 @@ function renderCardioPlan(workouts) {
   const barColor = donePct >= 100 ? '#4ade80' : donePct >= 50 ? '#60a5fa' : '#fb923c';
 
   summaryEl.innerHTML = `
-    <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid #2a2a2e;">
+    <div onclick="toggleCardioBreakdown()" style="cursor:pointer;display:flex;align-items:center;gap:10px;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid #2a2a2e;">
       <div style="font-family:'Space Grotesk',sans-serif;font-size:14px;color:#4ade80;font-weight:600;white-space:nowrap;">${Math.round(doneMin)}/${result.targetMin}m</div>
       <div style="flex:1;height:5px;border-radius:3px;background:#222226;overflow:hidden;">
         <div style="height:100%;border-radius:3px;background:${barColor};width:${donePct}%;transition:width 0.4s ease;"></div>
       </div>
-      <div style="font-family:'Space Grotesk',sans-serif;font-size:12px;color:#8e8e98;white-space:nowrap;">this week</div>
+      <div style="font-family:'Space Grotesk',sans-serif;font-size:12px;color:#8e8e98;white-space:nowrap;">this week \u25BE</div>
     </div>
-    ${(result.history.hevySessions > 0 || result.history.appleSessions > 0) ? `<div style="display:flex;gap:12px;font-size:11px;font-family:'Space Grotesk',sans-serif;color:#6e6e78;margin-bottom:10px;">
-      ${result.history.hevySessions > 0 ? `<span>\u{1F3CB} Hevy: ${result.history.hevySessions}s / ${Math.round(result.history.hevyMinutes)}m</span>` : ''}
-      ${result.history.appleSessions > 0 ? `<span>\u231A Watch: ${result.history.appleSessions}s / ${Math.round(result.history.appleMinutes)}m</span>` : ''}
-    </div>` : ''}`;
+    <div id="cardio-breakdown" style="display:none;margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid #2a2a2e;">
+      ${buildCardioBreakdownHTML(result.history)}
+    </div>`;
 
   if (result.weekComplete) {
     rxEl.innerHTML = `<div style="font-size:14px;color:#4ade80;font-family:'Space Grotesk',sans-serif;padding:8px 0;">\u2713 Weekly cardio target met. Active recovery or rest recommended.</div>`;
