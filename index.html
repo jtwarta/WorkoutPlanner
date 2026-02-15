@@ -1939,15 +1939,15 @@ function preprocessWorkouts(workouts, bodyweightLbs) {
 // ============================================================
 // STRENGTH INDEX LIFT DEFINITIONS
 // ============================================================
-// p50 = 50th percentile BW multiplier, age-adjusted for 36yo male (~75kg class)
-// Base values from van den Hoek et al. 2024 (26-35 bracket), reduced ~4% for 36-39 bracket
-// Row p50 derived from approximate StrengthLevel data (same age adjustment applied)
+// p50 = 50th percentile BW multiplier for general gym-going male population
+// Derived from STRENGTH_STANDARDS (competition 25th ≈ gym 50th)
+// Age-adjusted dynamically via PROFILE.age
 const STRENGTH_INDEX_LIFTS = {
-  bench:    { weight: 0.20, p50: 1.15, patterns: [/bench press.*barbell/i, /^bench press$/i] },
-  squat:    { weight: 0.25, p50: 1.54, patterns: [/squat.*barbell/i, /^squat$/i, /barbell.*squat/i] },
-  deadlift: { weight: 0.30, p50: 1.78, patterns: [/^deadlift/i, /deadlift.*barbell/i] },
-  ohp:      { weight: 0.10, p50: 0.69, patterns: [/overhead press/i, /shoulder press/i, /military press/i] },
-  row:      { weight: 0.15, p50: 0.86, patterns: [/barbell row/i, /bent over row/i, /pendlay row/i, /seated row/i, /cable row/i, /dumbbell row/i] },
+  bench:    { weight: 0.20, p50: 0.95, patterns: [/bench press.*barbell/i, /^bench press$/i] },
+  squat:    { weight: 0.25, p50: 1.20, patterns: [/squat.*barbell/i, /^squat$/i, /barbell.*squat/i] },
+  deadlift: { weight: 0.30, p50: 1.45, patterns: [/^deadlift/i, /deadlift.*barbell/i] },
+  ohp:      { weight: 0.10, p50: 0.55, patterns: [/overhead press/i, /shoulder press/i, /military press/i] },
+  row:      { weight: 0.15, p50: 0.70, patterns: [/barbell row/i, /bent over row/i, /pendlay row/i, /seated row/i, /cable row/i, /dumbbell row/i] },
 };
 
 // ============================================================
