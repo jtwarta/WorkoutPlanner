@@ -1,5 +1,5 @@
 {"updated":"
-2026-02-13T09:23:28-08:00
+2026-02-14T20:08:33-08:00
 ","resting_heart_rate":
 72
 ,"cardio_fitness":
@@ -7,9 +7,9 @@
 ,"cardio_recovery":
 36.63855095766542
 ,"steps":
-10784
+11246.375
 ,"active_energy_kcal":
-453.171
+346.03475
 ,"walking_heart_rate_avg":
-100
-}
+119
+,"workouts":[WLIST]}
