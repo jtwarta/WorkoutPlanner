@@ -22,6 +22,9 @@
   15. Added cardio row to history heatmap (blue, ≥15 min threshold,
       merges Hevy + Apple Watch with dedup, source icons in detail)
   16. Expanded heatmap from 12 to 14 days
+  17. Apple Health body composition integration: weight entries auto-merge
+      into weight chart, body fat % and lean mass in vitals, waist from
+      HealthKit auto-fills measurements (Hevy → Apple Health → Shortcut → app)
 -->
 
 <html lang="en">
@@ -1354,7 +1357,12 @@ function saveWeightEntry(date, value) {
 
 function getMergedWeightData() {
   const stored = getStoredWeightEntries();
-  const all = [...WEIGHT_DATA_BASELINE, ...stored];
+  // Apple Health weight entries from iOS Shortcut (via Hevy → HealthKit)
+  const appleEntries = (healthData && Array.isArray(healthData.weight_entries))
+    ? healthData.weight_entries.map(e => ({ date: e.date, value: parseFloat(e.lbs) || 0 })).filter(e => e.value > 0)
+    : [];
+  const all = [...WEIGHT_DATA_BASELINE, ...appleEntries, ...stored];
+  // Dedup by date — later sources win (stored > apple > baseline)
   const byDate = {};
   for (const entry of all) {
     byDate[entry.date] = entry.value;
@@ -1469,7 +1477,7 @@ function saveMeasurementEntry(entry) {
 
 function getLatestMeasurements() {
   const entries = getStoredMeasurements();
-  if (entries.length === 0) return null;
+  if (entries.length === 0 && !(healthData && healthData.waist_circumference_in)) return null;
   // Merge all entries — latest value per field wins
   const latest = {};
   const dates = {};
@@ -1481,6 +1489,14 @@ function getLatestMeasurements() {
         latest[field.key] = parseFloat(entry[field.key]);
         dates[field.key] = entry.date;
       }
+    }
+  }
+  // Merge Apple Health waist if we don't have a manual entry or Apple is newer
+  if (healthData && healthData.waist_circumference_in > 0) {
+    const ahDate = healthData.waist_date || healthData.updated || '';
+    if (!latest.waist_in || (ahDate && ahDate > (dates.waist_in || ''))) {
+      latest.waist_in = healthData.waist_circumference_in;
+      dates.waist_in = ahDate;
     }
   }
   if (Object.keys(latest).length === 0) return null;
@@ -3693,6 +3709,28 @@ function renderHealthVitals() {
       <div class="vital-label">Walking HR</div>
       <div class="vital-value">${Math.round(whr)}<span class="vital-unit">bpm</span></div>
       <div class="vital-context" style="color:${whrColor}">${whr < 100 ? 'Good' : whr <= 110 ? 'Normal' : 'Elevated'}</div>
+    </div>`;
+  }
+
+  // Body Fat % (from Hevy → Apple Health)
+  const bf = healthData.body_fat_pct;
+  if (bf && bf > 0) {
+    const bfColor = bf <= 15 ? C.accent : bf <= 20 ? C.blue : bf <= 25 ? C.warn : C.danger;
+    const bfLabel = bf <= 15 ? 'Athletic' : bf <= 20 ? 'Fit' : bf <= 25 ? 'Average' : 'Above Avg';
+    html += `<div class="vital-cell">
+      <div class="vital-label">Body Fat</div>
+      <div class="vital-value">${bf.toFixed(1)}<span class="vital-unit">%</span></div>
+      <div class="vital-context" style="color:${bfColor}">${bfLabel}</div>
+    </div>`;
+  }
+
+  // Lean Body Mass (from Hevy → Apple Health)
+  const lbm = healthData.lean_body_mass_lbs;
+  if (lbm && lbm > 0) {
+    html += `<div class="vital-cell">
+      <div class="vital-label">Lean Mass</div>
+      <div class="vital-value">${Math.round(lbm)}<span class="vital-unit">lbs</span></div>
+      <div class="vital-context">Muscle + bone</div>
     </div>`;
   }
 
