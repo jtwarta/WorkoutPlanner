@@ -66,6 +66,7 @@ html, body {
 background: #0a0a0a;
 background-color: #0a0a0a;
 color-scheme: dark;
+overscroll-behavior-y: none;
 }
 
 body {
@@ -3850,7 +3851,7 @@ async function loadDashboard() {
   const PTR_THRESHOLD = 64;       // px of pull before triggering refresh
   const PTR_MAX_PULL = 100;       // max visual displacement
   let ptrStartY = 0;
-  let ptrActive = false;
+  let ptrPulling = false;         // true once we confirm a downward pull at top
   let ptrRefreshing = false;
 
   const dashboard = document.getElementById('dashboard');
@@ -3859,6 +3860,7 @@ async function loadDashboard() {
   const ptrSpinner = document.getElementById('ptr-spinner');
 
   function isAtTop() {
+    // iOS can report negative scrollY during bounce
     return window.scrollY <= 1;
   }
 
@@ -3866,25 +3868,30 @@ async function loadDashboard() {
     if (ptrRefreshing) return;
     if (isAtTop()) {
       ptrStartY = e.touches[0].clientY;
-      ptrActive = true;
+      ptrPulling = false; // will confirm on first move
+    } else {
+      ptrStartY = 0;
     }
   }, { passive: true });
 
+  // MUST be passive:false so preventDefault() can block iOS native bounce
   dashboard.addEventListener('touchmove', function(e) {
-    if (!ptrActive || ptrRefreshing) return;
+    if (ptrRefreshing || !ptrStartY) return;
+
     const dy = e.touches[0].clientY - ptrStartY;
 
-    if (dy < 0) {
-      // Scrolling up — cancel
-      indicator.style.display = 'none';
+    // Scrolling up or page has scrolled away from top — cancel
+    if (dy < 0 || !isAtTop()) {
+      if (ptrPulling) {
+        ptrPulling = false;
+        indicator.style.display = 'none';
+      }
       return;
     }
 
-    if (!isAtTop()) {
-      ptrActive = false;
-      indicator.style.display = 'none';
-      return;
-    }
+    // Pulling down at top of page — suppress native bounce
+    e.preventDefault();
+    ptrPulling = true;
 
     const pull = Math.min(dy, PTR_MAX_PULL);
     const progress = Math.min(pull / PTR_THRESHOLD, 1);
@@ -3895,19 +3902,19 @@ async function loadDashboard() {
     ptrSpinner.style.display = 'none';
 
     if (progress >= 1) {
-      ptrText.textContent = '↑ Release to refresh';
+      ptrText.textContent = '\u2191 Release to refresh';
       ptrText.style.color = C.accent;
     } else {
-      ptrText.textContent = '↓ Pull to refresh';
+      ptrText.textContent = '\u2193 Pull to refresh';
       ptrText.style.color = C.textDim;
     }
-  }, { passive: true });
+  }, { passive: false });
 
   dashboard.addEventListener('touchend', function() {
-    if (!ptrActive || ptrRefreshing) { ptrActive = false; return; }
-    ptrActive = false;
+    if (!ptrPulling || ptrRefreshing) { ptrPulling = false; ptrStartY = 0; return; }
+    ptrPulling = false;
+    ptrStartY = 0;
 
-    // Check if user pulled past threshold
     const indicatorH = parseInt(indicator.style.height) || 0;
     const pulled = indicatorH / 0.6;
 
@@ -3931,10 +3938,9 @@ async function loadDashboard() {
   async function triggerPullRefresh() {
     ptrRefreshing = true;
 
-    // Show refreshing state
     indicator.style.height = '48px';
     indicator.style.opacity = '1';
-    ptrText.textContent = 'Refreshing…';
+    ptrText.textContent = 'Refreshing\u2026';
     ptrText.style.color = C.accent;
     ptrSpinner.style.display = 'block';
 
@@ -3944,8 +3950,7 @@ async function loadDashboard() {
       setCachedWorkouts(workouts);
       hevyStatus = 'ok';
 
-      // Brief success flash
-      ptrText.textContent = '✓ Updated';
+      ptrText.textContent = '\u2713 Updated';
       ptrSpinner.style.display = 'none';
       await new Promise(r => setTimeout(r, 400));
 
@@ -3953,7 +3958,7 @@ async function loadDashboard() {
     } catch (err) {
       console.error('Pull refresh failed:', err);
       hevyStatus = 'error';
-      ptrText.textContent = '✗ Refresh failed';
+      ptrText.textContent = '\u2717 Refresh failed';
       ptrText.style.color = C.danger;
       ptrSpinner.style.display = 'none';
       await new Promise(r => setTimeout(r, 800));
