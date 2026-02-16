@@ -19,6 +19,9 @@
   13. Removed 30 dead CSS classes (legacy rec-*, workout-*, cardio-rx/week-*,
       zone-*, mono) — ~160 lines of unused styles
   14. Added pull-to-refresh for on-demand workout data sync
+  15. Added cardio row to history heatmap (blue, ≥15 min threshold,
+      merges Hevy + Apple Watch with dedup, source icons in detail)
+  16. Expanded heatmap from 12 to 14 days
 -->
 
 <html lang="en">
@@ -477,8 +480,8 @@ background: var(–surface);
 z-index: 2;
 }
 .heatmap-cell {
-width: 18px;
-height: 18px;
+width: 16px;
+height: 16px;
 border-radius: 3px;
 background: var(–surface2);
 cursor: pointer;
@@ -1659,6 +1662,7 @@ function preprocessWorkouts(workouts, bodyweightLbs, weightData) {
   const siTimeline = [];
   const heatmapDayMuscle = {};
   const heatmapDayWorkouts = {};
+  const heatmapDayCardio = {}; // dateStr → { minutes, sessions: [{ name, minutes, source }] }
 
   // Init muscle stats
   for (const [key, meta] of Object.entries(MUSCLE_GROUPS)) {
@@ -1715,6 +1719,21 @@ function preprocessWorkouts(workouts, bodyweightLbs, weightData) {
         exHistory[name].lastSets = workingSets.length;
         exHistory[name].weights.push(bestWeight);
         exHistory[name].dates.push(wDate);
+      }
+
+      if (classification.primary === 'cardio') {
+        // Accumulate cardio minutes for heatmap row
+        let cardioMin = 0;
+        for (const s of (ex.sets || [])) {
+          if (s.duration_seconds && s.duration_seconds > 0) {
+            cardioMin += s.duration_seconds / 60;
+          }
+        }
+        if (cardioMin > 0) {
+          if (!heatmapDayCardio[dateStr]) heatmapDayCardio[dateStr] = { minutes: 0, sessions: [] };
+          heatmapDayCardio[dateStr].minutes += cardioMin;
+          heatmapDayCardio[dateStr].sessions.push({ name, minutes: Math.round(cardioMin), source: 'hevy' });
+        }
       }
 
       if (classification.primary === 'cardio' || classification.primary === 'other') continue;
@@ -1852,6 +1871,37 @@ function preprocessWorkouts(workouts, bodyweightLbs, weightData) {
     };
   }
 
+  // Merge Apple Watch cardio into heatmap (dedup against Hevy within 30 min)
+  const WATCH_NON_CARDIO_HM = /strength|weight\s*train|yoga|pilates|stretch|cool\s*down|flexibility|mind.*body|tai\s*chi/i;
+  if (healthData && Array.isArray(healthData.workouts)) {
+    // Collect Hevy cardio timestamps for dedup
+    const hevyCardioTs = [];
+    for (const [dateStr, cd] of Object.entries(heatmapDayCardio)) {
+      for (const sess of cd.sessions) {
+        if (sess.source === 'hevy') {
+          // Approximate timestamp from date
+          hevyCardioTs.push(new Date(dateStr + 'T12:00:00').getTime());
+        }
+      }
+    }
+    for (const aw of healthData.workouts) {
+      if (WATCH_NON_CARDIO_HM.test(aw.type || '')) continue;
+      const startStr = (aw.start || '').replace(/\s+at\s+/i, ' ');
+      const awDate = new Date(startStr);
+      if (isNaN(awDate.getTime())) continue;
+      const dur = parseFloat(aw.duration_min) || 0;
+      if (dur <= 0) continue;
+      const dateStr = awDate.toISOString().split('T')[0];
+      // Dedup: skip if Hevy cardio on same day within 30 min
+      const DEDUP_MS = 30 * 60 * 1000;
+      const isDup = hevyCardioTs.some(ts => Math.abs(ts - awDate.getTime()) < DEDUP_MS);
+      if (isDup) continue;
+      if (!heatmapDayCardio[dateStr]) heatmapDayCardio[dateStr] = { minutes: 0, sessions: [] };
+      heatmapDayCardio[dateStr].minutes += dur;
+      heatmapDayCardio[dateStr].sessions.push({ name: aw.type || 'Cardio', minutes: Math.round(dur), source: 'watch' });
+    }
+  }
+
   return {
     exerciseHistory: exHistory,
     muscleStats,
@@ -1859,6 +1909,7 @@ function preprocessWorkouts(workouts, bodyweightLbs, weightData) {
     strengthIndexTimeline: siTimeline,
     heatmapDayMuscle,
     heatmapDayWorkouts,
+    heatmapDayCardio,
   };
 }
 
@@ -2860,18 +2911,21 @@ function toggleMuscleDetail(key) {
 // HEATMAP (v1.7: 12 days, no scroll, no direction row)
 // ============================================================
 let heatmapDayWorkouts = {};
+let heatmapDayCardio = {};
 let selectedHeatmapDay = null;
 
-function renderHeatmap(dayMuscleMap, dayWorkoutsMap) {
+function renderHeatmap(dayMuscleMap, dayWorkoutsMap, dayCardioMap) {
   heatmapDayWorkouts = dayWorkoutsMap;
+  heatmapDayCardio = dayCardioMap || {};
   const container = document.getElementById('heatmap-container');
   const muscleKeys = ['chest', 'back', 'shoulders', 'quads', 'hamstrings', 'glutes', 'biceps', 'triceps', 'calves', 'core', 'neck', 'forearms'];
   const muscleLabels = ['Chest', 'Back', 'Shldr', 'Quads', 'Hams', 'Glts', 'Bis', 'Tris', 'Calves', 'Core', 'Neck', 'F.Arms'];
 
-  // v1.7: 12 days lookback, no scroll
+  const CARDIO_THRESHOLD_MIN = 15; // minimum minutes for a lit cell
+
   const now = new Date();
   const days = [];
-  const numDays = 12;
+  const numDays = 14;
   for (let i = numDays - 1; i >= 0; i--) {
     const d = new Date(now);
     d.setDate(d.getDate() - i);
@@ -2887,20 +2941,20 @@ function renderHeatmap(dayMuscleMap, dayWorkoutsMap) {
   if (maxSets === 0) maxSets = 1;
 
   const labelWidth = 54;
-  const cellSize = 18;
+  const cellSize = 16;
+  const totalRows = muscleKeys.length + 1; // +1 for cardio
   let html = '';
 
-  // Fixed cell sizing for stable layout on all widths
-  html += `<div class="heatmap-grid" style="grid-template-columns: ${labelWidth}px repeat(${numDays}, ${cellSize}px); grid-template-rows: 22px repeat(${muscleKeys.length}, ${cellSize}px);">`;
+  html += `<div class="heatmap-grid" style="grid-template-columns: ${labelWidth}px repeat(${numDays}, ${cellSize}px); grid-template-rows: 22px repeat(${totalRows}, ${cellSize}px);">`;
 
-  // Day labels row
+  // Day labels row — evenly spaced for 14 days
   html += `<div></div>`;
   for (let i = 0; i < days.length; i++) {
     const d = new Date(days[i] + 'T12:00:00');
     const isFirst = i === 0;
     const isLast = i === days.length - 1;
     const isMid1 = i === 4;
-    const isMid2 = i === 8;
+    const isMid2 = i === 9;
     let label = '';
     if (isFirst || isMid1 || isMid2) {
       label = `${d.getMonth() + 1}/${d.getDate()}`;
@@ -2920,6 +2974,20 @@ function renderHeatmap(dayMuscleMap, dayWorkoutsMap) {
       const bgColor = sets > 0 ? `rgba(74, 222, 128, ${opacity})` : C.surface2; // accent RGB with dynamic opacity
       html += `<div class="heatmap-cell" style="background:${bgColor}" data-day="${day}" onclick="selectHeatmapDay('${day}')" title="${day}: ${formatSets(sets)} sets"></div>`;
     }
+  }
+
+  // Cardio row (blue, opacity scales with duration: 15 min → 0.3, 30 → 0.6, 45+ → 1.0)
+  html += `<div class="heatmap-label" style="color:${C.blue}">Cardio</div>`;
+  for (const day of days) {
+    const cd = heatmapDayCardio[day];
+    const min = cd ? cd.minutes : 0;
+    let bgColor = C.surface2;
+    if (min >= CARDIO_THRESHOLD_MIN) {
+      const opacity = Math.max(0.3, Math.min((min - 15) / 30 + 0.3, 1));
+      bgColor = `rgba(96, 165, 250, ${opacity.toFixed(2)})`; // blue RGB
+    }
+    const title = min > 0 ? `${day}: ${Math.round(min)} min cardio` : day;
+    html += `<div class="heatmap-cell" style="background:${bgColor}" data-day="${day}" onclick="selectHeatmapDay('${day}')" title="${title}"></div>`;
   }
 
   html += '</div>';
@@ -2955,10 +3023,14 @@ function selectHeatmapDay(day) {
 
   selectedHeatmapDay = day;
   const exercises = heatmapDayWorkouts[day] || [];
+  const cardio = heatmapDayCardio[day] || null;
   const dateObj = new Date(day + 'T12:00:00');
   const dateStr = dateObj.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
 
-  if (exercises.length === 0) {
+  const hasLifts = exercises.length > 0;
+  const hasCardio = cardio && cardio.sessions && cardio.sessions.length > 0;
+
+  if (!hasLifts && !hasCardio) {
     innerEl.innerHTML = `<div class="detail-date">${dateStr}</div><div style="color:${C.textDim};font-size:12px;">Rest day</div>`;
   } else {
     let html = `<div class="detail-date">${dateStr}</div>`;
@@ -2968,6 +3040,15 @@ function selectHeatmapDay(day) {
         <span class="detail-name">${ex.name}</span>
         <span class="detail-sets">${ex.sets}s${ex.bestReps > 0 ? ` \u00d7 ${ex.bestReps}r` : ''}${weightStr}</span>
       </div>`;
+    }
+    if (hasCardio) {
+      for (const sess of cardio.sessions) {
+        const icon = sess.source === 'watch' ? '\u231A' : '\uD83C\uDFCB\uFE0F';
+        html += `<div class="detail-exercise">
+          <span class="detail-name" style="color:${C.blue}">${icon} ${sess.name}</span>
+          <span class="detail-sets" style="color:${C.blue}">${sess.minutes} min</span>
+        </div>`;
+      }
     }
     innerEl.innerHTML = html;
   }
@@ -3686,12 +3767,12 @@ function renderDashboard(workouts) {
   const syncColor = (hevyStatus === 'ok' && healthStatus === 'ok') ? C.accent
     : (hevyStatus === 'error' || healthStatus === 'missing') ? C.textDim : C.warn;
   document.getElementById('last-updated').innerHTML =
-    `v1.8 \u00b7 ${now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })} <span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${syncColor};margin-left:5px;vertical-align:middle;position:relative;top:-1px;"></span>`;
+    `v1.10 \u00b7 ${now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })} <span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${syncColor};margin-left:5px;vertical-align:middle;position:relative;top:-1px;"></span>`;
 
   renderConstraintChips();
   renderTimedSession(recs);
   renderMuscleGrid(pp.muscleStats, recs);
-  renderHeatmap(pp.heatmapDayMuscle, pp.heatmapDayWorkouts);
+  renderHeatmap(pp.heatmapDayMuscle, pp.heatmapDayWorkouts, pp.heatmapDayCardio);
   renderWeightChart();
   renderHealthVitals();
   renderMeasurementsCard();
