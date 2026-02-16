@@ -18,6 +18,7 @@
       A7 (STRENGTH_INDEX_LIFTS defined), A8 (Storage round-trip)
   13. Removed 30 dead CSS classes (legacy rec-*, workout-*, cardio-rx/week-*,
       zone-*, mono) — ~160 lines of unused styles
+  14. Added pull-to-refresh for on-demand workout data sync
 -->
 
 <html lang="en">
@@ -686,10 +687,15 @@ color: var(–text-dim);
   <!-- Main Dashboard -->
 
   <div id="dashboard" class="hidden">
+    <!-- Pull-to-refresh indicator -->
+    <div id="ptr-indicator" style="display:none;text-align:center;padding:12px 0;font-family:'Space Grotesk',sans-serif;font-size:13px;color:#8e8e98;overflow:hidden;">
+      <div id="ptr-spinner" style="display:none;width:20px;height:20px;border:2px solid #2a2a2e;border-top:2px solid #4ade80;border-radius:50%;margin:0 auto 6px;animation:spin 0.6s linear infinite;"></div>
+      <div id="ptr-text">↓ Pull to refresh</div>
+    </div>
     <div class="header">
       <div style="display:flex;align-items:baseline;gap:10px;">
         <h1>LiftScript</h1>
-        <div class="subtitle" id="last-updated">v1.8</div>
+        <div class="subtitle" id="last-updated">v1.10</div>
       </div>
     </div>
 
@@ -3755,6 +3761,127 @@ async function loadDashboard() {
     showError(`Failed to load: ${err.message}`);
   }
 }
+
+// ============================================================
+// PULL-TO-REFRESH
+// ============================================================
+(function initPullToRefresh() {
+  const PTR_THRESHOLD = 64;       // px of pull before triggering refresh
+  const PTR_MAX_PULL = 100;       // max visual displacement
+  let ptrStartY = 0;
+  let ptrActive = false;
+  let ptrRefreshing = false;
+
+  const dashboard = document.getElementById('dashboard');
+  const indicator = document.getElementById('ptr-indicator');
+  const ptrText = document.getElementById('ptr-text');
+  const ptrSpinner = document.getElementById('ptr-spinner');
+
+  function isAtTop() {
+    return window.scrollY <= 1;
+  }
+
+  dashboard.addEventListener('touchstart', function(e) {
+    if (ptrRefreshing) return;
+    if (isAtTop()) {
+      ptrStartY = e.touches[0].clientY;
+      ptrActive = true;
+    }
+  }, { passive: true });
+
+  dashboard.addEventListener('touchmove', function(e) {
+    if (!ptrActive || ptrRefreshing) return;
+    const dy = e.touches[0].clientY - ptrStartY;
+
+    if (dy < 0) {
+      // Scrolling up — cancel
+      indicator.style.display = 'none';
+      return;
+    }
+
+    if (!isAtTop()) {
+      ptrActive = false;
+      indicator.style.display = 'none';
+      return;
+    }
+
+    const pull = Math.min(dy, PTR_MAX_PULL);
+    const progress = Math.min(pull / PTR_THRESHOLD, 1);
+
+    indicator.style.display = 'block';
+    indicator.style.height = Math.round(pull * 0.6) + 'px';
+    indicator.style.opacity = progress;
+    ptrSpinner.style.display = 'none';
+
+    if (progress >= 1) {
+      ptrText.textContent = '↑ Release to refresh';
+      ptrText.style.color = C.accent;
+    } else {
+      ptrText.textContent = '↓ Pull to refresh';
+      ptrText.style.color = C.textDim;
+    }
+  }, { passive: true });
+
+  dashboard.addEventListener('touchend', function() {
+    if (!ptrActive || ptrRefreshing) { ptrActive = false; return; }
+    ptrActive = false;
+
+    // Check if user pulled past threshold
+    const indicatorH = parseInt(indicator.style.height) || 0;
+    const pulled = indicatorH / 0.6;
+
+    if (pulled >= PTR_THRESHOLD) {
+      triggerPullRefresh();
+    } else {
+      collapseIndicator();
+    }
+  }, { passive: true });
+
+  function collapseIndicator() {
+    indicator.style.transition = 'height 0.2s ease, opacity 0.2s ease';
+    indicator.style.height = '0px';
+    indicator.style.opacity = '0';
+    setTimeout(() => {
+      indicator.style.display = 'none';
+      indicator.style.transition = '';
+    }, 220);
+  }
+
+  async function triggerPullRefresh() {
+    ptrRefreshing = true;
+
+    // Show refreshing state
+    indicator.style.height = '48px';
+    indicator.style.opacity = '1';
+    ptrText.textContent = 'Refreshing…';
+    ptrText.style.color = C.accent;
+    ptrSpinner.style.display = 'block';
+
+    try {
+      const [workouts] = await Promise.all([fetchWorkouts(10, 10), fetchHealthData()]);
+      workoutCache = workouts;
+      setCachedWorkouts(workouts);
+      hevyStatus = 'ok';
+
+      // Brief success flash
+      ptrText.textContent = '✓ Updated';
+      ptrSpinner.style.display = 'none';
+      await new Promise(r => setTimeout(r, 400));
+
+      renderDashboard(workouts);
+    } catch (err) {
+      console.error('Pull refresh failed:', err);
+      hevyStatus = 'error';
+      ptrText.textContent = '✗ Refresh failed';
+      ptrText.style.color = C.danger;
+      ptrSpinner.style.display = 'none';
+      await new Promise(r => setTimeout(r, 800));
+    }
+
+    collapseIndicator();
+    ptrRefreshing = false;
+  }
+})();
 
 // ============================================================
 // DEV TEST HARNESS (guarded behind flag — never runs in production)
