@@ -1,5 +1,4 @@
 <!DOCTYPE html>
-
 <!--
   LiftScript v1.10 — Stability Release
   Changes from v1.8:
@@ -63,7 +62,7 @@
   color-scheme: dark;
 }
 
-- { margin: 0; padding: 0; box-sizing: border-box; }
+* { margin: 0; padding: 0; box-sizing: border-box; }
 
 html, body {
 background: #0a0a0a;
@@ -74,11 +73,12 @@ overscroll-behavior-y: none;
 
 body {
 font-family: ‘Figtree’, -apple-system, sans-serif;
-color: var(–text);
+color: var(--text);
 min-height: 100vh;
 -webkit-font-smoothing: antialiased;
 line-height: 1.5;
 }
+
 
 /* Layout */
 .app {
@@ -93,24 +93,24 @@ background: #0a0a0a;
 .header {
 padding: 8px 0 12px;
 margin-bottom: 12px;
-border-bottom: 1px solid var(–border);
+border-bottom: 1px solid var(--border);
 }
 .header h1 {
 font-size: 26px;
 font-weight: 700;
 letter-spacing: -0.5px;
-color: var(–text);
+color: var(--text);
 }
 .header .subtitle {
 font-size: 13px;
-color: var(–text-dim);
+color: var(--text-dim);
 font-family: ‘Space Grotesk’, sans-serif;
 }
 
 /* Cards */
 .card {
-background: var(–surface);
-border: 1px solid var(–border);
+background: var(--surface);
+border: 1px solid var(--border);
 border-radius: 14px;
 padding: 18px;
 margin-bottom: 14px;
@@ -120,7 +120,7 @@ font-size: 13px;
 font-weight: 600;
 text-transform: uppercase;
 letter-spacing: 1.5px;
-color: var(–text-dim);
+color: var(--text-dim);
 margin-bottom: 14px;
 }
 
@@ -129,10 +129,10 @@ margin-bottom: 14px;
 display: flex;
 gap: 4px;
 margin-bottom: 18px;
-background: var(–surface);
+background: var(--surface);
 border-radius: 12px;
 padding: 4px;
-border: 1px solid var(–border);
+border: 1px solid var(--border);
 }
 .tab {
 flex: 1;
@@ -142,7 +142,7 @@ font-size: 16px;
 font-weight: 600;
 border-radius: 9px;
 cursor: pointer;
-color: var(–text-dim);
+color: var(--text-dim);
 transition: all 0.25s ease;
 border: none;
 background: none;
@@ -150,13 +150,13 @@ font-family: ‘Figtree’, sans-serif;
 -webkit-tap-highlight-color: transparent;
 }
 .tab.active {
-background: var(–surface3);
-color: var(–text);
+background: var(--surface3);
+color: var(--text);
 }
 
-.urgency-high { background: var(–danger-dim); color: var(–danger); }
-.urgency-med { background: var(–warn-dim); color: var(–warn); }
-.urgency-low { background: var(–accent-dim); color: var(–accent); }
+.urgency-high { background: var(--danger-dim); color: var(--danger); }
+.urgency-med { background: var(--warn-dim); color: var(--warn); }
+.urgency-low { background: var(--accent-dim); color: var(--accent); }
 
 /* Expandable explainer */
 .rec-expand {
@@ -171,11 +171,11 @@ opacity: 1;
 .rec-explainer {
 padding: 0 2px 14px 40px;
 font-size: 14px;
-color: var(–text-mid);
+color: var(--text-mid);
 line-height: 1.55;
 }
 .rec-explainer strong {
-color: var(–text);
+color: var(--text);
 font-weight: 600;
 }
 
@@ -188,18 +188,18 @@ align-items: center;
 justify-content: space-between;
 margin-bottom: 14px;
 padding-bottom: 10px;
-border-bottom: 1px solid var(–border);
+border-bottom: 1px solid var(--border);
 }
 .session-time {
 font-family: ‘Space Grotesk’, sans-serif;
 font-size: 15px;
 font-weight: 600;
-color: var(–accent);
+color: var(--accent);
 }
 .session-count {
 font-family: ‘Space Grotesk’, sans-serif;
 font-size: 13px;
-color: var(–text-dim);
+color: var(--text-dim);
 }
 
 .ex-group {
@@ -211,7 +211,7 @@ font-size: 14px;
 font-weight: 600;
 margin-bottom: 8px;
 padding-bottom: 6px;
-border-bottom: 1px solid var(–border);
+border-bottom: 1px solid var(--border);
 }
 .ex-row {
 display: flex;
@@ -225,19 +225,19 @@ font-weight: 500;
 flex: 1;
 min-width: 0;
 padding-right: 12px;
-color: var(–text);
+color: var(--text);
 }
 .ex-prescription {
 font-family: ‘Space Grotesk’, sans-serif;
 font-size: 13px;
-color: var(–accent);
+color: var(--accent);
 white-space: nowrap;
 flex-shrink: 0;
 }
 .ex-time {
 font-family: ‘Space Grotesk’, sans-serif;
 font-size: 11px;
-color: var(–text-dim);
+color: var(--text-dim);
 white-space: nowrap;
 flex-shrink: 0;
 margin-left: 8px;
@@ -257,7 +257,7 @@ gap: 10px;
 border-radius: 10px;
 padding: 12px;
 transition: all 0.3s ease;
-border: 1px solid var(–border);
+border: 1px solid var(--border);
 cursor: pointer;
 -webkit-tap-highlight-color: transparent;
 }
@@ -282,7 +282,7 @@ letter-spacing: 0.5px;
 }
 .muscle-stat {
 font-size: 12px;
-color: var(–text-mid);
+color: var(--text-mid);
 font-family: ‘Space Grotesk’, sans-serif;
 margin-top: 5px;
 }
@@ -298,15 +298,15 @@ opacity: 1;
 }
 .muscle-detail-inner {
 padding: 14px;
-background: var(–surface2);
+background: var(--surface2);
 border-radius: 10px;
-border: 1px solid var(–border);
+border: 1px solid var(--border);
 font-size: 14px;
-color: var(–text-mid);
+color: var(--text-mid);
 line-height: 1.55;
 }
 .muscle-detail-inner strong {
-color: var(–text);
+color: var(--text);
 font-weight: 600;
 }
 
@@ -335,7 +335,7 @@ font-family: ‘Space Grotesk’, sans-serif;
 font-size: 32px;
 font-weight: 700;
 letter-spacing: -1px;
-color: var(–text);
+color: var(--text);
 }
 .weight-delta {
 font-family: ‘Space Grotesk’, sans-serif;
@@ -343,7 +343,7 @@ font-size: 14px;
 }
 .weight-unit {
 font-size: 14px;
-color: var(–text-dim);
+color: var(--text-dim);
 }
 
 /* Constraints chips */
@@ -358,9 +358,9 @@ padding: 5px 10px;
 font-size: 13px;
 font-weight: 500;
 font-family: ‘Space Grotesk’, sans-serif;
-background: var(–surface2);
-color: var(–text-dim);
-border: 1px solid var(–border);
+background: var(--surface2);
+color: var(--text-dim);
+border: 1px solid var(--border);
 border-radius: 6px;
 cursor: pointer;
 -webkit-tap-highlight-color: transparent;
@@ -371,9 +371,9 @@ user-select: none;
 transform: scale(0.96);
 }
 .constraint-chip.active {
-color: var(–accent);
+color: var(--accent);
 border-color: rgba(74, 222, 128, 0.3);
-background: var(–accent-dim);
+background: var(--accent-dim);
 }
 .chart-legend {
 display: flex;
@@ -381,7 +381,7 @@ gap: 16px;
 margin-top: 12px;
 font-size: 12px;
 font-family: ‘Space Grotesk’, sans-serif;
-color: var(–text-mid);
+color: var(--text-mid);
 }
 .legend-dot {
 display: inline-block;
@@ -397,8 +397,8 @@ vertical-align: middle;
 padding: 5px 12px;
 font-size: 13px;
 font-weight: 600;
-background: var(–accent-dim);
-color: var(–accent);
+background: var(--accent-dim);
+color: var(--accent);
 border: 1px solid rgba(74, 222, 128, 0.25);
 border-radius: 7px;
 cursor: pointer;
@@ -415,9 +415,9 @@ align-items: center;
 gap: 8px;
 margin-bottom: 14px;
 padding: 12px;
-background: var(–surface2);
+background: var(--surface2);
 border-radius: 10px;
-border: 1px solid var(–border);
+border: 1px solid var(--border);
 flex-wrap: wrap;
 }
 .weight-input-form.open {
@@ -428,21 +428,21 @@ width: 90px;
 padding: 7px 10px;
 font-size: 15px;
 font-family: ‘Space Grotesk’, sans-serif;
-background: var(–surface);
-color: var(–text);
-border: 1px solid var(–border);
+background: var(--surface);
+color: var(--text);
+border: 1px solid var(--border);
 border-radius: 7px;
 outline: none;
 -webkit-appearance: none;
 }
 .weight-input-form input:focus {
-border-color: var(–accent);
+border-color: var(--accent);
 }
 .weight-input-form .btn-save {
 padding: 7px 14px;
 font-size: 13px;
 font-weight: 600;
-background: var(–accent);
+background: var(--accent);
 color: #0a0a0a;
 border: none;
 border-radius: 7px;
@@ -453,7 +453,7 @@ font-family: ‘Figtree’, sans-serif;
 padding: 7px 10px;
 font-size: 13px;
 background: none;
-color: var(–text-dim);
+color: var(--text-dim);
 border: none;
 cursor: pointer;
 font-family: ‘Figtree’, sans-serif;
@@ -473,21 +473,21 @@ gap: 3px;
 .heatmap-label {
 font-size: 12px;
 font-family: ‘Space Grotesk’, sans-serif;
-color: var(–text-mid);
+color: var(--text-mid);
 display: flex;
 align-items: center;
 padding-right: 6px;
 white-space: nowrap;
 position: sticky;
 left: 0;
-background: var(–surface);
+background: var(--surface);
 z-index: 2;
 }
 .heatmap-cell {
 width: 16px;
 height: 16px;
 border-radius: 3px;
-background: var(–surface2);
+background: var(--surface2);
 cursor: pointer;
 transition: opacity 0.15s ease;
 }
@@ -497,7 +497,7 @@ opacity: 0.7;
 .heatmap-day-labels {
 font-size: 10px;
 font-family: ‘Space Grotesk’, sans-serif;
-color: var(–text-dim);
+color: var(--text-dim);
 display: flex;
 align-items: flex-end;
 padding-bottom: 4px;
@@ -517,9 +517,9 @@ margin-top: 12px;
 }
 .heatmap-day-detail-inner {
 padding: 14px;
-background: var(–surface2);
+background: var(--surface2);
 border-radius: 10px;
-border: 1px solid var(–border);
+border: 1px solid var(--border);
 font-size: 14px;
 line-height: 1.6;
 }
@@ -528,7 +528,7 @@ font-weight: 600;
 margin-bottom: 8px;
 font-size: 13px;
 font-family: ‘Space Grotesk’, sans-serif;
-color: var(–text-mid);
+color: var(--text-mid);
 }
 .heatmap-day-detail-inner .detail-exercise {
 display: flex;
@@ -539,14 +539,15 @@ padding: 4px 0;
 .heatmap-day-detail-inner .detail-name {
 font-weight: 500;
 font-size: 14px;
-color: var(–text);
+color: var(--text);
 }
 .heatmap-day-detail-inner .detail-sets {
 font-size: 12px;
 font-family: ‘Space Grotesk’, sans-serif;
-color: var(–accent);
+color: var(--accent);
 flex-shrink: 0;
 }
+
 
 /* ===================== */
 /* LOADING & ERROR       */
@@ -561,24 +562,24 @@ gap: 18px;
 }
 .spinner {
 width: 28px; height: 28px;
-border: 2.5px solid var(–border);
-border-top-color: var(–accent);
+border: 2.5px solid var(--border);
+border-top-color: var(--accent);
 border-radius: 50%;
 animation: spin 0.75s linear infinite;
 }
 @keyframes spin { to { transform: rotate(360deg); } }
 .loading-text {
 font-size: 14px;
-color: var(–text-dim);
+color: var(--text-dim);
 font-family: ‘Space Grotesk’, sans-serif;
 }
 .error-msg {
-background: var(–danger-dim);
+background: var(--danger-dim);
 border: 1px solid rgba(248,113,113,0.2);
 border-radius: 10px;
 padding: 14px;
 font-size: 14px;
-color: var(–danger);
+color: var(--danger);
 margin-bottom: 14px;
 line-height: 1.4;
 }
@@ -593,34 +594,34 @@ margin-top: 14px;
 .vital-cell {
 padding: 12px;
 border-radius: 10px;
-border: 1px solid var(–border);
-background: var(–surface2);
+border: 1px solid var(--border);
+background: var(--surface2);
 }
 .vital-label {
 font-size: 11px;
 font-weight: 600;
 text-transform: uppercase;
 letter-spacing: 1px;
-color: var(–text-dim);
+color: var(--text-dim);
 margin-bottom: 6px;
 }
 .vital-value {
 font-family: ‘Space Grotesk’, sans-serif;
 font-size: 22px;
 font-weight: 700;
-color: var(–text);
+color: var(--text);
 line-height: 1.2;
 }
 .vital-unit {
 font-size: 12px;
 font-weight: 400;
-color: var(–text-dim);
+color: var(--text-dim);
 margin-left: 2px;
 }
 .vital-context {
 font-size: 11px;
 font-family: ‘Space Grotesk’, sans-serif;
-color: var(–text-dim);
+color: var(--text-dim);
 margin-top: 4px;
 }
 
@@ -628,7 +629,7 @@ margin-top: 4px;
 .cardio-score-row {
 margin-bottom: 14px;
 padding-bottom: 14px;
-border-bottom: 1px solid var(–border);
+border-bottom: 1px solid var(--border);
 }
 .cardio-score-header {
 display: flex;
@@ -645,11 +646,11 @@ gap: 6px;
 font-family: ‘Space Grotesk’, sans-serif;
 font-size: 28px;
 font-weight: 700;
-color: var(–text);
+color: var(--text);
 }
 .cardio-score-unit {
 font-size: 12px;
-color: var(–text-dim);
+color: var(--text-dim);
 }
 .cardio-score-label {
 font-family: ‘Space Grotesk’, sans-serif;
@@ -659,7 +660,7 @@ font-weight: 600;
 .cardio-score-bar-wrap {
 height: 6px;
 border-radius: 3px;
-background: var(–surface3);
+background: var(--surface3);
 overflow: hidden;
 position: relative;
 }
@@ -674,8 +675,9 @@ justify-content: space-between;
 margin-top: 4px;
 font-size: 10px;
 font-family: ‘Space Grotesk’, sans-serif;
-color: var(–text-dim);
+color: var(--text-dim);
 }
+
 
 .hidden { display: none; }
 </style>
@@ -714,7 +716,6 @@ color: var(–text-dim);
 </div>
 
 <!-- Today Tab -->
-
 <div id="tab-today">
   <div class="card" style="border:1px solid #2a2a2e;">
     <div class="card-title">Today's Session</div>
@@ -730,7 +731,6 @@ color: var(–text-dim);
 </div>
 
 <!-- Muscles Tab -->
-
 <div id="tab-muscles" class="hidden">
   <div class="card">
     <div class="card-title">Muscle Group Status</div>
@@ -742,7 +742,6 @@ color: var(–text-dim);
 </div>
 
 <!-- History Tab -->
-
 <div id="tab-history" class="hidden">
   <div class="card">
     <div class="card-title">Training Heatmap</div>
@@ -754,7 +753,6 @@ color: var(–text-dim);
 </div>
 
 <!-- Weight Tab -->
-
 <div id="tab-weight" class="hidden">
   <div class="card">
     <div class="card-title" style="display:flex;align-items:center;justify-content:space-between;">
@@ -786,7 +784,6 @@ color: var(–text-dim);
   </div>
 
   <!-- Health Vitals Card -->
-
   <div class="card" id="health-vitals-card" style="display:none;">
     <div class="card-title" style="display:flex;align-items:center;justify-content:space-between;">
       <span>Health Vitals</span>
@@ -813,7 +810,6 @@ color: var(–text-dim);
   </div>
 
   <!-- Body Measurements Card (v1.7) -->
-
   <div class="card" id="measurements-card">
     <div class="card-title" style="display:flex;align-items:center;justify-content:space-between;">
       <span>Body Measurements</span>
@@ -3088,6 +3084,19 @@ function selectHeatmapDay(day) {
   });
 }
 
+// Dismiss heatmap selection when tapping outside
+document.addEventListener('click', function(e) {
+  if (!selectedHeatmapDay) return;
+  if (e.target.closest('.heatmap-container, .heatmap-day-detail')) return;
+  const detailEl = document.getElementById('heatmap-day-detail');
+  if (detailEl && detailEl.classList.contains('open')) {
+    detailEl.style.maxHeight = '0';
+    detailEl.classList.remove('open');
+    selectedHeatmapDay = null;
+    document.querySelectorAll('.heatmap-cell').forEach(cell => { cell.style.outline = 'none'; });
+  }
+});
+
 // ============================================================
 // WEIGHT CHART + SI (v1.1 Task 2: always-visible SI panel)
 // ============================================================
@@ -3435,7 +3444,13 @@ function renderMeasurementsDisplay() {
     if (!val) continue;
     hasAny = true;
     const dateStr = latest._dates ? latest._dates[field.key] : '';
-    const daysAgo = dateStr ? Math.floor((Date.now() - new Date(dateStr + 'T12:00:00').getTime()) / (1000 * 60 * 60 * 24)) : null;
+    let daysAgo = null;
+    if (dateStr) {
+      // Handle both "yyyy-MM-dd" and full ISO datetime strings
+      const dateOnly = dateStr.length > 10 ? dateStr.slice(0, 10) : dateStr;
+      const parsed = new Date(dateOnly + 'T12:00:00');
+      daysAgo = isNaN(parsed.getTime()) ? null : Math.floor((Date.now() - parsed.getTime()) / (1000 * 60 * 60 * 24));
+    }
     const stale = daysAgo !== null && daysAgo > 90;
     const ageLabel = daysAgo === 0 ? 'today' : daysAgo !== null ? `${daysAgo}d ago` : '';
     const ageColor = stale ? C.warn : C.textDark;
