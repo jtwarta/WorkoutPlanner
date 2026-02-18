@@ -733,6 +733,10 @@ color: var(--text-dim);
 
 <!-- History Tab -->
 <div id="tab-history" class="hidden">
+  <div class="card" id="weekly-summary-card">
+    <div class="card-title">This Week</div>
+    <div id="weekly-summary"></div>
+  </div>
   <div class="card">
     <div class="card-title">Training Heatmap</div>
     <div class="heatmap-container" id="heatmap-container"></div>
@@ -2984,6 +2988,96 @@ function toggleMuscleDetail(key) {
 }
 
 // ============================================================
+// WEEKLY SUMMARY (v1.11 Item 7)
+// ============================================================
+function renderWeeklySummary(dayWorkoutsMap, dayMuscleMap, dayCardioMap, workouts) {
+  const container = document.getElementById('weekly-summary');
+  if (!container) return;
+
+  const now = new Date();
+  const muscleTotal = Object.keys(MUSCLE_GROUPS).length;
+
+  // Helper: compute stats for a 7-day window ending on `endDate`
+  function weekStats(endDate) {
+    const sessions = new Set();
+    let totalSets = 0;
+    const musclesHit = new Set();
+    let cardioMin = 0;
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(endDate);
+      d.setDate(d.getDate() - i);
+      const key = localDateStr(d);
+      // Lifting
+      const exs = dayWorkoutsMap[key];
+      if (exs && exs.length > 0) {
+        sessions.add(key);
+        for (const ex of exs) totalSets += ex.sets;
+      }
+      // Muscles
+      const muscles = dayMuscleMap[key];
+      if (muscles) {
+        for (const m of Object.keys(muscles)) {
+          if (muscles[m] > 0) musclesHit.add(m);
+        }
+      }
+      // Cardio
+      const cd = dayCardioMap[key];
+      if (cd && cd.minutes) cardioMin += cd.minutes;
+    }
+    return { sessions: sessions.size, totalSets, musclesHit: musclesHit.size, cardioMin };
+  }
+
+  const thisWeek = weekStats(now);
+  const lastWeekEnd = new Date(now);
+  lastWeekEnd.setDate(lastWeekEnd.getDate() - 7);
+  const lastWeek = weekStats(lastWeekEnd);
+
+  // Delta helper
+  function delta(curr, prev) {
+    const diff = curr - prev;
+    if (diff === 0 || prev === 0) return '';
+    const sign = diff > 0 ? '+' : '';
+    return `<span style="font-size:10px;font-family:'Space Grotesk',sans-serif;color:${diff > 0 ? C.accent : C.warn};margin-left:4px;">${sign}${diff}</span>`;
+  }
+
+  // Cardio bar
+  const cardioTarget = CARDIO_WEEKLY_TARGETS.totalMinModerate;
+  const cardioPct = Math.min(100, Math.round((thisWeek.cardioMin / cardioTarget) * 100));
+  const cardioBarColor = cardioPct >= 100 ? C.accent : cardioPct >= 50 ? C.blue : C.warn;
+
+  const statStyle = `padding:12px;border-radius:8px;border:1px solid ${C.border};background:${C.surface2};text-align:center;`;
+  const labelStyle = `font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:${C.textDim};font-family:'Space Grotesk',sans-serif;margin-bottom:4px;`;
+  const valueStyle = `font-family:'Space Grotesk',sans-serif;font-size:22px;font-weight:700;color:${C.text};line-height:1.2;`;
+  const subStyle = `font-size:11px;font-family:'Space Grotesk',sans-serif;color:${C.textDark};`;
+
+  container.innerHTML = `
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px;">
+      <div style="${statStyle}">
+        <div style="${labelStyle}">Sessions</div>
+        <div style="${valueStyle}">${thisWeek.sessions}${delta(thisWeek.sessions, lastWeek.sessions)}</div>
+        <div style="${subStyle}">of 7 days</div>
+      </div>
+      <div style="${statStyle}">
+        <div style="${labelStyle}">Volume</div>
+        <div style="${valueStyle}">${thisWeek.totalSets}${delta(thisWeek.totalSets, lastWeek.totalSets)}</div>
+        <div style="${subStyle}">total sets</div>
+      </div>
+      <div style="${statStyle}">
+        <div style="${labelStyle}">Coverage</div>
+        <div style="${valueStyle}">${thisWeek.musclesHit}<span style="font-size:14px;font-weight:400;color:${C.textDim};">/${muscleTotal}</span></div>
+        <div style="${subStyle}">muscles</div>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;">
+      <div style="font-family:'Space Grotesk',sans-serif;font-size:13px;color:${cardioPct >= 100 ? C.accent : C.text};font-weight:600;white-space:nowrap;">${Math.round(thisWeek.cardioMin)}/${cardioTarget}m</div>
+      <div style="flex:1;height:5px;border-radius:3px;background:${C.surface3};overflow:hidden;">
+        <div style="height:100%;border-radius:3px;background:${cardioBarColor};width:${cardioPct}%;transition:width 0.4s ease;"></div>
+      </div>
+      <div style="font-family:'Space Grotesk',sans-serif;font-size:11px;color:${C.textDim};white-space:nowrap;">cardio${delta(Math.round(thisWeek.cardioMin), Math.round(lastWeek.cardioMin))}</div>
+    </div>`;
+}
+
+// ============================================================
 // HEATMAP (v1.7: 12 days, no scroll, no direction row)
 // ============================================================
 let heatmapDayWorkouts = {};
@@ -3937,6 +4031,7 @@ function renderDashboard(workouts) {
   renderConstraintChips();
   renderTimedSession(recs);
   renderMuscleGrid(pp.muscleStats, recs);
+  renderWeeklySummary(pp.heatmapDayWorkouts, pp.heatmapDayMuscle, pp.heatmapDayCardio, workouts);
   renderHeatmap(pp.heatmapDayMuscle, pp.heatmapDayWorkouts, pp.heatmapDayCardio);
   renderWeightChart();
   renderHealthVitals();
