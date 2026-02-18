@@ -861,7 +861,7 @@ function localDateStr(d) {
 }
 
 // ============================================================
-// COLOR CONSTANTS (CSS Rendering Guidance Â§4)
+// COLOR CONSTANTS (CSS Rendering Guidance §4)
 // Single source of truth for all JS-rendered inline styles.
 // Hex values here match the CSS custom properties in <style>.
 // ============================================================
@@ -2324,16 +2324,16 @@ function buildCardioBreakdownHTML(history) {
   if (history.hevySessions > 0) parts.push(`\u{1F3CB}\uFE0F Hevy: ${history.hevySessions} session${history.hevySessions > 1 ? 's' : ''}, ${Math.round(history.hevyMinutes)} min`);
   if (history.appleSessions > 0) parts.push(`\u231A Watch: ${history.appleSessions} session${history.appleSessions > 1 ? 's' : ''}, ${Math.round(history.appleMinutes)} min`);
 
-  let html = `<div style="font-size:11px;font-family:'Space Grotesk',sans-serif;color:${C.textDim};margin-bottom:8px;">${parts.join(' Â· ')}</div>`;
+  let html = `<div style="font-size:11px;font-family:'Space Grotesk',sans-serif;color:${C.textDim};margin-bottom:8px;">${parts.join(' · ')}</div>`;
 
   // Per-session rows
   for (const s of sorted) {
     const dayStr = s.date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
     const icon = s.source === 'watch' ? '\u231A' : '\u{1F3CB}\uFE0F';
-    const calStr = s.calories > 0 ? ` Â· ${Math.round(s.calories)} cal` : '';
+    const calStr = s.calories > 0 ? ` · ${Math.round(s.calories)} cal` : '';
     html += `<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;font-size:12px;font-family:'Space Grotesk',sans-serif;">
       <span style="color:${C.textMid};">${icon} ${s.type}</span>
-      <span style="color:${C.textDark};">${Math.round(s.minutes)} min${calStr} Â· ${dayStr}</span>
+      <span style="color:${C.textDark};">${Math.round(s.minutes)} min${calStr} · ${dayStr}</span>
     </div>`;
   }
 
@@ -3521,7 +3521,7 @@ function renderProportionsDisplay() {
     const vals = rule.requires.map(k => {
       const f = MEASUREMENT_FIELDS.find(mf => mf.key === k);
       return `${f ? f.label : k}: ${latest[k].toFixed(1)}"`;
-    }).join(' Â· ');
+    }).join(' · ');
 
     html += `<div style="padding:8px 0;border-bottom:1px solid ${C.surface2};">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
@@ -3531,7 +3531,7 @@ function renderProportionsDisplay() {
       <div style="height:4px;border-radius:2px;background:${C.surface3};overflow:hidden;">
         <div style="height:100%;width:${barPct}%;border-radius:2px;background:${statusColor};transition:width 0.4s ease;"></div>
       </div>
-      <div style="font-size:11px;font-family:'Space Grotesk',sans-serif;color:${C.textDark};margin-top:3px;">${rule.label}: ${actual.toFixed(2)} (target ${target.toFixed(2)}) Â· ${vals}</div>
+      <div style="font-size:11px;font-family:'Space Grotesk',sans-serif;color:${C.textDark};margin-top:3px;">${rule.label}: ${actual.toFixed(2)} (target ${target.toFixed(2)}) · ${vals}</div>
     </div>`;
   }
 
@@ -4142,7 +4142,7 @@ function runDevTests() {
   });
 
   // Report
-  console.group('ðŸ§ª LiftScript Dev Tests');
+  console.group('🧪 LiftScript Dev Tests');
   for (const r of results) {
     console.log(`${r.pass ? '✅' : '❌'} ${r.test}${r.pass ? '' : ' (got: ' + r.got + ')'}`);
   }
