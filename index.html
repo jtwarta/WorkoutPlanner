@@ -862,6 +862,14 @@ const PROFILE = {
   get bodyweightKg() { return this.bodyweightLbs * 0.453592; }
 };
 
+// Local date string helper — avoids UTC shift from toISOString()
+function localDateStr(d) {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
 // ============================================================
 // COLOR CONSTANTS (CSS Rendering Guidance §4)
 // Single source of truth for all JS-rendered inline styles.
@@ -1707,7 +1715,7 @@ function preprocessWorkouts(workouts, bodyweightLbs, weightData) {
   // ---- Single pass ----
   for (const w of sorted) {
     const wDate = new Date(w.start_time || w.created_at);
-    const dateStr = wDate.toISOString().split('T')[0];
+    const dateStr = localDateStr(wDate);
     const isRecent = wDate >= thirtyDaysAgo;
     const musclesThisWorkout = new Set();
     let siUpdated = false;
@@ -1908,7 +1916,7 @@ function preprocessWorkouts(workouts, bodyweightLbs, weightData) {
       if (isNaN(awDate.getTime())) continue;
       const dur = parseFloat(aw.duration_min) || 0;
       if (dur <= 0) continue;
-      const dateStr = awDate.toISOString().split('T')[0];
+      const dateStr = localDateStr(awDate);
       // Dedup: skip if Hevy cardio on same day within 30 min
       const DEDUP_MS = 30 * 60 * 1000;
       const isDup = hevyCardioTs.some(ts => Math.abs(ts - awDate.getTime()) < DEDUP_MS);
@@ -2248,9 +2256,11 @@ function generateCardioRecommendations(workouts) {
 
   // Decide session split: if 3+ sessions remain, prescribe 1 HIIT + 1 Zone 2
   // If 2 remain: 1 Zone 2 + 1 HIIT. If 1 remains: Zone 2 (safer default)
-  const needHIIT = remainingSessions >= 2 && history.cardioSessions7d < 1;
-  const zone2Count = needHIIT ? 1 : Math.min(remainingSessions, 2);
-  const hiitCount = needHIIT ? 1 : (remainingSessions >= 2 ? 1 : 0);
+  // If sessions met but minutes remain, prescribe 1 Zone 2 to fill the gap
+  const effectiveSessions = remainingSessions > 0 ? remainingSessions : (remainingMin > 0 ? 1 : 0);
+  const needHIIT = effectiveSessions >= 2 && history.cardioSessions7d < 1;
+  const zone2Count = needHIIT ? 1 : Math.min(effectiveSessions, 2);
+  const hiitCount = needHIIT ? 1 : (effectiveSessions >= 2 ? 1 : 0);
 
   // Pick zone 2 protocols (avoid recently used modalities for variety)
   const z2Pool = CARDIO_PROTOCOLS.zone2.filter(p => !history.recentModalities.includes(p.modality));
@@ -2946,7 +2956,7 @@ function renderHeatmap(dayMuscleMap, dayWorkoutsMap, dayCardioMap) {
   for (let i = numDays - 1; i >= 0; i--) {
     const d = new Date(now);
     d.setDate(d.getDate() - i);
-    days.push(d.toISOString().split('T')[0]);
+    days.push(localDateStr(d));
   }
 
   let maxSets = 0;
@@ -3730,7 +3740,19 @@ function renderHealthVitals() {
     html += `<div class="vital-cell">
       <div class="vital-label">Lean Mass</div>
       <div class="vital-value">${Math.round(lbm)}<span class="vital-unit">lbs</span></div>
-      <div class="vital-context">Muscle + bone</div>
+      <div class="vital-context">via Apple Health</div>
+    </div>`;
+  }
+
+  // Waist (from Hevy → Apple Health)
+  const waistAH = healthData.waist_circumference_in;
+  if (waistAH && waistAH > 0) {
+    const waistDate = healthData.waist_date || '';
+    const waistCtx = waistDate ? waistDate : 'via Apple Health';
+    html += `<div class="vital-cell">
+      <div class="vital-label">Waist</div>
+      <div class="vital-value">${waistAH.toFixed(1)}<span class="vital-unit">in</span></div>
+      <div class="vital-context">${waistCtx}</div>
     </div>`;
   }
 
