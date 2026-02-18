@@ -1,29 +1,14 @@
 <!DOCTYPE html>
 <!--
-  LiftScript v1.10 — Stability Release
-  Changes from v1.8:
-  1.  Fixed universal reset selector (* vs -)
-  2.  Fixed all CSS var() en-dash encoding (U+2013 → ASCII --)
-  3.  Removed stray markdown code fences from HTML body
-  4.  Fixed ${C.xxx} in static HTML (replaced with hex values)
-  5.  Fixed ${C.xxx} in single-quoted JS strings (converted to template literals)
-  6.  Moved STRENGTH_INDEX_LIFTS definition above preprocessWorkouts
-  7.  Made preprocessWorkouts accept weightData as explicit parameter
-  8.  Replaced window._muscleRecMap with module-scoped variable
-  9.  Added centralized Storage utility with error boundaries
-  10. Migrated all localStorage calls through Storage wrapper
-  11. Added boot-time CSS sanity check (validates --accent loads)
-  12. Expanded dev test harness: A4 (CSS vars), A5 (reset), A6 (fences),
-      A7 (STRENGTH_INDEX_LIFTS defined), A8 (Storage round-trip)
-  13. Removed 30 dead CSS classes (legacy rec-*, workout-*, cardio-rx/week-*,
-      zone-*, mono) — ~160 lines of unused styles
-  14. Added pull-to-refresh for on-demand workout data sync
-  15. Added cardio row to history heatmap (blue, ≥15 min threshold,
-      merges Hevy + Apple Watch with dedup, source icons in detail)
-  16. Expanded heatmap from 12 to 14 days
-  17. Apple Health body composition integration: weight entries auto-merge
-      into weight chart, body fat % and lean mass in vitals, waist from
-      HealthKit auto-fills measurements (Hevy → Apple Health → Shortcut → app)
+  LiftScript v1.11
+  Changes from v1.10:
+  1.  Fixed UTC date bug: weight + measurement date defaults now use localDateStr()
+  2.  Fixed mojibake curly quotes in CSS font-family declarations (27 occurrences)
+  3.  saveWeightEntry: upsert by date (no duplicates), sort, cap at 400
+  4.  saveMeasurementEntry: upsert + merge fields by date, sort, cap at 400
+  5.  Anatomy sort: unknown muscles sort last instead of first
+  6.  Cardio minutes: 15-min default when duration_seconds missing but sets exist
+  7.  Added desktop-visible refresh button in header
 -->
 
 <html lang="en">
@@ -72,7 +57,7 @@ overscroll-behavior-y: none;
 }
 
 body {
-font-family: ‘Figtree’, -apple-system, sans-serif;
+font-family: 'Figtree', -apple-system, sans-serif;
 color: var(--text);
 min-height: 100vh;
 -webkit-font-smoothing: antialiased;
@@ -104,7 +89,7 @@ color: var(--text);
 .header .subtitle {
 font-size: 13px;
 color: var(--text-dim);
-font-family: ‘Space Grotesk’, sans-serif;
+font-family: 'Space Grotesk', sans-serif;
 }
 
 /* Cards */
@@ -146,7 +131,7 @@ color: var(--text-dim);
 transition: all 0.25s ease;
 border: none;
 background: none;
-font-family: ‘Figtree’, sans-serif;
+font-family: 'Figtree', sans-serif;
 -webkit-tap-highlight-color: transparent;
 }
 .tab.active {
@@ -191,13 +176,13 @@ padding-bottom: 10px;
 border-bottom: 1px solid var(--border);
 }
 .session-time {
-font-family: ‘Space Grotesk’, sans-serif;
+font-family: 'Space Grotesk', sans-serif;
 font-size: 15px;
 font-weight: 600;
 color: var(--accent);
 }
 .session-count {
-font-family: ‘Space Grotesk’, sans-serif;
+font-family: 'Space Grotesk', sans-serif;
 font-size: 13px;
 color: var(--text-dim);
 }
@@ -228,14 +213,14 @@ padding-right: 12px;
 color: var(--text);
 }
 .ex-prescription {
-font-family: ‘Space Grotesk’, sans-serif;
+font-family: 'Space Grotesk', sans-serif;
 font-size: 13px;
 color: var(--accent);
 white-space: nowrap;
 flex-shrink: 0;
 }
 .ex-time {
-font-family: ‘Space Grotesk’, sans-serif;
+font-family: 'Space Grotesk', sans-serif;
 font-size: 11px;
 color: var(--text-dim);
 white-space: nowrap;
@@ -276,14 +261,14 @@ font-size: 9px;
 font-weight: 600;
 padding: 2px 6px;
 border-radius: 4px;
-font-family: ‘Space Grotesk’, sans-serif;
+font-family: 'Space Grotesk', sans-serif;
 text-transform: uppercase;
 letter-spacing: 0.5px;
 }
 .muscle-stat {
 font-size: 12px;
 color: var(--text-mid);
-font-family: ‘Space Grotesk’, sans-serif;
+font-family: 'Space Grotesk', sans-serif;
 margin-top: 5px;
 }
 .muscle-detail {
@@ -331,14 +316,14 @@ position: relative;
 }
 .weight-chart canvas { width: 100%; height: 100%; }
 .weight-current {
-font-family: ‘Space Grotesk’, sans-serif;
+font-family: 'Space Grotesk', sans-serif;
 font-size: 32px;
 font-weight: 700;
 letter-spacing: -1px;
 color: var(--text);
 }
 .weight-delta {
-font-family: ‘Space Grotesk’, sans-serif;
+font-family: 'Space Grotesk', sans-serif;
 font-size: 14px;
 }
 .weight-unit {
@@ -357,7 +342,7 @@ margin-bottom: 14px;
 padding: 5px 10px;
 font-size: 13px;
 font-weight: 500;
-font-family: ‘Space Grotesk’, sans-serif;
+font-family: 'Space Grotesk', sans-serif;
 background: var(--surface2);
 color: var(--text-dim);
 border: 1px solid var(--border);
@@ -380,7 +365,7 @@ display: flex;
 gap: 16px;
 margin-top: 12px;
 font-size: 12px;
-font-family: ‘Space Grotesk’, sans-serif;
+font-family: 'Space Grotesk', sans-serif;
 color: var(--text-mid);
 }
 .legend-dot {
@@ -402,7 +387,7 @@ color: var(--accent);
 border: 1px solid rgba(74, 222, 128, 0.25);
 border-radius: 7px;
 cursor: pointer;
-font-family: ‘Figtree’, sans-serif;
+font-family: 'Figtree', sans-serif;
 -webkit-tap-highlight-color: transparent;
 transition: all 0.2s ease;
 }
@@ -427,7 +412,7 @@ display: flex;
 width: 90px;
 padding: 7px 10px;
 font-size: 15px;
-font-family: ‘Space Grotesk’, sans-serif;
+font-family: 'Space Grotesk', sans-serif;
 background: var(--surface);
 color: var(--text);
 border: 1px solid var(--border);
@@ -447,7 +432,7 @@ color: #0a0a0a;
 border: none;
 border-radius: 7px;
 cursor: pointer;
-font-family: ‘Figtree’, sans-serif;
+font-family: 'Figtree', sans-serif;
 }
 .weight-input-form .btn-cancel {
 padding: 7px 10px;
@@ -456,7 +441,7 @@ background: none;
 color: var(--text-dim);
 border: none;
 cursor: pointer;
-font-family: ‘Figtree’, sans-serif;
+font-family: 'Figtree', sans-serif;
 }
 
 /* ===================== */
@@ -472,7 +457,7 @@ gap: 3px;
 }
 .heatmap-label {
 font-size: 12px;
-font-family: ‘Space Grotesk’, sans-serif;
+font-family: 'Space Grotesk', sans-serif;
 color: var(--text-mid);
 display: flex;
 align-items: center;
@@ -496,7 +481,7 @@ opacity: 0.7;
 }
 .heatmap-day-labels {
 font-size: 10px;
-font-family: ‘Space Grotesk’, sans-serif;
+font-family: 'Space Grotesk', sans-serif;
 color: var(--text-dim);
 display: flex;
 align-items: flex-end;
@@ -527,7 +512,7 @@ line-height: 1.6;
 font-weight: 600;
 margin-bottom: 8px;
 font-size: 13px;
-font-family: ‘Space Grotesk’, sans-serif;
+font-family: 'Space Grotesk', sans-serif;
 color: var(--text-mid);
 }
 .heatmap-day-detail-inner .detail-exercise {
@@ -543,7 +528,7 @@ color: var(--text);
 }
 .heatmap-day-detail-inner .detail-sets {
 font-size: 12px;
-font-family: ‘Space Grotesk’, sans-serif;
+font-family: 'Space Grotesk', sans-serif;
 color: var(--accent);
 flex-shrink: 0;
 }
@@ -571,7 +556,7 @@ animation: spin 0.75s linear infinite;
 .loading-text {
 font-size: 14px;
 color: var(--text-dim);
-font-family: ‘Space Grotesk’, sans-serif;
+font-family: 'Space Grotesk', sans-serif;
 }
 .error-msg {
 background: var(--danger-dim);
@@ -606,7 +591,7 @@ color: var(--text-dim);
 margin-bottom: 6px;
 }
 .vital-value {
-font-family: ‘Space Grotesk’, sans-serif;
+font-family: 'Space Grotesk', sans-serif;
 font-size: 22px;
 font-weight: 700;
 color: var(--text);
@@ -620,7 +605,7 @@ margin-left: 2px;
 }
 .vital-context {
 font-size: 11px;
-font-family: ‘Space Grotesk’, sans-serif;
+font-family: 'Space Grotesk', sans-serif;
 color: var(--text-dim);
 margin-top: 4px;
 }
@@ -643,7 +628,7 @@ align-items: baseline;
 gap: 6px;
 }
 .cardio-score-value {
-font-family: ‘Space Grotesk’, sans-serif;
+font-family: 'Space Grotesk', sans-serif;
 font-size: 28px;
 font-weight: 700;
 color: var(--text);
@@ -653,7 +638,7 @@ font-size: 12px;
 color: var(--text-dim);
 }
 .cardio-score-label {
-font-family: ‘Space Grotesk’, sans-serif;
+font-family: 'Space Grotesk', sans-serif;
 font-size: 14px;
 font-weight: 600;
 }
@@ -674,7 +659,7 @@ display: flex;
 justify-content: space-between;
 margin-top: 4px;
 font-size: 10px;
-font-family: ‘Space Grotesk’, sans-serif;
+font-family: 'Space Grotesk', sans-serif;
 color: var(--text-dim);
 }
 
@@ -699,12 +684,17 @@ color: var(--text-dim);
     <!-- Pull-to-refresh indicator -->
     <div id="ptr-indicator" style="display:none;text-align:center;padding:12px 0;font-family:'Space Grotesk',sans-serif;font-size:13px;color:#8e8e98;overflow:hidden;">
       <div id="ptr-spinner" style="display:none;width:20px;height:20px;border:2px solid #2a2a2e;border-top:2px solid #4ade80;border-radius:50%;margin:0 auto 6px;animation:spin 0.6s linear infinite;"></div>
-      <div id="ptr-text">↓ Pull to refresh</div>
+      <div id="ptr-text">â†“ Pull to refresh</div>
     </div>
     <div class="header">
       <div style="display:flex;align-items:baseline;gap:10px;">
         <h1>LiftScript</h1>
-        <div class="subtitle" id="last-updated">v1.10</div>
+        <div class="subtitle" id="last-updated">v1.11</div>
+        <button id="header-refresh-btn" onclick="refreshData()" title="Refresh data" style="background:none;border:none;cursor:pointer;padding:2px 4px;margin-left:auto;position:relative;top:1px;line-height:1;-webkit-tap-highlight-color:transparent;">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style="display:block;">
+            <path d="M13.65 2.35A7.96 7.96 0 008 0C3.58 0 .01 3.58.01 8S3.58 16 8 16c3.73 0 6.84-2.55 7.73-6h-2.08A5.99 5.99 0 018 14 6 6 0 012 8a6 6 0 016-6c1.66 0 3.14.69 4.22 1.78L9 7h7V0l-2.35 2.35z" fill="#8e8e98"/>
+          </svg>
+        </button>
       </div>
     </div>
 
@@ -835,7 +825,7 @@ color: var(--text-dim);
 // Targets scaled to ~65% of Schoenfeld optimal for recreational gym-goers (3-4x/week)
 // PILLAR 2: Strength Standards / Percentile Benchmarks
 // Based on OpenPowerlifting data, shifted to general gym-going population norms:
-// competition 25th percentile ≈ gym-population 50th percentile
+// competition 25th percentile â‰ˆ gym-population 50th percentile
 // PILLAR 3: 1RM Estimation - Brzycki (1993), Epley (1985)
 // PILLAR 4: Progressive Overload - NSCA guideline: +2-10% when target reps achieved
 
@@ -847,7 +837,7 @@ const PROFILE = {
   sex: 'male',
   ethnicity: 'caucasian',
   bodyweightLbs: 166,
-  heightIn: 70, // 5'10" — used for proportion rules (waist:height ratio)
+  heightIn: 70, // 5'10" â€” used for proportion rules (waist:height ratio)
   get age() {
     const today = new Date();
     let age = today.getFullYear() - this.dob.getFullYear();
@@ -858,7 +848,7 @@ const PROFILE = {
   get bodyweightKg() { return this.bodyweightLbs * 0.453592; }
 };
 
-// Local date string helper — avoids UTC shift from toISOString()
+// Local date string helper â€” avoids UTC shift from toISOString()
 function localDateStr(d) {
   const y = d.getFullYear();
   const m = String(d.getMonth() + 1).padStart(2, '0');
@@ -867,7 +857,7 @@ function localDateStr(d) {
 }
 
 // ============================================================
-// COLOR CONSTANTS (CSS Rendering Guidance §4)
+// COLOR CONSTANTS (CSS Rendering Guidance Â§4)
 // Single source of truth for all JS-rendered inline styles.
 // Hex values here match the CSS custom properties in <style>.
 // ============================================================
@@ -907,7 +897,7 @@ const C = {
 // STRENGTH STANDARDS (Pillar 2)
 // BW multipliers for 1RM - male, general gym-going population, age-adjusted
 // Shifted from OpenPowerlifting competition data to recreational lifter norms:
-// competition 25th ≈ gym-population 50th percentile
+// competition 25th â‰ˆ gym-population 50th percentile
 // Percentile: [10th, 25th, 50th, 75th, 90th]
 // ============================================================
 const STRENGTH_STANDARDS = {
@@ -1055,7 +1045,7 @@ const EXERCISE_MUSCLE_MAP = [
   // Specific bench variants (before generic)
   { pattern: /close.?grip.*bench/i, primary: 'triceps', secondary: ['chest'] },
 
-  // Specific dip (chest vs tricep) — "Tricep Dip" must match before generic /dip/i
+  // Specific dip (chest vs tricep) â€” "Tricep Dip" must match before generic /dip/i
   { pattern: /tricep[s]?\s*dip/i, primary: 'triceps', secondary: ['chest', 'shoulders'] },
   { pattern: /chest dip/i, primary: 'chest', secondary: ['triceps', 'shoulders'] },
 
@@ -1170,7 +1160,7 @@ function classifyExercise(name) {
 // ============================================================
 // MUSCLE GROUP METADATA (Pillar 1)
 // Volume targets: effective range for recreational lifters training 3-4x/week
-// (Schoenfeld optimal ≈ 14-16 sets; these are ~65% of that — still productive)
+// (Schoenfeld optimal â‰ˆ 14-16 sets; these are ~65% of that â€” still productive)
 // Frequency: realistic for non-PPL splits (each muscle every 5-7 days)
 // ============================================================
 const MUSCLE_GROUPS = {
@@ -1320,7 +1310,7 @@ const WEIGHT_DATA_BASELINE = [
 ];
 
 // ============================================================
-// STORAGE UTILITY — centralized localStorage with error boundaries
+// STORAGE UTILITY â€” centralized localStorage with error boundaries
 // ============================================================
 const Storage = {
   get(key, fallback = null) {
@@ -1355,18 +1345,26 @@ function getStoredWeightEntries() {
 
 function saveWeightEntry(date, value) {
   const entries = getStoredWeightEntries();
-  entries.push({ date, value });
+  const idx = entries.findIndex(e => e.date === date);
+  if (idx !== -1) {
+    entries[idx].value = value;          // overwrite existing date
+  } else {
+    entries.push({ date, value });
+  }
+  entries.sort((a, b) => a.date.localeCompare(b.date));
+  // Cap at 400 entries — drop oldest
+  if (entries.length > 400) entries.splice(0, entries.length - 400);
   Storage.set('weightHistory', entries);
 }
 
 function getMergedWeightData() {
   const stored = getStoredWeightEntries();
-  // Apple Health weight entries from iOS Shortcut (via Hevy → HealthKit)
+  // Apple Health weight entries from iOS Shortcut (via Hevy â†’ HealthKit)
   const appleEntries = (healthData && Array.isArray(healthData.weight_entries))
     ? healthData.weight_entries.map(e => ({ date: e.date, value: parseFloat(e.lbs) || 0 })).filter(e => e.value > 0)
     : [];
   const all = [...WEIGHT_DATA_BASELINE, ...appleEntries, ...stored];
-  // Dedup by date — later sources win (stored > apple > baseline)
+  // Dedup by date â€” later sources win (stored > apple > baseline)
   const byDate = {};
   for (const entry of all) {
     byDate[entry.date] = entry.value;
@@ -1377,20 +1375,20 @@ function getMergedWeightData() {
 }
 
 // ============================================================
-// BODY MEASUREMENTS SYSTEM (v1.7 — Phases 2-4)
+// BODY MEASUREMENTS SYSTEM (v1.7 â€” Phases 2-4)
 // ============================================================
 // SCIENTIFIC FOUNDATION
 // Pillar 6: Anthropometric Proportions
-// Source: McRobert (2005) "Build Muscle, Lose Fat, Look Great" — ideal
+// Source: McRobert (2005) "Build Muscle, Lose Fat, Look Great" â€” ideal
 //   proportional targets for natural lifters based on wrist/ankle bone structure
-// Source: Butt (2010) "Your Muscular Potential" — circumference-based
+// Source: Butt (2010) "Your Muscular Potential" â€” circumference-based
 //   proportions correlated with lean mass development
-// Source: Katch & McArdle (1983) — limb girth norms for athletic males
+// Source: Katch & McArdle (1983) â€” limb girth norms for athletic males
 //
 // Target ratio philosophy:
-// - Neck ≈ Calf circumference (classic proportion)
-// - Forearm ≈ 0.80× Bicep circumference (flexed)
-// - Waist < 0.45× Height (health marker — WHO guideline)
+// - Neck â‰ˆ Calf circumference (classic proportion)
+// - Forearm â‰ˆ 0.80Ã— Bicep circumference (flexed)
+// - Waist < 0.45Ã— Height (health marker â€” WHO guideline)
 // - Chest circumference tracked for development trend
 
 const MEASUREMENTS_KEY = 'bodyMeasurements_v1';
@@ -1405,39 +1403,39 @@ const MEASUREMENT_FIELDS = [
   { key: 'calf_in',    label: 'Calf',     unit: 'in', placeholder: '15.0' },
 ];
 
-// ---- Phase 3+4: Proportion targets mapping measurements → muscle priority ----
+// ---- Phase 3+4: Proportion targets mapping measurements â†’ muscle priority ----
 // Each rule: if measurement ratio deviates from target, boost that muscle's score
 // deficit > 0 means the muscle needs MORE work
 const PROPORTION_RULES = [
   {
-    // Neck should ≈ calf circumference
+    // Neck should â‰ˆ calf circumference
     muscle: 'neck',
     requires: ['neck_in', 'calf_in'],
     targetRatio: 1.0, // neck / calf
     compute: (m) => m.neck_in / m.calf_in,
-    label: 'Neck ÷ Calf',
+    label: 'Neck Ã· Calf',
   },
   {
-    // Forearm should be ≈ 80% of bicep
+    // Forearm should be â‰ˆ 80% of bicep
     muscle: 'forearms',
     requires: ['forearm_in', 'bicep_in'],
     targetRatio: 0.80,
     compute: (m) => m.forearm_in / m.bicep_in,
-    label: 'Forearm ÷ Bicep',
+    label: 'Forearm Ã· Bicep',
   },
   {
-    // Bicep growth tracking — compare to wrist-based genetic potential
-    // Simplified: bicep should be ≈ 2.5× wrist, but we don't have wrist.
-    // Instead use bicep ÷ forearm — target 1.25 (inverse of forearm rule)
+    // Bicep growth tracking â€” compare to wrist-based genetic potential
+    // Simplified: bicep should be â‰ˆ 2.5Ã— wrist, but we don't have wrist.
+    // Instead use bicep Ã· forearm â€” target 1.25 (inverse of forearm rule)
     muscle: 'biceps',
     requires: ['bicep_in', 'forearm_in'],
     targetRatio: 1.25,
     compute: (m) => m.bicep_in / m.forearm_in,
-    label: 'Bicep ÷ Forearm',
+    label: 'Bicep Ã· Forearm',
   },
   {
-    // Waist health — smaller is better; deficit if waist is too large
-    // WHO: waist < 0.45 × height. For 5'10 (70"), target < 31.5"
+    // Waist health â€” smaller is better; deficit if waist is too large
+    // WHO: waist < 0.45 Ã— height. For 5'10 (70"), target < 31.5"
     // We use a fixed target since we have height in profile
     muscle: 'core',
     requires: ['waist_in'],
@@ -1448,24 +1446,24 @@ const PROPORTION_RULES = [
       // Return a "score" where < 1.0 means good, > 1.0 means over target
       return m.waist_in / targetMax;
     },
-    label: 'Waist ÷ Target',
+    label: 'Waist Ã· Target',
   },
   {
-    // Calf should ≈ neck circumference
+    // Calf should â‰ˆ neck circumference
     muscle: 'calves',
     requires: ['calf_in', 'neck_in'],
     targetRatio: 1.0,
     compute: (m) => m.calf_in / m.neck_in,
-    label: 'Calf ÷ Neck',
+    label: 'Calf Ã· Neck',
   },
   {
-    // Chest development — tracked as trend; compare to waist for V-taper
-    // Target chest:waist ratio ≈ 1.3 for aesthetic V-taper
+    // Chest development â€” tracked as trend; compare to waist for V-taper
+    // Target chest:waist ratio â‰ˆ 1.3 for aesthetic V-taper
     muscle: 'chest',
     requires: ['chest_in', 'waist_in'],
     targetRatio: 1.30,
     compute: (m) => m.chest_in / m.waist_in,
-    label: 'Chest ÷ Waist',
+    label: 'Chest Ã· Waist',
   },
 ];
 
@@ -1474,15 +1472,24 @@ function getStoredMeasurements() {
 }
 
 function saveMeasurementEntry(entry) {
+  if (!entry.date) entry.date = localDateStr(new Date());
   const entries = getStoredMeasurements();
-  entries.push(entry);
+  const idx = entries.findIndex(e => e.date === entry.date);
+  if (idx !== -1) {
+    // Merge: new fields overwrite, keep old fields not in new entry
+    entries[idx] = Object.assign({}, entries[idx], entry);
+  } else {
+    entries.push(entry);
+  }
+  entries.sort((a, b) => (a.date || '').localeCompare(b.date || ''));
+  if (entries.length > 400) entries.splice(0, entries.length - 400);
   Storage.set(MEASUREMENTS_KEY, entries);
 }
 
 function getLatestMeasurements() {
   const entries = getStoredMeasurements();
   if (entries.length === 0 && !(healthData && healthData.waist_circumference_in)) return null;
-  // Merge all entries — latest value per field wins
+  // Merge all entries â€” latest value per field wins
   const latest = {};
   const dates = {};
   // Sort chronologically so later entries overwrite
@@ -1652,7 +1659,7 @@ async function fetchWorkouts(pageSize = 10, maxPages = 10) {
 // STRENGTH INDEX LIFT DEFINITIONS
 // ============================================================
 // p50 = 50th percentile BW multiplier for general gym-going male population
-// Derived from STRENGTH_STANDARDS (competition 25th ≈ gym 50th)
+// Derived from STRENGTH_STANDARDS (competition 25th â‰ˆ gym 50th)
 // Age-adjusted dynamically via PROFILE.age
 const STRENGTH_INDEX_LIFTS = {
   bench:    { weight: 0.20, p50: 0.95, patterns: [/bench press.*barbell/i, /^bench press$/i] },
@@ -1683,7 +1690,7 @@ function preprocessWorkouts(workouts, bodyweightLbs, weightData) {
   const siTimeline = [];
   const heatmapDayMuscle = {};
   const heatmapDayWorkouts = {};
-  const heatmapDayCardio = {}; // dateStr → { minutes, sessions: [{ name, minutes, source }] }
+  const heatmapDayCardio = {}; // dateStr â†’ { minutes, sessions: [{ name, minutes, source }] }
 
   // Init muscle stats
   for (const [key, meta] of Object.entries(MUSCLE_GROUPS)) {
@@ -1750,6 +1757,8 @@ function preprocessWorkouts(workouts, bodyweightLbs, weightData) {
             cardioMin += s.duration_seconds / 60;
           }
         }
+        // Conservative default: if cardio exercise exists but has no duration data, assume 15 min
+        if (cardioMin === 0 && (ex.sets || []).length > 0) cardioMin = 15;
         if (cardioMin > 0) {
           if (!heatmapDayCardio[dateStr]) heatmapDayCardio[dateStr] = { minutes: 0, sessions: [] };
           heatmapDayCardio[dateStr].minutes += cardioMin;
@@ -1943,10 +1952,10 @@ function preprocessWorkouts(workouts, bodyweightLbs, weightData) {
 // Source 2: Seiler (2010) "What is Best Practice for Training Intensity and Duration
 //   Distribution in Endurance Athletes?" - polarized 80/20 model
 // Source 3: Tanaka et al. (2001) "Age-predicted maximal heart rate revisited"
-//   - HRmax = 208 - 0.7 × age (more accurate than 220-age)
+//   - HRmax = 208 - 0.7 Ã— age (more accurate than 220-age)
 // Source 4: Karvonen (1957) "Heart Rate Reserve" method for HR zones
-//   - Target HR = ((HRmax - HRrest) × %intensity) + HRrest
-// Source 5: Stöggl & Sperlich (2014) "Polarized training has greater impact on key
+//   - Target HR = ((HRmax - HRrest) Ã— %intensity) + HRrest
+// Source 5: StÃ¶ggl & Sperlich (2014) "Polarized training has greater impact on key
 //   endurance variables than threshold, high-intensity, or high-volume training"
 
 // HR Zone calculations
@@ -2182,7 +2191,7 @@ function analyzeCardioHistory(workouts) {
 
   // --- Pass 2: Apple Health Watch workouts ---
   // Everything in healthData.workouts[] was explicitly started on the Watch.
-  // We count all workout types EXCEPT strength/flexibility — those aren't cardio.
+  // We count all workout types EXCEPT strength/flexibility â€” those aren't cardio.
   const WATCH_NON_CARDIO = /strength|weight\s*train|yoga|pilates|stretch|cool\s*down|flexibility|mind.*body|tai\s*chi/i;
 
   if (healthData && Array.isArray(healthData.workouts)) {
@@ -2311,16 +2320,16 @@ function buildCardioBreakdownHTML(history) {
   if (history.hevySessions > 0) parts.push(`\u{1F3CB}\uFE0F Hevy: ${history.hevySessions} session${history.hevySessions > 1 ? 's' : ''}, ${Math.round(history.hevyMinutes)} min`);
   if (history.appleSessions > 0) parts.push(`\u231A Watch: ${history.appleSessions} session${history.appleSessions > 1 ? 's' : ''}, ${Math.round(history.appleMinutes)} min`);
 
-  let html = `<div style="font-size:11px;font-family:'Space Grotesk',sans-serif;color:${C.textDim};margin-bottom:8px;">${parts.join(' · ')}</div>`;
+  let html = `<div style="font-size:11px;font-family:'Space Grotesk',sans-serif;color:${C.textDim};margin-bottom:8px;">${parts.join(' Â· ')}</div>`;
 
   // Per-session rows
   for (const s of sorted) {
     const dayStr = s.date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
     const icon = s.source === 'watch' ? '\u231A' : '\u{1F3CB}\uFE0F';
-    const calStr = s.calories > 0 ? ` · ${Math.round(s.calories)} cal` : '';
+    const calStr = s.calories > 0 ? ` Â· ${Math.round(s.calories)} cal` : '';
     html += `<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;font-size:12px;font-family:'Space Grotesk',sans-serif;">
       <span style="color:${C.textMid};">${icon} ${s.type}</span>
-      <span style="color:${C.textDark};">${Math.round(s.minutes)} min${calStr} · ${dayStr}</span>
+      <span style="color:${C.textDark};">${Math.round(s.minutes)} min${calStr} Â· ${dayStr}</span>
     </div>`;
   }
 
@@ -2446,7 +2455,7 @@ function generateRecommendations(muscleStats) {
   const imbalanceW = hasProportions ? 0.25 : 0.30;
 
   for (const [key, stat] of Object.entries(muscleStats)) {
-    // Recency uses PRIMARY training date — secondary stimulus (e.g. RDLs for back)
+    // Recency uses PRIMARY training date â€” secondary stimulus (e.g. RDLs for back)
     // doesn't reset the clock. This prevents back from being deprioritized when
     // only indirect work has been done recently.
     const recencyScore = Math.min(stat.daysSincePrimary / stat.idealFreqDays, 3);
@@ -2477,7 +2486,7 @@ function generateRecommendations(muscleStats) {
     if (stat.daysSincePrimary === Infinity && stat.daysSinceAny === Infinity) {
       explainer = `No ${stat.name.toLowerCase()} training found in your history. This muscle group needs attention to build a balanced physique.`;
     } else if (stat.daysSincePrimary === Infinity) {
-      explainer = `No direct ${stat.name.toLowerCase()} work found — only indirect stimulus (${stat.daysSinceAny}d ago). Add dedicated exercises to develop this muscle group.`;
+      explainer = `No direct ${stat.name.toLowerCase()} work found â€” only indirect stimulus (${stat.daysSinceAny}d ago). Add dedicated exercises to develop this muscle group.`;
     } else {
       const parts = [];
       if (stat.daysSincePrimary >= stat.idealFreqDays * 2.5) {
@@ -2660,9 +2669,9 @@ function buildTimedSession(recs, prefs) {
 // ============================================================
 // RENDERING
 // ============================================================
-// renderRecommendations removed in v1.7 — replaced by renderTimedSession
+// renderRecommendations removed in v1.7 â€” replaced by renderTimedSession
 
-// B2: Sort mode state for Today tab — 'urgency' (default) or 'anatomy'
+// B2: Sort mode state for Today tab â€” 'urgency' (default) or 'anatomy'
 let todaySortMode = 'urgency';
 const ANATOMY_ORDER = ['chest', 'back', 'shoulders', 'quads', 'hamstrings', 'glutes', 'biceps', 'triceps', 'calves', 'core', 'neck', 'forearms'];
 
@@ -2703,7 +2712,11 @@ function renderTimedSession(recs) {
   // B2: Sort muscle groups by selected mode
   let groupKeys = Object.keys(grouped);
   if (todaySortMode === 'anatomy') {
-    groupKeys.sort((a, b) => ANATOMY_ORDER.indexOf(a) - ANATOMY_ORDER.indexOf(b));
+    groupKeys.sort((a, b) => {
+      const ai = ANATOMY_ORDER.indexOf(a);
+      const bi = ANATOMY_ORDER.indexOf(b);
+      return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi);
+    });
   } else {
     // urgency: sort by recommendation score (highest first)
     const recScores = {};
@@ -2725,12 +2738,12 @@ function renderTimedSession(recs) {
     exHtml += `<div class="ex-group">
       <div class="ex-group-title" style="color:${meta.color};cursor:pointer;display:flex;align-items:center;justify-content:space-between;" onclick="toggleSessionExplainer('exp-${key}')">
         <span>${meta.name}</span>
-        <span style="font-size:10px;color:${C.textDim};font-weight:400;letter-spacing:0;">▾ why</span>
+        <span style="font-size:10px;color:${C.textDim};font-weight:400;letter-spacing:0;">â–¾ why</span>
       </div>`;
 
     // B1: Collapsible "Why this?" explainer
     if (rec) {
-      const daysSince = rec.daysSince === Infinity ? '∞' : rec.daysSince;
+      const daysSince = rec.daysSince === Infinity ? 'âˆž' : rec.daysSince;
       const idealFreq = (muscleAnalysis && muscleAnalysis[key]) ? muscleAnalysis[key].idealFreqDays : '?';
       const volActual = rec.weeklyActual;
       const volIdeal = rec.weeklyIdeal;
@@ -2742,7 +2755,7 @@ function renderTimedSession(recs) {
       if (deficit > 0) {
         bullets.push(`<span style="color:${C.textDim};">Volume gap:</span> <strong>${deficit.toFixed(1)} sets/wk</strong> <span style="color:${C.textDark};">below ${volIdeal}</span>`);
       } else {
-        bullets.push(`<span style="color:${C.textDim};">Volume:</span> <strong>${volActual} / ${volIdeal}</strong> <span style="color:${C.accent};">✓</span>`);
+        bullets.push(`<span style="color:${C.textDim};">Volume:</span> <strong>${volActual} / ${volIdeal}</strong> <span style="color:${C.accent};">âœ“</span>`);
       }
       if (propDef && propDef > 0.05) {
         const rule = PROPORTION_RULES.find(r => r.muscle === key);
@@ -2970,7 +2983,7 @@ function renderHeatmap(dayMuscleMap, dayWorkoutsMap, dayCardioMap) {
 
   html += `<div class="heatmap-grid" style="grid-template-columns: ${labelWidth}px repeat(${numDays}, ${cellSize}px); grid-template-rows: 22px repeat(${totalRows}, ${cellSize}px);">`;
 
-  // Day labels row — evenly spaced for 14 days
+  // Day labels row â€” evenly spaced for 14 days
   html += `<div></div>`;
   for (let i = 0; i < days.length; i++) {
     const d = new Date(days[i] + 'T12:00:00');
@@ -2999,7 +3012,7 @@ function renderHeatmap(dayMuscleMap, dayWorkoutsMap, dayCardioMap) {
     }
   }
 
-  // Cardio row (blue, opacity scales with duration: 15 min → 0.3, 30 → 0.6, 45+ → 1.0)
+  // Cardio row (blue, opacity scales with duration: 15 min â†’ 0.3, 30 â†’ 0.6, 45+ â†’ 1.0)
   html += `<div class="heatmap-label" style="color:${C.blue}">Cardio</div>`;
   for (const day of days) {
     const cd = heatmapDayCardio[day];
@@ -3332,7 +3345,7 @@ function toggleWeightForm() {
     const input = document.getElementById('weight-input');
     const dateInput = document.getElementById('weight-date-input');
     input.value = '';
-    dateInput.value = new Date().toISOString().split('T')[0];
+    dateInput.value = localDateStr(new Date());
     input.focus();
   }
 }
@@ -3346,7 +3359,7 @@ function saveWeight() {
     setTimeout(() => { input.style.borderColor = C.border; }, 1500);
     return;
   }
-  const entryDate = dateInput.value || new Date().toISOString().split('T')[0];
+  const entryDate = dateInput.value || localDateStr(new Date());
   saveWeightEntry(entryDate, val);
   toggleWeightForm();
   renderWeightChart();
@@ -3367,7 +3380,7 @@ function toggleMeasureForm() {
   const latest = getLatestMeasurements();
   let html = `<div style="margin-bottom:10px;">
     <label style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:${C.textDim};font-family:'Space Grotesk',sans-serif;display:block;margin-bottom:4px;">Date</label>
-    <input type="date" id="meas-date" value="${new Date().toISOString().split('T')[0]}" style="width:100%;padding:7px 10px;font-size:15px;font-family:'Space Grotesk',sans-serif;background:${C.surface};color:${C.text};border:1px solid ${C.border};border-radius:7px;outline:none;-webkit-appearance:none;">
+    <input type="date" id="meas-date" value="${localDateStr(new Date())}" style="width:100%;padding:7px 10px;font-size:15px;font-family:'Space Grotesk',sans-serif;background:${C.surface};color:${C.text};border:1px solid ${C.border};border-radius:7px;outline:none;-webkit-appearance:none;">
   </div>`;
   html += `<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">`;
 
@@ -3393,7 +3406,7 @@ function toggleMeasureForm() {
 
 function saveMeasurements() {
   const dateInput = document.getElementById('meas-date');
-  const entryDate = (dateInput && dateInput.value) ? dateInput.value : new Date().toISOString().split('T')[0];
+  const entryDate = (dateInput && dateInput.value) ? dateInput.value : localDateStr(new Date());
   const entry = { date: entryDate };
   let hasValue = false;
 
@@ -3504,7 +3517,7 @@ function renderProportionsDisplay() {
     const vals = rule.requires.map(k => {
       const f = MEASUREMENT_FIELDS.find(mf => mf.key === k);
       return `${f ? f.label : k}: ${latest[k].toFixed(1)}"`;
-    }).join(' · ');
+    }).join(' Â· ');
 
     html += `<div style="padding:8px 0;border-bottom:1px solid ${C.surface2};">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
@@ -3514,7 +3527,7 @@ function renderProportionsDisplay() {
       <div style="height:4px;border-radius:2px;background:${C.surface3};overflow:hidden;">
         <div style="height:100%;width:${barPct}%;border-radius:2px;background:${statusColor};transition:width 0.4s ease;"></div>
       </div>
-      <div style="font-size:11px;font-family:'Space Grotesk',sans-serif;color:${C.textDark};margin-top:3px;">${rule.label}: ${actual.toFixed(2)} (target ${target.toFixed(2)}) · ${vals}</div>
+      <div style="font-size:11px;font-family:'Space Grotesk',sans-serif;color:${C.textDark};margin-top:3px;">${rule.label}: ${actual.toFixed(2)} (target ${target.toFixed(2)}) Â· ${vals}</div>
     </div>`;
   }
 
@@ -3544,9 +3557,9 @@ async function fetchHealthData() {
     // Shortcuts inserts literal newlines in JSON - strip them before parsing
     const rawText = await resp.text();
     let cleanText = rawText.replace(/\n/g, '').replace(/\r/g, '');
-    // Fix missing commas between workout objects: }{ → },{
+    // Fix missing commas between workout objects: }{ â†’ },{
     cleanText = cleanText.replace(/\}\s*\{/g, '},{');
-    // Strip unit suffixes from calories: "32 kcal" → "32", "1,220 kcal" → "1220"
+    // Strip unit suffixes from calories: "32 kcal" â†’ "32", "1,220 kcal" â†’ "1220"
     cleanText = cleanText.replace(/(\d),(\d)/g, '$1$2'); // remove thousands commas
     cleanText = cleanText.replace(/([\d.]+)\s*kcal/g, '$1');
     const data = JSON.parse(cleanText);
@@ -3737,7 +3750,7 @@ function renderHealthVitals() {
     </div>`;
   }
 
-  // Body Fat % (from Hevy → Apple Health)
+  // Body Fat % (from Hevy â†’ Apple Health)
   const bf = healthData.body_fat_pct;
   if (bf && bf > 0) {
     const bfColor = bf <= 15 ? C.accent : bf <= 20 ? C.blue : bf <= 25 ? C.warn : C.danger;
@@ -3749,7 +3762,7 @@ function renderHealthVitals() {
     </div>`;
   }
 
-  // Lean Body Mass (from Hevy → Apple Health)
+  // Lean Body Mass (from Hevy â†’ Apple Health)
   const lbm = healthData.lean_body_mass_lbs;
   if (lbm && lbm > 0) {
     html += `<div class="vital-cell">
@@ -3759,7 +3772,7 @@ function renderHealthVitals() {
     </div>`;
   }
 
-  // Waist (from Hevy → Apple Health)
+  // Waist (from Hevy â†’ Apple Health)
   const waistAH = healthData.waist_circumference_in;
   if (waistAH && waistAH > 0) {
     const waistDate = healthData.waist_date || '';
@@ -3843,7 +3856,7 @@ function renderDashboard(workouts) {
   const syncColor = (hevyStatus === 'ok' && healthStatus === 'ok') ? C.accent
     : (hevyStatus === 'error' || healthStatus === 'missing') ? C.textDim : C.warn;
   document.getElementById('last-updated').innerHTML =
-    `v1.10 \u00b7 ${now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })} <span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${syncColor};margin-left:5px;vertical-align:middle;position:relative;top:-1px;"></span>`;
+    `v1.11 \u00b7 ${now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })} <span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${syncColor};margin-left:5px;vertical-align:middle;position:relative;top:-1px;"></span>`;
 
   renderConstraintChips();
   renderTimedSession(recs);
@@ -3955,7 +3968,7 @@ async function loadDashboard() {
 
     const dy = e.touches[0].clientY - ptrStartY;
 
-    // Scrolling up or page has scrolled away from top — cancel
+    // Scrolling up or page has scrolled away from top â€” cancel
     if (dy < 0 || !isAtTop()) {
       if (ptrPulling) {
         ptrPulling = false;
@@ -3964,7 +3977,7 @@ async function loadDashboard() {
       return;
     }
 
-    // Pulling down at top of page — suppress native bounce
+    // Pulling down at top of page â€” suppress native bounce
     e.preventDefault();
     ptrPulling = true;
 
@@ -4045,7 +4058,7 @@ async function loadDashboard() {
 })();
 
 // ============================================================
-// DEV TEST HARNESS (guarded behind flag — never runs in production)
+// DEV TEST HARNESS (guarded behind flag â€” never runs in production)
 // ============================================================
 const DEV_TEST_MODE = false;
 
@@ -4055,19 +4068,19 @@ function runDevTests() {
 
   // Test A1: Tricep Dip classification
   const tricepDip = classifyExercise('Tricep Dip');
-  results.push({ test: 'A1: Tricep Dip → triceps', pass: tricepDip.primary === 'triceps', got: tricepDip.primary });
+  results.push({ test: 'A1: Tricep Dip â†’ triceps', pass: tricepDip.primary === 'triceps', got: tricepDip.primary });
 
   const chestDip = classifyExercise('Chest Dip');
-  results.push({ test: 'A1: Chest Dip → chest', pass: chestDip.primary === 'chest', got: chestDip.primary });
+  results.push({ test: 'A1: Chest Dip â†’ chest', pass: chestDip.primary === 'chest', got: chestDip.primary });
 
   const genericDip = classifyExercise('Dips');
-  results.push({ test: 'A1: Dips → chest (generic)', pass: genericDip.primary === 'chest', got: genericDip.primary });
+  results.push({ test: 'A1: Dips â†’ chest (generic)', pass: genericDip.primary === 'chest', got: genericDip.primary });
 
   // Test A2: Curly apostrophe normalization
   const curly1 = normalizeExerciseName('Farmer\u2019s Carry');
-  results.push({ test: 'A2: Right curly → ASCII', pass: curly1 === "farmer's carry", got: curly1 });
+  results.push({ test: 'A2: Right curly â†’ ASCII', pass: curly1 === "farmer's carry", got: curly1 });
   const curly2 = normalizeExerciseName('Farmer\u2018s Carry');
-  results.push({ test: 'A2: Left curly → ASCII', pass: curly2 === "farmer's carry", got: curly2 });
+  results.push({ test: 'A2: Left curly â†’ ASCII', pass: curly2 === "farmer's carry", got: curly2 });
 
   // Test A3: Cardio session counting (mock workout with 2 cardio exercises)
   const mockWorkouts = [{
@@ -4086,7 +4099,7 @@ function runDevTests() {
   results.push({
     test: 'A4: CSS --accent resolves to #4ade80',
     pass: accentVar === '#4ade80',
-    got: accentVar || '(empty — var() references may use en-dash instead of double-hyphen)'
+    got: accentVar || '(empty â€” var() references may use en-dash instead of double-hyphen)'
   });
 
   // Test A5: Universal reset selector is active (catches * vs - typo)
@@ -4125,21 +4138,21 @@ function runDevTests() {
   });
 
   // Report
-  console.group('🧪 LiftScript Dev Tests');
+  console.group('ðŸ§ª LiftScript Dev Tests');
   for (const r of results) {
-    console.log(`${r.pass ? '✅' : '❌'} ${r.test}${r.pass ? '' : ' (got: ' + r.got + ')'}`);
+    console.log(`${r.pass ? 'âœ…' : 'âŒ'} ${r.test}${r.pass ? '' : ' (got: ' + r.got + ')'}`);
   }
   console.groupEnd();
 }
 
 runDevTests();
 
-// Boot-time CSS sanity check — catches encoding issues like en-dash var() references
+// Boot-time CSS sanity check â€” catches encoding issues like en-dash var() references
 (function checkCSS() {
   const root = getComputedStyle(document.documentElement);
   const test = root.getPropertyValue('--accent').trim();
   if (!test) {
-    console.error('⚠️ CSS custom properties not loading. Check <style> block for encoding issues (e.g. en-dash vs double-hyphen in var() references).');
+    console.error('âš ï¸ CSS custom properties not loading. Check <style> block for encoding issues (e.g. en-dash vs double-hyphen in var() references).');
   }
 })();
 
