@@ -5,14 +5,15 @@
   Changes from v1.11:
   1.  Hevy CSV measurement import: tap "Import Hevy" on Body Measurements card
   2.  Added shoulder, hip, and thigh to MEASUREMENT_FIELDS
-  3.  Removed +Log weight form and +Measure form (data via Apple Health / Hevy import only)
-  4.  Active calories now classified (Very Active / Active / Moderate / Low)
-  5.  Tappable measurement tiles with SVG sparkline history charts
-  6.  Radar chart for frame-adjusted muscle development (McCallum/Butt wrist-based targets)
-  7.  Collapsible explainer text under section headers (collapsed by default)
-  8.  Slightly increased title/header font sizes for readability
-  9.  Muscle grid redesign: uniform backgrounds, urgency dot + micro progress bar
-  10. Fixed UTF-8 mojibake (double-encoding) from v1.11
+  3.  Manual entry form now includes new fields
+  UI upgrades (v1.12b):
+  4.  Removed +Log weight and +Measure buttons (Import Hevy is sole data path)
+  5.  Active calories now classified with color-coded labels
+  6.  Tappable measurement tiles with animated SVG sparkline history charts
+  7.  Proportion analysis replaced with SVG radar/spider chart
+  8.  Collapsible section headers for strength index, muscle grid legend
+  9.  Increased header/title text sizes for scannability
+  10. Muscle grid redesign: uniform tiles, urgency dots, volume micro-bars
 -->
 
 <html lang="en">
@@ -142,6 +143,10 @@ background: var(–surface3);
 color: var(–text);
 }
 
+.urgency-high { background: var(–danger-dim); color: var(–danger); }
+.urgency-med { background: var(–warn-dim); color: var(–warn); }
+.urgency-low { background: var(–accent-dim); color: var(–accent); }
+
 /* Expandable explainer */
 .rec-expand {
 max-height: 0;
@@ -254,6 +259,15 @@ justify-content: space-between;
 .muscle-name {
 font-size: 17px;
 font-weight: 600;
+}
+.muscle-urgency {
+font-size: 9px;
+font-weight: 600;
+padding: 2px 6px;
+border-radius: 4px;
+font-family: ‘Space Grotesk’, sans-serif;
+text-transform: uppercase;
+letter-spacing: 0.5px;
 }
 .muscle-stat {
 font-size: 12px;
@@ -384,8 +398,6 @@ transition: all 0.2s ease;
 .btn-log-weight:active {
 transform: scale(0.96);
 }
-
-/* ===================== */
 /* HISTORY - HEATMAP (v1.1: no scroll) */
 /* ===================== */
 .heatmap-container {
@@ -659,7 +671,10 @@ color: var(–text-dim);
 
 <div id="tab-muscles" class="hidden">
   <div class="card">
-    <div class="card-title">Muscle Group Status</div>
+    <div class="card-title" style="cursor:pointer;display:flex;align-items:center;justify-content:space-between;" onclick="toggleSectionExplainer('muscle-grid-legend',this)">
+      <span>Muscle Group Status</span>
+      <span class="section-chevron" style="font-size:10px;color:var(--text-dim);transition:transform 0.3s ease;display:inline-block;">&#9662;</span>
+    </div>
     <div id="muscle-grid" class="muscle-grid"></div>
     <div class="muscle-detail" id="muscle-detail">
       <div class="muscle-detail-inner" id="muscle-detail-inner"></div>
@@ -687,7 +702,7 @@ color: var(–text-dim);
 
 <div id="tab-weight" class="hidden">
   <div class="card">
-    <div class="card-title">
+    <div class="card-title" style="display:flex;align-items:center;justify-content:space-between;">
       <span>Body Weight & Strength</span>
     </div>
     <div class="weight-header">
@@ -763,7 +778,7 @@ color: var(–text-dim);
 // Targets scaled to ~65% of Schoenfeld optimal for recreational gym-goers (3-4x/week)
 // PILLAR 2: Strength Standards / Percentile Benchmarks
 // Based on OpenPowerlifting data, shifted to general gym-going population norms:
-// competition 25th percentile ≈ gym-population 50th percentile
+// competition 25th percentile â‰ˆ gym-population 50th percentile
 // PILLAR 3: 1RM Estimation - Brzycki (1993), Epley (1985)
 // PILLAR 4: Progressive Overload - NSCA guideline: +2-10% when target reps achieved
 
@@ -775,8 +790,7 @@ const PROFILE = {
   sex: 'male',
   ethnicity: 'caucasian',
   bodyweightLbs: 166,
-  heightIn: 72, // 6'0" — used for proportion rules (waist:height ratio)
-  wristIn: 7.0, // wrist circumference for frame-adjusted muscle targets
+  heightIn: 72, // 6'0" â€” used for proportion rules (waist:height ratio)
   get age() {
     const today = new Date();
     let age = today.getFullYear() - this.dob.getFullYear();
@@ -787,7 +801,7 @@ const PROFILE = {
   get bodyweightKg() { return this.bodyweightLbs * 0.453592; }
 };
 
-// Local date string helper — avoids UTC shift from toISOString()
+// Local date string helper â€” avoids UTC shift from toISOString()
 function localDateStr(d) {
   const y = d.getFullYear();
   const m = String(d.getMonth() + 1).padStart(2, '0');
@@ -796,7 +810,7 @@ function localDateStr(d) {
 }
 
 // ============================================================
-// COLOR CONSTANTS (CSS Rendering Guidance §4)
+// COLOR CONSTANTS (CSS Rendering Guidance Â§4)
 // Single source of truth for all JS-rendered inline styles.
 // Hex values here match the CSS custom properties in <style>.
 // ============================================================
@@ -836,7 +850,7 @@ const C = {
 // STRENGTH STANDARDS (Pillar 2)
 // BW multipliers for 1RM - male, general gym-going population, age-adjusted
 // Shifted from OpenPowerlifting competition data to recreational lifter norms:
-// competition 25th ≈ gym-population 50th percentile
+// competition 25th â‰ˆ gym-population 50th percentile
 // Percentile: [10th, 25th, 50th, 75th, 90th]
 // ============================================================
 const STRENGTH_STANDARDS = {
@@ -984,7 +998,7 @@ const EXERCISE_MUSCLE_MAP = [
   // Specific bench variants (before generic)
   { pattern: /close.?grip.*bench/i, primary: 'triceps', secondary: ['chest'] },
 
-  // Specific dip (chest vs tricep) — "Tricep Dip" must match before generic /dip/i
+  // Specific dip (chest vs tricep) â€” "Tricep Dip" must match before generic /dip/i
   { pattern: /tricep[s]?\s*dip/i, primary: 'triceps', secondary: ['chest', 'shoulders'] },
   { pattern: /chest dip/i, primary: 'chest', secondary: ['triceps', 'shoulders'] },
 
@@ -1099,7 +1113,7 @@ function classifyExercise(name) {
 // ============================================================
 // MUSCLE GROUP METADATA (Pillar 1)
 // Volume targets: effective range for recreational lifters training 3-4x/week
-// (Schoenfeld optimal ≈ 14-16 sets; these are ~65% of that — still productive)
+// (Schoenfeld optimal â‰ˆ 14-16 sets; these are ~65% of that â€” still productive)
 // Frequency: realistic for non-PPL splits (each muscle every 5-7 days)
 // ============================================================
 const MUSCLE_GROUPS = {
@@ -1249,7 +1263,7 @@ const WEIGHT_DATA_BASELINE = [
 ];
 
 // ============================================================
-// STORAGE UTILITY — centralized localStorage with error boundaries
+// STORAGE UTILITY â€” centralized localStorage with error boundaries
 // ============================================================
 const Storage = {
   get(key, fallback = null) {
@@ -1291,19 +1305,19 @@ function saveWeightEntry(date, value) {
     entries.push({ date, value });
   }
   entries.sort((a, b) => a.date.localeCompare(b.date));
-  // Cap at 400 entries — drop oldest
+  // Cap at 400 entries â€” drop oldest
   if (entries.length > 400) entries.splice(0, entries.length - 400);
   Storage.set('weightHistory', entries);
 }
 
 function getMergedWeightData() {
   const stored = getStoredWeightEntries();
-  // Apple Health weight entries from iOS Shortcut (via Hevy → HealthKit)
+  // Apple Health weight entries from iOS Shortcut (via Hevy â†’ HealthKit)
   const appleEntries = (healthData && Array.isArray(healthData.weight_entries))
     ? healthData.weight_entries.map(e => ({ date: e.date, value: parseFloat(e.lbs) || 0 })).filter(e => e.value > 0)
     : [];
   const all = [...WEIGHT_DATA_BASELINE, ...appleEntries, ...stored];
-  // Dedup by date — later sources win (stored > apple > baseline)
+  // Dedup by date â€” later sources win (stored > apple > baseline)
   const byDate = {};
   for (const entry of all) {
     byDate[entry.date] = entry.value;
@@ -1314,20 +1328,20 @@ function getMergedWeightData() {
 }
 
 // ============================================================
-// BODY MEASUREMENTS SYSTEM (v1.7 — Phases 2-4)
+// BODY MEASUREMENTS SYSTEM (v1.7 â€” Phases 2-4)
 // ============================================================
 // SCIENTIFIC FOUNDATION
 // Pillar 6: Anthropometric Proportions
-// Source: McRobert (2005) "Build Muscle, Lose Fat, Look Great" — ideal
+// Source: McRobert (2005) "Build Muscle, Lose Fat, Look Great" â€” ideal
 //   proportional targets for natural lifters based on wrist/ankle bone structure
-// Source: Butt (2010) "Your Muscular Potential" — circumference-based
+// Source: Butt (2010) "Your Muscular Potential" â€” circumference-based
 //   proportions correlated with lean mass development
-// Source: Katch & McArdle (1983) — limb girth norms for athletic males
+// Source: Katch & McArdle (1983) â€” limb girth norms for athletic males
 //
 // Target ratio philosophy:
-// - Neck ≈ Calf circumference (classic proportion)
-// - Forearm ≈ 0.80× Bicep circumference (flexed)
-// - Waist < 0.45× Height (health marker — WHO guideline)
+// - Neck â‰ˆ Calf circumference (classic proportion)
+// - Forearm â‰ˆ 0.80Ã— Bicep circumference (flexed)
+// - Waist < 0.45Ã— Height (health marker â€” WHO guideline)
 // - Chest circumference tracked for development trend
 
 const MEASUREMENTS_KEY = 'bodyMeasurements_v1';
@@ -1345,39 +1359,39 @@ const MEASUREMENT_FIELDS = [
   { key: 'calf_in',     label: 'Calf',       unit: 'in', placeholder: '15.0' },
 ];
 
-// ---- Phase 3+4: Proportion targets mapping measurements → muscle priority ----
+// ---- Phase 3+4: Proportion targets mapping measurements â†’ muscle priority ----
 // Each rule: if measurement ratio deviates from target, boost that muscle's score
 // deficit > 0 means the muscle needs MORE work
 const PROPORTION_RULES = [
   {
-    // Neck should ≈ calf circumference
+    // Neck should â‰ˆ calf circumference
     muscle: 'neck',
     requires: ['neck_in', 'calf_in'],
     targetRatio: 1.0, // neck / calf
     compute: (m) => m.neck_in / m.calf_in,
-    label: 'Neck ÷ Calf',
+    label: 'Neck Ã· Calf',
   },
   {
-    // Forearm should be ≈ 80% of bicep
+    // Forearm should be â‰ˆ 80% of bicep
     muscle: 'forearms',
     requires: ['forearm_in', 'bicep_in'],
     targetRatio: 0.80,
     compute: (m) => m.forearm_in / m.bicep_in,
-    label: 'Forearm ÷ Bicep',
+    label: 'Forearm Ã· Bicep',
   },
   {
-    // Bicep growth tracking — compare to wrist-based genetic potential
-    // Simplified: bicep should be ≈ 2.5× wrist, but we don't have wrist.
-    // Instead use bicep ÷ forearm — target 1.25 (inverse of forearm rule)
+    // Bicep growth tracking â€” compare to wrist-based genetic potential
+    // Simplified: bicep should be â‰ˆ 2.5Ã— wrist, but we don't have wrist.
+    // Instead use bicep Ã· forearm â€” target 1.25 (inverse of forearm rule)
     muscle: 'biceps',
     requires: ['bicep_in', 'forearm_in'],
     targetRatio: 1.25,
     compute: (m) => m.bicep_in / m.forearm_in,
-    label: 'Bicep ÷ Forearm',
+    label: 'Bicep Ã· Forearm',
   },
   {
-    // Waist health — smaller is better; deficit if waist is too large
-    // WHO: waist < 0.45 × height. For 6'0 (72"), target < 32.4"
+    // Waist health â€” smaller is better; deficit if waist is too large
+    // WHO: waist < 0.45 Ã— height. For 6'0 (72"), target < 32.4"
     // We use a fixed target since we have height in profile
     muscle: 'core',
     requires: ['waist_in'],
@@ -1388,24 +1402,24 @@ const PROPORTION_RULES = [
       // Return a "score" where < 1.0 means good, > 1.0 means over target
       return m.waist_in / targetMax;
     },
-    label: 'Waist ÷ Target',
+    label: 'Waist Ã· Target',
   },
   {
-    // Calf should ≈ neck circumference
+    // Calf should â‰ˆ neck circumference
     muscle: 'calves',
     requires: ['calf_in', 'neck_in'],
     targetRatio: 1.0,
     compute: (m) => m.calf_in / m.neck_in,
-    label: 'Calf ÷ Neck',
+    label: 'Calf Ã· Neck',
   },
   {
-    // Chest development — tracked as trend; compare to waist for V-taper
-    // Target chest:waist ratio ≈ 1.3 for aesthetic V-taper
+    // Chest development â€” tracked as trend; compare to waist for V-taper
+    // Target chest:waist ratio â‰ˆ 1.3 for aesthetic V-taper
     muscle: 'chest',
     requires: ['chest_in', 'waist_in'],
     targetRatio: 1.30,
     compute: (m) => m.chest_in / m.waist_in,
-    label: 'Chest ÷ Waist',
+    label: 'Chest Ã· Waist',
   },
 ];
 
@@ -1431,7 +1445,7 @@ function saveMeasurementEntry(entry) {
 function getLatestMeasurements() {
   const entries = getStoredMeasurements();
   if (entries.length === 0 && !(healthData && healthData.waist_circumference_in)) return null;
-  // Merge all entries — latest value per field wins
+  // Merge all entries â€” latest value per field wins
   const latest = {};
   const dates = {};
   // Sort chronologically so later entries overwrite
@@ -1541,7 +1555,7 @@ function renderConstraintChips() {
     const chipStyle = isNonDefault
       ? `background:${C.accentDim};color:${C.accent};border:1px solid ${C.accentBorder};padding:5px 10px;font-size:12px;font-weight:500;font-family:Space Grotesk,sans-serif;border-radius:6px;cursor:pointer;user-select:none;`
       : `background:${C.surface2};color:${C.textDim};border:1px solid ${C.border};padding:5px 10px;font-size:12px;font-weight:500;font-family:Space Grotesk,sans-serif;border-radius:6px;cursor:pointer;user-select:none;`;
-    return `<div class="constraint-chip${isNonDefault ? ' active' : ''}" style="${chipStyle}" data-key="${def.key}" onclick="cycleChip('${def.key}')">${def.label(current)} <span style="opacity:0.35;font-size:9px;margin-left:1px;">↻</span></div>`;
+    return `<div class="constraint-chip${isNonDefault ? ' active' : ''}" style="${chipStyle}" data-key="${def.key}" onclick="cycleChip('${def.key}')">${def.label(current)} <span style="opacity:0.35;font-size:9px;margin-left:1px;">â†»</span></div>`;
   }).join('');
 }
 
@@ -1601,7 +1615,7 @@ async function fetchWorkouts(pageSize = 10, maxPages = 10) {
 // STRENGTH INDEX LIFT DEFINITIONS
 // ============================================================
 // p50 = 50th percentile BW multiplier for general gym-going male population
-// Derived from STRENGTH_STANDARDS (competition 25th ≈ gym 50th)
+// Derived from STRENGTH_STANDARDS (competition 25th â‰ˆ gym 50th)
 // Age-adjusted dynamically via PROFILE.age
 const STRENGTH_INDEX_LIFTS = {
   bench:    { weight: 0.20, p50: 0.95, patterns: [/bench press.*barbell/i, /^bench press$/i] },
@@ -1632,7 +1646,7 @@ function preprocessWorkouts(workouts, bodyweightLbs, weightData) {
   const siTimeline = [];
   const heatmapDayMuscle = {};
   const heatmapDayWorkouts = {};
-  const heatmapDayCardio = {}; // dateStr → { minutes, sessions: [{ name, minutes, source }] }
+  const heatmapDayCardio = {}; // dateStr â†’ { minutes, sessions: [{ name, minutes, source }] }
 
   // Init muscle stats
   for (const [key, meta] of Object.entries(MUSCLE_GROUPS)) {
@@ -1894,10 +1908,10 @@ function preprocessWorkouts(workouts, bodyweightLbs, weightData) {
 // Source 2: Seiler (2010) "What is Best Practice for Training Intensity and Duration
 //   Distribution in Endurance Athletes?" - polarized 80/20 model
 // Source 3: Tanaka et al. (2001) "Age-predicted maximal heart rate revisited"
-//   - HRmax = 208 - 0.7 × age (more accurate than 220-age)
+//   - HRmax = 208 - 0.7 Ã— age (more accurate than 220-age)
 // Source 4: Karvonen (1957) "Heart Rate Reserve" method for HR zones
-//   - Target HR = ((HRmax - HRrest) × %intensity) + HRrest
-// Source 5: Stöggl & Sperlich (2014) "Polarized training has greater impact on key
+//   - Target HR = ((HRmax - HRrest) Ã— %intensity) + HRrest
+// Source 5: StÃ¶ggl & Sperlich (2014) "Polarized training has greater impact on key
 //   endurance variables than threshold, high-intensity, or high-volume training"
 
 // HR Zone calculations
@@ -2133,7 +2147,7 @@ function analyzeCardioHistory(workouts) {
 
   // --- Pass 2: Apple Health Watch workouts ---
   // Everything in healthData.workouts[] was explicitly started on the Watch.
-  // We count all workout types EXCEPT strength/flexibility — those aren't cardio.
+  // We count all workout types EXCEPT strength/flexibility â€” those aren't cardio.
   const WATCH_NON_CARDIO = /strength|weight\s*train|yoga|pilates|stretch|cool\s*down|flexibility|mind.*body|tai\s*chi/i;
 
   if (healthData && Array.isArray(healthData.workouts)) {
@@ -2262,16 +2276,16 @@ function buildCardioBreakdownHTML(history) {
   if (history.hevySessions > 0) parts.push(`\u{1F3CB}\uFE0F Hevy: ${history.hevySessions} session${history.hevySessions > 1 ? 's' : ''}, ${Math.round(history.hevyMinutes)} min`);
   if (history.appleSessions > 0) parts.push(`\u231A Watch: ${history.appleSessions} session${history.appleSessions > 1 ? 's' : ''}, ${Math.round(history.appleMinutes)} min`);
 
-  let html = `<div style="font-size:11px;font-family:'Space Grotesk',sans-serif;color:${C.textDim};margin-bottom:8px;">${parts.join(' · ')}</div>`;
+  let html = `<div style="font-size:11px;font-family:'Space Grotesk',sans-serif;color:${C.textDim};margin-bottom:8px;">${parts.join(' Â· ')}</div>`;
 
   // Per-session rows
   for (const s of sorted) {
     const dayStr = s.date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
     const icon = s.source === 'watch' ? '\u231A' : '\u{1F3CB}\uFE0F';
-    const calStr = s.calories > 0 ? ` · ${Math.round(s.calories)} cal` : '';
+    const calStr = s.calories > 0 ? ` Â· ${Math.round(s.calories)} cal` : '';
     html += `<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;font-size:12px;font-family:'Space Grotesk',sans-serif;">
       <span style="color:${C.textMid};">${icon} ${s.type}</span>
-      <span style="color:${C.textDark};">${Math.round(s.minutes)} min${calStr} · ${dayStr}</span>
+      <span style="color:${C.textDark};">${Math.round(s.minutes)} min${calStr} Â· ${dayStr}</span>
     </div>`;
   }
 
@@ -2397,7 +2411,7 @@ function generateRecommendations(muscleStats) {
   const imbalanceW = hasProportions ? 0.25 : 0.30;
 
   for (const [key, stat] of Object.entries(muscleStats)) {
-    // Recency uses PRIMARY training date — secondary stimulus (e.g. RDLs for back)
+    // Recency uses PRIMARY training date â€” secondary stimulus (e.g. RDLs for back)
     // doesn't reset the clock. This prevents back from being deprioritized when
     // only indirect work has been done recently.
     const recencyScore = Math.min(stat.daysSincePrimary / stat.idealFreqDays, 3);
@@ -2428,7 +2442,7 @@ function generateRecommendations(muscleStats) {
     if (stat.daysSincePrimary === Infinity && stat.daysSinceAny === Infinity) {
       explainer = `No ${stat.name.toLowerCase()} training found in your history. This muscle group needs attention to build a balanced physique.`;
     } else if (stat.daysSincePrimary === Infinity) {
-      explainer = `No direct ${stat.name.toLowerCase()} work found — only indirect stimulus (${stat.daysSinceAny}d ago). Add dedicated exercises to develop this muscle group.`;
+      explainer = `No direct ${stat.name.toLowerCase()} work found â€” only indirect stimulus (${stat.daysSinceAny}d ago). Add dedicated exercises to develop this muscle group.`;
     } else {
       const parts = [];
       if (stat.daysSincePrimary >= stat.idealFreqDays * 2.5) {
@@ -2611,9 +2625,9 @@ function buildTimedSession(recs, prefs) {
 // ============================================================
 // RENDERING
 // ============================================================
-// renderRecommendations removed in v1.7 — replaced by renderTimedSession
+// renderRecommendations removed in v1.7 â€” replaced by renderTimedSession
 
-// B2: Sort mode state for Today tab — 'urgency' (default) or 'anatomy'
+// B2: Sort mode state for Today tab â€” 'urgency' (default) or 'anatomy'
 let todaySortMode = 'urgency';
 const ANATOMY_ORDER = ['chest', 'back', 'shoulders', 'quads', 'hamstrings', 'glutes', 'biceps', 'triceps', 'calves', 'core', 'neck', 'forearms'];
 
@@ -2637,7 +2651,7 @@ function renderTimedSession(recs) {
     ${_consecutiveTrainDays >= 3 ? `<div style="padding:10px 12px;margin-bottom:12px;border-radius:8px;border:1px solid ${_consecutiveTrainDays >= 5 ? C.danger : C.warn};background:${_consecutiveTrainDays >= 5 ? C.dangerDim : C.warnDim};font-size:13px;font-family:'Space Grotesk',sans-serif;color:${_consecutiveTrainDays >= 5 ? C.danger : C.warn};line-height:1.5;">
       ${_consecutiveTrainDays >= 5
         ? `<strong>${_consecutiveTrainDays} days straight.</strong> Your muscles grow during rest, not during training. Take a recovery day.`
-        : `<strong>${_consecutiveTrainDays} days in a row</strong> — consider a rest or light day. Recovery is when growth happens.`}
+        : `<strong>${_consecutiveTrainDays} days in a row</strong> â€” consider a rest or light day. Recovery is when growth happens.`}
     </div>` : ''}
     <div class="session-summary">
       <div class="session-time" style="color:${C.accent}">~${totalMin} min</div>
@@ -2685,12 +2699,12 @@ function renderTimedSession(recs) {
     exHtml += `<div class="ex-group">
       <div class="ex-group-title" style="color:${meta.color};cursor:pointer;display:flex;align-items:center;justify-content:space-between;" onclick="toggleSessionExplainer('exp-${key}')">
         <span>${meta.name}</span>
-        <span style="font-size:11px;color:${C.textMid};font-weight:500;letter-spacing:0;background:${C.surface2};padding:2px 8px;border-radius:4px;">▾ why</span>
+        <span style="font-size:11px;color:${C.textMid};font-weight:500;letter-spacing:0;background:${C.surface2};padding:2px 8px;border-radius:4px;">â–¾ why</span>
       </div>`;
 
     // B1: Collapsible "Why this?" explainer
     if (rec) {
-      const daysSince = rec.daysSince === Infinity ? '∞' : rec.daysSince;
+      const daysSince = rec.daysSince === Infinity ? 'âˆž' : rec.daysSince;
       const idealFreq = (muscleAnalysis && muscleAnalysis[key]) ? muscleAnalysis[key].idealFreqDays : '?';
       const volActual = rec.weeklyActual;
       const volIdeal = rec.weeklyIdeal;
@@ -2702,7 +2716,7 @@ function renderTimedSession(recs) {
       if (deficit > 0) {
         bullets.push(`<span style="color:${C.textDim};">Volume gap:</span> <strong>${deficit.toFixed(1)} sets/wk</strong> <span style="color:${C.textDark};">below ${volIdeal}</span>`);
       } else {
-        bullets.push(`<span style="color:${C.textDim};">Volume:</span> <strong>${volActual} / ${volIdeal}</strong> <span style="color:${C.accent};">✔</span>`);
+        bullets.push(`<span style="color:${C.textDim};">Volume:</span> <strong>${volActual} / ${volIdeal}</strong> <span style="color:${C.accent};">âœ”</span>`);
       }
       if (propDef && propDef > 0.05) {
         const rule = PROPORTION_RULES.find(r => r.muscle === key);
@@ -2742,6 +2756,29 @@ function renderTimedSession(recs) {
   }
 }
 
+// Generic collapsible section toggle
+function toggleSectionExplainer(id, triggerEl) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  if (el.classList.contains('open')) {
+    el.style.maxHeight = '0';
+    el.style.opacity = '0';
+    el.classList.remove('open');
+    if (triggerEl) {
+      const chev = triggerEl.querySelector('.section-chevron');
+      if (chev) chev.style.transform = 'rotate(0deg)';
+    }
+  } else {
+    el.classList.add('open');
+    el.style.opacity = '1';
+    el.style.maxHeight = el.scrollHeight + 'px';
+    if (triggerEl) {
+      const chev = triggerEl.querySelector('.section-chevron');
+      if (chev) chev.style.transform = 'rotate(180deg)';
+    }
+  }
+}
+
 // B1: Toggle explainer panel for a muscle group in Today tab
 function toggleSessionExplainer(id) {
   const el = document.getElementById(id);
@@ -2763,26 +2800,14 @@ function toggleSessionExplainer(id) {
   }
 }
 
-// Generic collapsible section toggle (for explainer text under headers)
-function toggleSectionInfo(id) {
-  const el = document.getElementById(id);
-  if (!el) return;
-  const chevron = document.getElementById(id + '-chevron');
-  const isOpen = el.style.maxHeight && el.style.maxHeight !== '0px';
-  if (isOpen) {
-    el.style.maxHeight = '0';
-    el.style.opacity = '0';
-    if (chevron) chevron.style.transform = 'rotate(0deg)';
-  } else {
-    el.style.maxHeight = el.scrollHeight + 'px';
-    el.style.opacity = '1';
-    if (chevron) chevron.style.transform = 'rotate(180deg)';
-  }
+// ============================================================
+// MUSCLE GRID (v1.1 Task 3: simplified - no percentile text, no bar)
+// ============================================================
+function getMuscleCardColor(muscleKey, daysSinceTrained, idealFreqDays) {
+  // v1.12: Simplified - returns only urgency info, tiles use uniform background
+  return { bg: C.surface2, border: C.border };
 }
 
-// ============================================================
-// MUSCLE GRID (v1.12: clean urgency-based design)
-// ============================================================
 function renderMuscleGrid(muscleStats, recs) {
   const grid = document.getElementById('muscle-grid');
 
@@ -2799,8 +2824,6 @@ function renderMuscleGrid(muscleStats, recs) {
     return scoreB - scoreA;
   });
 
-  const urgencyColors = { high: C.danger, med: C.warn, low: C.accent };
-
   grid.innerHTML = entries.map(([key, stat]) => {
     let daysText;
     if (stat.daysSincePrimary === Infinity && stat.daysSinceAny === Infinity) {
@@ -2813,16 +2836,17 @@ function renderMuscleGrid(muscleStats, recs) {
     const weeklyVol = (stat.totalSets30d / 4.3).toFixed(1);
     const rec = recMap[key];
     const urgency = rec ? rec.urgency : 'low';
+    const urgencyColors = { high: C.danger, med: C.warn, low: C.accent };
     const uColor = urgencyColors[urgency] || C.accent;
     const volPct = Math.min(100, Math.round((parseFloat(weeklyVol) / stat.idealSetsPerWeek) * 100));
 
     return `
-      <div class="muscle-cell" style="background:${C.surface2};border-color:${C.border};border-left:3px solid ${uColor};" onclick="toggleMuscleDetail('${key}')">
+      <div class="muscle-cell" style="background:${C.surface2};border-color:${C.border};border-left:3px solid ${uColor}" onclick="toggleMuscleDetail('${key}')">
         <div class="muscle-cell-header">
           <div class="muscle-name" style="color:${C.text}">${stat.name}</div>
           <div style="width:8px;height:8px;border-radius:50%;background:${uColor};flex-shrink:0;"></div>
         </div>
-        <div class="muscle-stat">${daysText} \u00b7 ${weeklyVol}/${stat.idealSetsPerWeek}/wk</div>
+        <div class="muscle-stat" style="color:${C.textMid};font-family:'Space Grotesk',sans-serif;font-size:12px;margin-top:5px;">${daysText} \u00b7 ${weeklyVol}/${stat.idealSetsPerWeek}/wk</div>
         <div style="height:2px;border-radius:1px;background:${C.surface3};margin-top:6px;overflow:hidden;">
           <div style="height:100%;width:${volPct}%;border-radius:1px;background:${uColor};opacity:0.7;transition:width 0.4s ease;"></div>
         </div>
@@ -2833,7 +2857,7 @@ function renderMuscleGrid(muscleStats, recs) {
   const prevLegend = document.getElementById('muscle-grid-legend');
   if (prevLegend) prevLegend.remove();
   grid.insertAdjacentHTML('afterend',
-    `<div id="muscle-grid-legend" style="display:flex;gap:14px;justify-content:center;margin-top:10px;font-size:11px;font-family:'Space Grotesk',sans-serif;color:${C.textDim};">
+    `<div id="muscle-grid-legend" style="display:flex;gap:14px;justify-content:center;margin-top:10px;font-size:11px;font-family:'Space Grotesk',sans-serif;color:${C.textDim};max-height:0;overflow:hidden;opacity:0;transition:max-height 0.3s ease,opacity 0.25s ease;">
       <span><span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${C.danger};margin-right:3px;vertical-align:middle;"></span>Needs work</span>
       <span><span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${C.warn};margin-right:3px;vertical-align:middle;"></span>Due soon</span>
       <span><span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${C.accent};margin-right:3px;vertical-align:middle;"></span>On track</span>
@@ -2858,6 +2882,7 @@ function renderMuscleGrid(muscleStats, recs) {
     });
   }
 }
+
 
 let selectedMuscleKey = null;
 let _muscleRecMap = {};
@@ -3008,7 +3033,7 @@ function countConsecutiveTrainingDays(dayWorkoutsMap) {
     if (dayWorkoutsMap[key] && dayWorkoutsMap[key].length > 0) {
       count++;
     } else {
-      // Allow skipping today if it's early — check if yesterday continues a streak
+      // Allow skipping today if it's early â€” check if yesterday continues a streak
       if (i === 0) continue;
       break;
     }
@@ -3049,7 +3074,7 @@ function renderHeatmap(dayMuscleMap, dayWorkoutsMap, dayCardioMap) {
 
   html += `<div class="heatmap-grid" style="grid-template-columns: ${labelWidth}px repeat(${numDays}, ${cellSize}px); grid-template-rows: 22px repeat(${totalRows}, ${cellSize}px);">`;
 
-  // Day labels row — evenly spaced for 14 days
+  // Day labels row â€” evenly spaced for 14 days
   html += `<div></div>`;
   for (let i = 0; i < days.length; i++) {
     const d = new Date(days[i] + 'T12:00:00');
@@ -3078,7 +3103,7 @@ function renderHeatmap(dayMuscleMap, dayWorkoutsMap, dayCardioMap) {
     }
   }
 
-  // Cardio row (blue, opacity scales with duration: 15 min → 0.3, 30 → 0.6, 45+ → 1.0)
+  // Cardio row (blue, opacity scales with duration: 15 min â†’ 0.3, 30 â†’ 0.6, 45+ â†’ 1.0)
   html += `<div class="heatmap-label" style="color:${C.blue}">Cardio</div>`;
   for (const day of days) {
     const cd = heatmapDayCardio[day];
@@ -3444,17 +3469,14 @@ function populateStrengthDetail() {
   }
 
   let html = `<div style="margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid ${C.border};">
-    <div style="display:flex;align-items:baseline;justify-content:space-between;">
-      <div style="font-family:'Space Grotesk',sans-serif;font-size:32px;font-weight:700;color:${C.strength};">${latestSI ? latestSI.index.toFixed(2) : '--'}</div>
+    <div style="display:flex;align-items:baseline;justify-content:space-between;cursor:pointer;" onclick="toggleSectionExplainer('si-explainer',this)">
+      <div style="display:flex;align-items:baseline;gap:6px;">
+        <div style="font-family:'Space Grotesk',sans-serif;font-size:32px;font-weight:700;color:${C.strength};">${latestSI ? latestSI.index.toFixed(2) : '--'}</div>
+        <span class="section-chevron" style="font-size:10px;color:${C.textDim};transition:transform 0.3s ease;display:inline-block;">\u25BE</span>
+      </div>
       <div style="font-family:'Space Grotesk',sans-serif;font-size:12px;font-weight:600;color:${siColor};padding:2px 8px;border-radius:5px;background:${siColor}18;">${siLevel}</div>
     </div>
-    <div onclick="toggleSectionInfo('si-explainer')" style="cursor:pointer;display:flex;align-items:center;gap:4px;">
-      <div style="font-family:'Space Grotesk',sans-serif;font-size:11px;color:${C.textDim};margin-top:4px;">What's this?</div>
-      <span id="si-explainer-chevron" style="font-size:10px;color:${C.textDim};margin-top:4px;transition:transform 0.3s ease;display:inline-block;">▾</span>
-    </div>
-    <div id="si-explainer" style="max-height:0;overflow:hidden;opacity:0;transition:max-height 0.3s ease,opacity 0.2s ease;">
-      <div style="font-family:'Space Grotesk',sans-serif;font-size:11px;color:${C.textDim};margin-top:6px;line-height:1.5;">Big-5 estimated 1RM total ÷ bodyweight · higher = stronger</div>
-    </div>
+    <div id="si-explainer" style="font-family:'Space Grotesk',sans-serif;font-size:11px;color:${C.textDim};margin-top:4px;max-height:0;overflow:hidden;opacity:0;transition:max-height 0.3s ease,opacity 0.25s ease;">Big-5 estimated 1RM total Ã· bodyweight Â· higher = stronger</div>
   </div>`;
 
   // Column labels (no %ile column)
@@ -3496,6 +3518,9 @@ function populateStrengthDetail() {
   container.innerHTML = html;
 }
 
+// ============================================================
+// WEIGHT INPUT
+// ============================================================
 // ============================================================
 // BODY MEASUREMENTS UI (v1.7 Phase 2)
 // ============================================================
@@ -3694,37 +3719,17 @@ function parseHevyDate(str) {
   return `${match[3]}-${String(mon).padStart(2, '0')}-${day}`;
 }
 
-// Frame-adjusted muscle size targets (McCallum/Butt wrist-based, 85% of max potential)
-const FRAME_TARGETS = (() => {
-  const w = PROFILE.wristIn || 7.0;
-  const scale = 0.85; // recreational lifter target (85% of genetic max)
-  const chestMax = 6.5 * w;
-  return {
-    chest_in:    { target: chestMax * scale, label: 'Chest' },
-    bicep_in:    { target: 2.34 * w * scale, label: 'Biceps' },
-    forearm_in:  { target: 1.885 * w * scale, label: 'Forearms' },
-    neck_in:     { target: 2.405 * w * scale, label: 'Neck' },
-    thigh_in:    { target: 3.445 * w * scale, label: 'Thighs' },
-    calf_in:     { target: 2.21 * w * scale, label: 'Calves' },
-    shoulder_in: { target: chestMax * 1.618 * scale, label: 'Shoulders' },
-    // waist — health target, not growth
-    waist_in:    { target: (PROFILE.heightIn || 72) * 0.45, label: 'Waist', inverse: true },
-  };
-})();
-
-let _activeMeasChart = null; // currently open sparkline key
-
 function renderMeasurementsDisplay() {
   const container = document.getElementById('measurements-display');
   if (!container) return;
   const latest = latestMeasurements;
 
   if (!latest) {
-    container.innerHTML = `<div style="font-size:13px;color:${C.textDim};font-family:'Space Grotesk',sans-serif;padding:4px 0;">No measurements yet. Import from Hevy to start tracking.</div>`;
+    container.innerHTML = `<div style="font-size:13px;color:${C.textDim};font-family:'Space Grotesk',sans-serif;padding:4px 0;">No measurements yet. Use Import Hevy to start tracking.</div>`;
     return;
   }
 
-  let html = `<div id="meas-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;">`;
+  let html = `<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;">`;
   let hasAny = false;
   for (const field of MEASUREMENT_FIELDS) {
     const val = latest[field.key];
@@ -3740,317 +3745,304 @@ function renderMeasurementsDisplay() {
     const stale = daysAgo !== null && daysAgo > 90;
     const ageLabel = daysAgo === 0 ? 'today' : daysAgo !== null ? `${daysAgo}d ago` : '';
     const ageColor = stale ? C.warn : C.textDark;
-    const isActive = _activeMeasChart === field.key;
+    const isSelected = _selectedMeasField === field.key;
+    const borderStyle = isSelected ? `border:1px solid ${C.accent}` : `border:1px solid ${C.border}`;
 
-    html += `<div id="meas-tile-${field.key}" onclick="toggleMeasSparkline('${field.key}')" style="padding:10px;border-radius:8px;border:1px solid ${isActive ? C.accent : C.border};background:${C.surface2};cursor:pointer;-webkit-tap-highlight-color:transparent;transition:border-color 0.2s ease;">
+    html += `<div style="padding:10px;border-radius:8px;${borderStyle};background:${C.surface2};cursor:pointer;-webkit-tap-highlight-color:transparent;transition:border-color 0.2s ease;" onclick="toggleMeasSparkline('${field.key}')">
       <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:${C.textDim};font-family:'Space Grotesk',sans-serif;margin-bottom:4px;">${field.label}</div>
       <div style="font-family:'Space Grotesk',sans-serif;font-size:20px;font-weight:700;color:${C.text};line-height:1.2;">${val.toFixed(1)}<span style="font-size:11px;font-weight:400;color:${C.textDim};margin-left:2px;">${field.unit}</span></div>
       <div style="font-size:10px;font-family:'Space Grotesk',sans-serif;color:${ageColor};margin-top:2px;">${ageLabel}</div>
     </div>`;
   }
   html += `</div>`;
-  html += `<div id="meas-sparkline-container" style="overflow:hidden;max-height:0;opacity:0;transition:max-height 0.4s ease,opacity 0.3s ease;"></div>`;
+
+  // Sparkline container
+  html += `<div id="meas-sparkline-container" style="max-height:0;overflow:hidden;opacity:0;transition:max-height 0.4s ease,opacity 0.3s ease;margin-top:8px;"></div>`;
 
   if (!hasAny) {
-    container.innerHTML = `<div style="font-size:13px;color:${C.textDim};font-family:'Space Grotesk',sans-serif;padding:4px 0;">No measurements yet. Import from Hevy to start tracking.</div>`;
+    container.innerHTML = `<div style="font-size:13px;color:${C.textDim};font-family:'Space Grotesk',sans-serif;padding:4px 0;">No measurements yet. Use Import Hevy to start tracking.</div>`;
     return;
   }
   container.innerHTML = html;
-  // Restore sparkline if one was active
-  if (_activeMeasChart) {
-    setTimeout(() => showMeasSparkline(_activeMeasChart), 50);
-  }
 }
 
-function toggleMeasSparkline(key) {
+let _selectedMeasField = null;
+
+function toggleMeasSparkline(fieldKey) {
   const container = document.getElementById('meas-sparkline-container');
   if (!container) return;
 
-  // Deselect old tile
-  if (_activeMeasChart) {
-    const oldTile = document.getElementById(`meas-tile-${_activeMeasChart}`);
-    if (oldTile) oldTile.style.borderColor = C.border;
-  }
-
-  if (_activeMeasChart === key) {
-    // Close
-    _activeMeasChart = null;
+  if (_selectedMeasField === fieldKey) {
+    // Collapse
     container.style.maxHeight = '0';
     container.style.opacity = '0';
+    _selectedMeasField = null;
+    renderMeasurementsDisplay();
     return;
   }
 
-  _activeMeasChart = key;
-  const tile = document.getElementById(`meas-tile-${key}`);
-  if (tile) tile.style.borderColor = C.accent;
-  showMeasSparkline(key);
-}
+  _selectedMeasField = fieldKey;
+  renderMeasurementsDisplay(); // re-render to update selection highlight
 
-function showMeasSparkline(key) {
-  const container = document.getElementById('meas-sparkline-container');
-  if (!container) return;
+  const sparkContainer = document.getElementById('meas-sparkline-container');
+  if (!sparkContainer) return;
 
   const entries = getStoredMeasurements();
+  const field = MEASUREMENT_FIELDS.find(f => f.key === fieldKey);
+  if (!field) return;
+
+  // Get all values for this field with dates
   const points = [];
-  for (const e of entries) {
-    if (e[key] != null && !isNaN(e[key]) && e[key] > 0) {
-      points.push({ date: e.date, value: parseFloat(e[key]) });
+  for (const entry of entries) {
+    if (entry[fieldKey] != null && !isNaN(entry[fieldKey]) && entry[fieldKey] > 0) {
+      points.push({ date: entry.date, value: parseFloat(entry[fieldKey]) });
     }
   }
 
-  const field = MEASUREMENT_FIELDS.find(f => f.key === key);
-  const label = field ? field.label : key;
+  // For waist, also check Apple Health
+  if (fieldKey === 'waist_in' && healthData && healthData.waist_circumference_in > 0) {
+    const ahDate = healthData.waist_date || localDateStr(new Date());
+    const exists = points.some(p => p.date === ahDate);
+    if (!exists) points.push({ date: ahDate, value: healthData.waist_circumference_in });
+  }
+
+  points.sort((a, b) => (a.date || '').localeCompare(b.date || ''));
 
   if (points.length < 2) {
-    container.innerHTML = `<div style="padding:16px 0;text-align:center;font-size:12px;font-family:'Space Grotesk',sans-serif;color:${C.textDim};">Need 2+ entries to chart ${label}.</div>`;
-    container.style.maxHeight = '80px';
-    container.style.opacity = '1';
+    sparkContainer.innerHTML = `<div style="padding:12px;text-align:center;font-size:12px;font-family:'Space Grotesk',sans-serif;color:${C.textDim};">Need 2+ entries to chart ${field.label}.</div>`;
+    sparkContainer.style.opacity = '1';
+    sparkContainer.style.maxHeight = '60px';
     return;
   }
 
-  // Determine trend direction for color
-  const firstVal = points[0].value;
-  const lastVal = points[points.length - 1].value;
-  const isWaist = key === 'waist_in';
-  const trendUp = lastVal > firstVal;
-  const trendGood = isWaist ? !trendUp : trendUp;
-  const lineColor = trendGood ? C.accent : C.warn;
-
   // Build SVG sparkline
-  const svgW = 320, svgH = 80, padX = 30, padY = 12;
-  const plotW = svgW - padX * 2, plotH = svgH - padY * 2;
+  const w = 300, h = 70, pad = 20;
   const vals = points.map(p => p.value);
-  const minV = Math.min(...vals) * 0.98;
-  const maxV = Math.max(...vals) * 1.02;
+  const minV = Math.min(...vals), maxV = Math.max(...vals);
   const range = maxV - minV || 1;
 
-  const pts = points.map((p, i) => {
-    const x = padX + (i / (points.length - 1)) * plotW;
-    const y = padY + plotH - ((p.value - minV) / range) * plotH;
-    return { x, y, value: p.value };
+  const scaleX = (i) => pad + (i / (points.length - 1)) * (w - 2 * pad);
+  const scaleY = (v) => h - pad - ((v - minV) / range) * (h - 2 * pad);
+
+  let pathD = points.map((p, i) => `${i === 0 ? 'M' : 'L'}${scaleX(i).toFixed(1)},${scaleY(p.value).toFixed(1)}`).join(' ');
+
+  // Determine trend color
+  const isWaist = fieldKey === 'waist_in';
+  const firstVal = vals[0], lastVal = vals[vals.length - 1];
+  const trending = lastVal > firstVal ? 'up' : lastVal < firstVal ? 'down' : 'flat';
+  let lineColor = C.accent;
+  if (isWaist) {
+    lineColor = trending === 'down' ? C.accent : trending === 'up' ? C.warn : C.textMid;
+  } else {
+    lineColor = trending === 'up' ? C.accent : trending === 'down' ? C.warn : C.textMid;
+  }
+
+  const totalLen = points.reduce((sum, p, i) => {
+    if (i === 0) return 0;
+    const dx = scaleX(i) - scaleX(i-1);
+    const dy = scaleY(p.value) - scaleY(points[i-1].value);
+    return sum + Math.sqrt(dx*dx + dy*dy);
+  }, 0);
+
+  let svg = `<svg viewBox="0 0 ${w} ${h}" width="100%" height="${h}" style="display:block;">
+    <style>
+      @keyframes drawLine { from { stroke-dashoffset: ${totalLen.toFixed(0)}; } to { stroke-dashoffset: 0; } }
+    </style>
+    <path d="${pathD}" fill="none" stroke="${lineColor}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"
+      stroke-dasharray="${totalLen.toFixed(0)}" style="animation:drawLine 0.5s ease forwards;" />`;
+
+  // Dots at each point
+  points.forEach((p, i) => {
+    svg += `<circle cx="${scaleX(i).toFixed(1)}" cy="${scaleY(p.value).toFixed(1)}" r="2.5" fill="${lineColor}" />`;
   });
 
-  const pathD = pts.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ');
-  const totalLen = pts.reduce((acc, p, i) => i === 0 ? 0 : acc + Math.hypot(p.x - pts[i-1].x, p.y - pts[i-1].y), 0);
+  // Labels at first and last points
+  const firstPt = points[0], lastPt = points[points.length - 1];
+  svg += `<text x="${pad}" y="${scaleY(firstPt.value) - 6}" fill="${C.textDim}" font-size="9" font-family="Space Grotesk,sans-serif" text-anchor="start">${firstPt.value.toFixed(1)}</text>`;
+  svg += `<text x="${w - pad}" y="${scaleY(lastPt.value) - 6}" fill="${C.text}" font-size="9" font-family="Space Grotesk,sans-serif" text-anchor="end">${lastPt.value.toFixed(1)}</text>`;
 
-  let svg = `<svg width="100%" viewBox="0 0 ${svgW} ${svgH}" style="display:block;">`;
-  // Line with draw-in animation
-  svg += `<path d="${pathD}" fill="none" stroke="${lineColor}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="stroke-dasharray:${totalLen.toFixed(0)};stroke-dashoffset:${totalLen.toFixed(0)};animation:sparkDraw 0.6s ease forwards;" />`;
-  // Dots at each data point
-  for (const p of pts) {
-    svg += `<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="2.5" fill="${lineColor}" opacity="0.7" />`;
-  }
-  // First & last value labels
-  const first = pts[0], last = pts[pts.length - 1];
-  svg += `<text x="${first.x}" y="${first.y - 6}" fill="${C.textDim}" font-size="9" font-family="Space Grotesk,sans-serif" text-anchor="start">${firstVal.toFixed(1)}</text>`;
-  svg += `<text x="${last.x}" y="${last.y - 6}" fill="${lineColor}" font-size="9" font-family="Space Grotesk,sans-serif" text-anchor="end" font-weight="600">${lastVal.toFixed(1)}</text>`;
   svg += `</svg>`;
 
-  container.innerHTML = `<div style="padding:10px 4px 6px 4px;">
-    <style>@keyframes sparkDraw { to { stroke-dashoffset: 0; } }</style>
-
-```
-${svg}
-```
-
+  // Date range label
+  const dateRange = `${points[0].date || ''} → ${points[points.length-1].date || ''}`;
+  sparkContainer.innerHTML = `<div style="background:${C.surface2};border-radius:8px;border:1px solid ${C.border};padding:10px 8px 6px;">
+    ${svg}
+    <div style="text-align:center;font-size:10px;font-family:'Space Grotesk',sans-serif;color:${C.textDark};margin-top:2px;">${dateRange} \u00b7 ${points.length} entries</div>
   </div>`;
-  container.style.maxHeight = '120px';
-  container.style.opacity = '1';
+  sparkContainer.style.opacity = '1';
+  sparkContainer.style.maxHeight = sparkContainer.scrollHeight + 'px';
 }
 
 function renderProportionsDisplay() {
-const container = document.getElementById(‘proportions-display’);
-if (!container) return;
-const latest = latestMeasurements;
+  const container = document.getElementById('proportions-display');
+  if (!container) return;
+  const latest = latestMeasurements;
 
-if (!latest || !PROFILE.wristIn) {
-container.innerHTML = ‘’;
-return;
-}
+  if (!latest || Object.keys(latest).length < 3) {
+    container.innerHTML = '';
+    return;
+  }
 
-// Check if we have any measurement data with targets
-const dataPoints = [];
-const radarKeys = [‘chest_in’,‘bicep_in’,‘forearm_in’,‘neck_in’,‘thigh_in’,‘calf_in’];
-for (const key of radarKeys) {
-const ft = FRAME_TARGETS[key];
-if (!ft) continue;
-const val = latest[key];
-if (val && val > 0) {
-dataPoints.push({ key, label: ft.label, value: val, target: ft.target, pct: Math.min(1, val / ft.target) });
-}
-}
+  // Radar chart: use proportion rules to compute development %
+  // Each axis represents a body part's development relative to its proportion target
+  const axes = [];
+  for (const rule of PROPORTION_RULES) {
+    const hasDeps = rule.requires.every(k => latest[k] != null && latest[k] > 0);
+    if (!hasDeps) continue;
+    const actual = rule.compute(latest);
+    const target = rule.targetRatio || 1.0;
+    let pct;
+    if (rule.muscle === 'core') {
+      // For waist: at target (1.0) = 100%, above target = less
+      pct = Math.max(0, Math.min(100, Math.round((1 / Math.max(actual, 0.5)) * 100)));
+    } else {
+      pct = Math.max(0, Math.min(100, Math.round((actual / target) * 100)));
+    }
+    const muscleName = MUSCLE_GROUPS[rule.muscle] ? MUSCLE_GROUPS[rule.muscle].name : rule.muscle;
+    axes.push({ name: muscleName, pct, muscle: rule.muscle });
+  }
 
-if (dataPoints.length < 3) {
-container.innerHTML = ‘’;
-return;
-}
+  if (axes.length < 3) {
+    container.innerHTML = '';
+    return;
+  }
 
-// Build SVG radar chart
-const size = 220, cx = size / 2, cy = size / 2, maxR = 85;
-const n = dataPoints.length;
-const angleStep = (2 * Math.PI) / n;
-const startAngle = -Math.PI / 2; // Start from top
+  // Build SVG radar chart
+  const size = 220, cx = size / 2, cy = size / 2, r = 80;
+  const n = axes.length;
+  const angleStep = (2 * Math.PI) / n;
+  const startAngle = -Math.PI / 2; // start from top
 
-// Helper: polar to cartesian
-const toXY = (angle, r) => ({
-x: cx + r * Math.cos(angle),
-y: cy + r * Math.sin(angle),
-});
+  function polarToXY(angle, radius) {
+    return { x: cx + radius * Math.cos(angle), y: cy + radius * Math.sin(angle) };
+  }
 
-// Target ring (100% = maxR)
-let targetPath = ‘’;
-for (let i = 0; i < n; i++) {
-const angle = startAngle + i * angleStep;
-const p = toXY(angle, maxR);
-targetPath += `${i === 0 ? 'M' : 'L'}${p.x.toFixed(1)},${p.y.toFixed(1)} `;
-}
-targetPath += ‘Z’;
+  let svg = `<svg viewBox="0 0 ${size} ${size}" width="100%" height="${size}" style="display:block;">`;
 
-// Actual fill polygon
-let fillPath = ‘’;
-for (let i = 0; i < n; i++) {
-const angle = startAngle + i * angleStep;
-const r = dataPoints[i].pct * maxR;
-const p = toXY(angle, r);
-fillPath += `${i === 0 ? 'M' : 'L'}${p.x.toFixed(1)},${p.y.toFixed(1)} `;
-}
-fillPath += ‘Z’;
+  // Background rings (25%, 50%, 75%, 100%)
+  [0.25, 0.5, 0.75, 1.0].forEach(frac => {
+    const ringR = r * frac;
+    let ringPath = '';
+    for (let i = 0; i < n; i++) {
+      const angle = startAngle + i * angleStep;
+      const pt = polarToXY(angle, ringR);
+      ringPath += (i === 0 ? 'M' : 'L') + pt.x.toFixed(1) + ',' + pt.y.toFixed(1);
+    }
+    ringPath += 'Z';
+    const opacity = frac === 1.0 ? 0.3 : 0.15;
+    svg += `<path d="${ringPath}" fill="none" stroke="${C.border}" stroke-width="1" opacity="${opacity}" ${frac === 1.0 ? 'stroke-dasharray="3,3"' : ''} />`;
+  });
 
-// Build grid rings at 50% and 100%
-let gridRings = ‘’;
-for (const ringPct of [0.5, 1.0]) {
-let ringPath = ‘’;
-for (let i = 0; i < n; i++) {
-const angle = startAngle + i * angleStep;
-const p = toXY(angle, maxR * ringPct);
-ringPath += `${i === 0 ? 'M' : 'L'}${p.x.toFixed(1)},${p.y.toFixed(1)} `;
-}
-ringPath += ‘Z’;
-const dash = ringPct === 1 ? ‘3,3’ : ‘2,4’;
-gridRings += `<path d="${ringPath}" fill="none" stroke="${C.border}" stroke-width="0.7" stroke-dasharray="${dash}" />`;
-}
+  // Spoke lines
+  for (let i = 0; i < n; i++) {
+    const angle = startAngle + i * angleStep;
+    const pt = polarToXY(angle, r);
+    svg += `<line x1="${cx}" y1="${cy}" x2="${pt.x.toFixed(1)}" y2="${pt.y.toFixed(1)}" stroke="${C.border}" stroke-width="0.5" opacity="0.4" />`;
+  }
 
-// Spokes
-let spokes = ‘’;
-for (let i = 0; i < n; i++) {
-const angle = startAngle + i * angleStep;
-const p = toXY(angle, maxR + 2);
-spokes += `<line x1="${cx}" y1="${cy}" x2="${p.x.toFixed(1)}" y2="${p.y.toFixed(1)}" stroke="${C.border}" stroke-width="0.5" />`;
-}
+  // Data polygon
+  let dataPath = '';
+  axes.forEach((axis, i) => {
+    const angle = startAngle + i * angleStep;
+    const dataR = r * Math.min(axis.pct / 100, 1);
+    const pt = polarToXY(angle, dataR);
+    dataPath += (i === 0 ? 'M' : 'L') + pt.x.toFixed(1) + ',' + pt.y.toFixed(1);
+  });
+  dataPath += 'Z';
+  svg += `<path d="${dataPath}" fill="${C.accent}" fill-opacity="0.15" stroke="${C.accent}" stroke-width="1.5" />`;
 
-// Labels
-let labels = ‘’;
-for (let i = 0; i < n; i++) {
-const angle = startAngle + i * angleStep;
-const p = toXY(angle, maxR + 16);
-const pctVal = Math.round(dataPoints[i].pct * 100);
-const pctColor = pctVal >= 85 ? C.accent : pctVal >= 70 ? C.warn : C.danger;
-const anchor = Math.abs(p.x - cx) < 5 ? ‘middle’ : p.x > cx ? ‘start’ : ‘end’;
-labels += `<text x="${p.x.toFixed(1)}" y="${(p.y + 3).toFixed(1)}" fill="${C.textMid}" font-size="10" font-family="Space Grotesk,sans-serif" text-anchor="${anchor}" font-weight="500">${dataPoints[i].label}</text>`;
-labels += `<text x="${p.x.toFixed(1)}" y="${(p.y + 14).toFixed(1)}" fill="${pctColor}" font-size="9" font-family="Space Grotesk,sans-serif" text-anchor="${anchor}" font-weight="600">${pctVal}%</text>`;
-}
+  // Data points + labels
+  axes.forEach((axis, i) => {
+    const angle = startAngle + i * angleStep;
+    const dataR = r * Math.min(axis.pct / 100, 1);
+    const pt = polarToXY(angle, dataR);
+    svg += `<circle cx="${pt.x.toFixed(1)}" cy="${pt.y.toFixed(1)}" r="3" fill="${C.accent}" />`;
 
-let svg = `<svg width="100%" viewBox="0 0 ${size} ${size}" style="display:block;margin:0 auto;">`;
-svg += gridRings;
-svg += spokes;
-svg += `<path d="${fillPath}" fill="${C.accent}" fill-opacity="0.15" stroke="${C.accent}" stroke-width="1.5" stroke-linejoin="round" />`;
-// Dots on actual vertices
-for (let i = 0; i < n; i++) {
-const angle = startAngle + i * angleStep;
-const r = dataPoints[i].pct * maxR;
-const p = toXY(angle, r);
-const pctVal = Math.round(dataPoints[i].pct * 100);
-const dotColor = pctVal >= 85 ? C.accent : pctVal >= 70 ? C.warn : C.danger;
-svg += `<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="3" fill="${dotColor}" />`;
-}
-svg += labels;
-svg += `</svg>`;
+    // Label
+    const labelR = r + 16;
+    const lpt = polarToXY(angle, labelR);
+    const anchor = lpt.x < cx - 5 ? 'end' : lpt.x > cx + 5 ? 'start' : 'middle';
+    svg += `<text x="${lpt.x.toFixed(1)}" y="${lpt.y.toFixed(1)}" fill="${C.textMid}" font-size="10" font-family="Space Grotesk,sans-serif" text-anchor="${anchor}" dominant-baseline="middle">${axis.name}</text>`;
+  });
 
-// Weakest areas callout
-const sorted = […dataPoints].sort((a, b) => a.pct - b.pct);
-const weakest = sorted.slice(0, 3).filter(d => d.pct < 0.95);
-let callout = ‘’;
-if (weakest.length > 0) {
-const items = weakest.map(d => {
-const pctVal = Math.round(d.pct * 100);
-const pctColor = pctVal >= 85 ? C.accent : pctVal >= 70 ? C.warn : C.danger;
-return `<span style="color:${pctColor};font-weight:600;">${d.label} ${pctVal}%</span>`;
-}).join(`<span style="color:${C.textDark};"> · </span>`);
-callout = `<div style="text-align:center;font-size:11px;font-family:'Space Grotesk',sans-serif;color:${C.textDim};margin-top:4px;">Priority: ${items}</div>`;
-}
+  svg += `</svg>`;
 
-container.innerHTML = `<div style="padding-top:12px;border-top:1px solid ${C.border};">
-<div onclick="toggleSectionInfo('radar-explainer')" style="cursor:pointer;display:flex;align-items:center;gap:6px;margin-bottom:8px;">
-<span style="font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:1.2px;color:${C.textDim};font-family:'Space Grotesk',sans-serif;">Frame Development</span>
-<span id="radar-explainer-chevron" style="font-size:10px;color:${C.textDim};transition:transform 0.3s ease;display:inline-block;">▾</span>
-</div>
-<div id="radar-explainer" style="max-height:0;overflow:hidden;opacity:0;transition:max-height 0.3s ease,opacity 0.2s ease;">
-<div style="font-size:11px;font-family:'Space Grotesk',sans-serif;color:${C.textDark};line-height:1.5;margin-bottom:8px;">Targets based on your wrist circumference (${PROFILE.wristIn}”) using McCallum/Butt frame-adjusted formulas, scaled to 85% of natural max potential.</div>
-</div>
-${svg}
-${callout}
+  // Weakest measurements callout
+  const sorted = [...axes].sort((a, b) => a.pct - b.pct);
+  const weakest = sorted.slice(0, Math.min(3, sorted.length)).filter(a => a.pct < 100);
 
+  let weakHtml = '';
+  if (weakest.length > 0) {
+    weakHtml = `<div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:6px;">`;
+    for (const w of weakest) {
+      const wColor = w.pct >= 85 ? C.accent : w.pct >= 70 ? C.warn : C.danger;
+      weakHtml += `<span style="font-size:11px;font-family:'Space Grotesk',sans-serif;color:${wColor};background:${wColor}18;padding:2px 8px;border-radius:4px;">${w.name} ${w.pct}%</span>`;
+    }
+    weakHtml += `</div>`;
+  }
+
+  container.innerHTML = `<div style="padding-top:12px;border-top:1px solid ${C.border};">
+    <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:1.2px;color:${C.textDim};margin-bottom:8px;font-family:'Space Grotesk',sans-serif;">Proportion Analysis</div>
+    ${svg}
+    ${weakHtml}
   </div>`;
 }
 
 function renderMeasurementsCard() {
-renderMeasurementsDisplay();
-renderProportionsDisplay();
+  renderMeasurementsDisplay();
+  renderProportionsDisplay();
 }
 
 // ============================================================
 // APPLE HEALTH DATA (fetched from repo via iOS Shortcut push)
 // ============================================================
-const HEALTH_DATA_URL = ‘https://jtwarta.github.io/WorkoutPlanner/health-data.json’;
+const HEALTH_DATA_URL = 'https://jtwarta.github.io/WorkoutPlanner/health-data.json';
 const HEALTH_STALE_HOURS = 48; // consider data stale after 48h
 
 async function fetchHealthData() {
-try {
-const resp = await fetch(HEALTH_DATA_URL + ‘?t=’ + Date.now(), { cache: ‘no-store’ });
-if (!resp.ok) {
-healthStatus = ‘missing’;
-healthData = null;
-return;
-}
-// Shortcuts inserts literal newlines in JSON - strip them before parsing
-const rawText = await resp.text();
-let cleanText = rawText.replace(/\n/g, ‘’).replace(/\r/g, ‘’);
-// Fix missing commas between workout objects: }{ → },{
-cleanText = cleanText.replace(/}\s*{/g, ‘},{’);
-// Strip unit suffixes from calories: “32 kcal” → “32”, “1,220 kcal” → “1220”
-cleanText = cleanText.replace(/(\d),(\d)/g, ‘$1$2’); // remove thousands commas
-cleanText = cleanText.replace(/([\d.]+)\s*kcal/g, ‘$1’);
-const data = JSON.parse(cleanText);
-healthData = data;
+  try {
+    const resp = await fetch(HEALTH_DATA_URL + '?t=' + Date.now(), { cache: 'no-store' });
+    if (!resp.ok) {
+      healthStatus = 'missing';
+      healthData = null;
+      return;
+    }
+    // Shortcuts inserts literal newlines in JSON - strip them before parsing
+    const rawText = await resp.text();
+    let cleanText = rawText.replace(/\n/g, '').replace(/\r/g, '');
+    // Fix missing commas between workout objects: }{ â†’ },{
+    cleanText = cleanText.replace(/\}\s*\{/g, '},{');
+    // Strip unit suffixes from calories: "32 kcal" â†’ "32", "1,220 kcal" â†’ "1220"
+    cleanText = cleanText.replace(/(\d),(\d)/g, '$1$2'); // remove thousands commas
+    cleanText = cleanText.replace(/([\d.]+)\s*kcal/g, '$1');
+    const data = JSON.parse(cleanText);
+    healthData = data;
 
-```
-// Check freshness
-if (data.updated) {
-  const updatedAt = new Date(data.updated);
-  const ageHours = (Date.now() - updatedAt.getTime()) / (1000 * 60 * 60);
-  healthStatus = ageHours <= HEALTH_STALE_HOURS ? 'ok' : 'stale';
-} else {
-  healthStatus = 'stale';
-}
-```
-
-} catch (e) {
-console.warn(‘Health data fetch failed:’, e.message);
-healthStatus = ‘missing’;
-healthData = null;
-}
+    // Check freshness
+    if (data.updated) {
+      const updatedAt = new Date(data.updated);
+      const ageHours = (Date.now() - updatedAt.getTime()) / (1000 * 60 * 60);
+      healthStatus = ageHours <= HEALTH_STALE_HOURS ? 'ok' : 'stale';
+    } else {
+      healthStatus = 'stale';
+    }
+  } catch (e) {
+    console.warn('Health data fetch failed:', e.message);
+    healthStatus = 'missing';
+    healthData = null;
+  }
 }
 
 function getHealthStatusTitle() {
-if (healthStatus === ‘ok’) {
-const ago = healthData && healthData.updated
-? Math.round((Date.now() - new Date(healthData.updated).getTime()) / (1000 * 60 * 60)) + ‘h ago’
-: ‘’;
-return `Apple Health: synced ${ago}`;
-}
-if (healthStatus === ‘stale’) return ‘Apple Health: data is stale (>48h)’;
-if (healthStatus === ‘missing’) return ‘Apple Health: no data found’;
-return ‘Apple Health: loading…’;
+  if (healthStatus === 'ok') {
+    const ago = healthData && healthData.updated
+      ? Math.round((Date.now() - new Date(healthData.updated).getTime()) / (1000 * 60 * 60)) + 'h ago'
+      : '';
+    return `Apple Health: synced ${ago}`;
+  }
+  if (healthStatus === 'stale') return 'Apple Health: data is stale (>48h)';
+  if (healthStatus === 'missing') return 'Apple Health: no data found';
+  return 'Apple Health: loading...';
 }
 
 // ============================================================
@@ -4059,422 +4051,449 @@ return ‘Apple Health: loading…’;
 // Percentile: [10th, 25th, 50th, 75th, 90th]
 // ============================================================
 const VO2_NORMS_MALE = {
-‘20-29’: [33.0, 36.5, 42.5, 46.8, 52.4],
-‘30-39’: [30.2, 34.0, 38.5, 43.0, 48.0],
-‘40-49’: [27.0, 31.0, 35.5, 39.5, 44.0],
-‘50-59’: [24.0, 28.0, 32.5, 36.5, 41.0],
+  '20-29': [33.0, 36.5, 42.5, 46.8, 52.4],
+  '30-39': [30.2, 34.0, 38.5, 43.0, 48.0],
+  '40-49': [27.0, 31.0, 35.5, 39.5, 44.0],
+  '50-59': [24.0, 28.0, 32.5, 36.5, 41.0],
 };
 
 function getVO2AgeGroup(age) {
-if (age < 30) return ‘20-29’;
-if (age < 40) return ‘30-39’;
-if (age < 50) return ‘40-49’;
-return ‘50-59’;
+  if (age < 30) return '20-29';
+  if (age < 40) return '30-39';
+  if (age < 50) return '40-49';
+  return '50-59';
 }
 
 function estimateVO2Percentile(vo2, age) {
-const group = getVO2AgeGroup(age);
-const norms = VO2_NORMS_MALE[group];
-if (!norms) return null;
+  const group = getVO2AgeGroup(age);
+  const norms = VO2_NORMS_MALE[group];
+  if (!norms) return null;
 
-const pctiles = [10, 25, 50, 75, 90];
-if (vo2 <= norms[0]) return Math.max(1, Math.round((vo2 / norms[0]) * 10));
-if (vo2 >= norms[4]) return Math.min(99, 90 + Math.round(((vo2 - norms[4]) / (norms[4] * 0.15)) * 9));
+  const pctiles = [10, 25, 50, 75, 90];
+  if (vo2 <= norms[0]) return Math.max(1, Math.round((vo2 / norms[0]) * 10));
+  if (vo2 >= norms[4]) return Math.min(99, 90 + Math.round(((vo2 - norms[4]) / (norms[4] * 0.15)) * 9));
 
-for (let i = 0; i < norms.length - 1; i++) {
-if (vo2 >= norms[i] && vo2 <= norms[i + 1]) {
-const frac = (vo2 - norms[i]) / (norms[i + 1] - norms[i]);
-return Math.round(pctiles[i] + frac * (pctiles[i + 1] - pctiles[i]));
-}
-}
-return 50;
+  for (let i = 0; i < norms.length - 1; i++) {
+    if (vo2 >= norms[i] && vo2 <= norms[i + 1]) {
+      const frac = (vo2 - norms[i]) / (norms[i + 1] - norms[i]);
+      return Math.round(pctiles[i] + frac * (pctiles[i + 1] - pctiles[i]));
+    }
+  }
+  return 50;
 }
 
 function getVO2Category(percentile) {
-if (percentile >= 80) return { label: ‘Excellent’, color: C.accent };
-if (percentile >= 60) return { label: ‘Good’, color: C.blue };
-if (percentile >= 40) return { label: ‘Fair’, color: C.warn };
-if (percentile >= 20) return { label: ‘Below Avg’, color: C.danger };
-return { label: ‘Low’, color: C.danger };
+  if (percentile >= 80) return { label: 'Excellent', color: C.accent };
+  if (percentile >= 60) return { label: 'Good', color: C.blue };
+  if (percentile >= 40) return { label: 'Fair', color: C.warn };
+  if (percentile >= 20) return { label: 'Below Avg', color: C.danger };
+  return { label: 'Low', color: C.danger };
 }
 
 function getRHRCategory(rhr) {
-if (rhr < 60) return { label: ‘Athletic’, color: C.accent };
-if (rhr <= 70) return { label: ‘Good’, color: C.blue };
-if (rhr <= 80) return { label: ‘Normal’, color: C.textMid };
-return { label: ‘Elevated’, color: C.danger };
+  if (rhr < 60) return { label: 'Athletic', color: C.accent };
+  if (rhr <= 70) return { label: 'Good', color: C.blue };
+  if (rhr <= 80) return { label: 'Normal', color: C.textMid };
+  return { label: 'Elevated', color: C.danger };
 }
 
 function getRecoveryCategory(recovery) {
-if (recovery >= 30) return { label: ‘Excellent’, color: C.accent };
-if (recovery >= 20) return { label: ‘Good’, color: C.blue };
-if (recovery >= 12) return { label: ‘Normal’, color: C.textMid };
-return { label: ‘Low’, color: C.danger };
+  if (recovery >= 30) return { label: 'Excellent', color: C.accent };
+  if (recovery >= 20) return { label: 'Good', color: C.blue };
+  if (recovery >= 12) return { label: 'Normal', color: C.textMid };
+  return { label: 'Low', color: C.danger };
 }
 
 function getActiveCalCategory(cal) {
-if (cal >= 600) return { label: ‘Very Active’, color: C.accent };
-if (cal >= 400) return { label: ‘Active’, color: C.blue };
-if (cal >= 250) return { label: ‘Moderate’, color: C.textMid };
-return { label: ‘Low’, color: C.danger };
+  if (cal >= 600) return { label: 'Very Active', color: C.accent };
+  if (cal >= 400) return { label: 'Active', color: C.blue };
+  if (cal >= 250) return { label: 'Moderate', color: C.textMid };
+  return { label: 'Low', color: C.danger };
 }
 
 // ============================================================
 // RENDER HEALTH VITALS
 // ============================================================
 function renderHealthVitals() {
-const card = document.getElementById(‘health-vitals-card’);
-if (!healthData || healthStatus === ‘missing’) {
-card.style.display = ‘none’;
-return;
-}
-card.style.display = ‘block’;
+  const card = document.getElementById('health-vitals-card');
+  if (!healthData || healthStatus === 'missing') {
+    card.style.display = 'none';
+    return;
+  }
+  card.style.display = 'block';
 
-// Sync time
-const syncEl = document.getElementById(‘health-sync-time’);
-if (healthData.updated) {
-const hrs = Math.round((Date.now() - new Date(healthData.updated).getTime()) / (1000 * 60 * 60));
-syncEl.textContent = hrs <= 1 ? ‘just now’ : `${hrs}h ago`;
-syncEl.style.color = healthStatus === ‘ok’ ? C.accent : C.warn;
-}
+  // Sync time
+  const syncEl = document.getElementById('health-sync-time');
+  if (healthData.updated) {
+    const hrs = Math.round((Date.now() - new Date(healthData.updated).getTime()) / (1000 * 60 * 60));
+    syncEl.textContent = hrs <= 1 ? 'just now' : `${hrs}h ago`;
+    syncEl.style.color = healthStatus === 'ok' ? C.accent : C.warn;
+  }
 
-// Cardio Fitness Score (VO2 Max)
-const vo2 = healthData.cardio_fitness;
-if (vo2 && vo2 > 0) {
-const pctile = estimateVO2Percentile(vo2, PROFILE.age);
-const cat = getVO2Category(pctile);
-const barPct = Math.min(Math.max(pctile, 3), 97);
+  // Cardio Fitness Score (VO2 Max)
+  const vo2 = healthData.cardio_fitness;
+  if (vo2 && vo2 > 0) {
+    const pctile = estimateVO2Percentile(vo2, PROFILE.age);
+    const cat = getVO2Category(pctile);
+    const barPct = Math.min(Math.max(pctile, 3), 97);
 
-```
-document.getElementById('cardio-score-value').textContent = vo2.toFixed(1);
-const labelEl = document.getElementById('cardio-score-label');
-labelEl.textContent = `${pctile}th %ile \u00b7 ${cat.label}`;
-labelEl.style.color = cat.color;
+    document.getElementById('cardio-score-value').textContent = vo2.toFixed(1);
+    const labelEl = document.getElementById('cardio-score-label');
+    labelEl.textContent = `${pctile}th %ile \u00b7 ${cat.label}`;
+    labelEl.style.color = cat.color;
 
-const bar = document.getElementById('cardio-score-bar');
-bar.style.width = barPct + '%';
-bar.style.background = cat.color;
+    const bar = document.getElementById('cardio-score-bar');
+    bar.style.width = barPct + '%';
+    bar.style.background = cat.color;
 
-document.getElementById('cardio-score-row').style.display = 'block';
-```
+    document.getElementById('cardio-score-row').style.display = 'block';
+  } else {
+    document.getElementById('cardio-score-row').style.display = 'none';
+  }
 
-} else {
-document.getElementById(‘cardio-score-row’).style.display = ‘none’;
-}
+  // Vitals Grid
+  const grid = document.getElementById('vitals-grid');
+  let html = '';
 
-// Vitals Grid
-const grid = document.getElementById(‘vitals-grid’);
-let html = ‘’;
+  // RHR
+  const rhr = healthData.resting_heart_rate;
+  if (rhr && rhr > 0) {
+    const rhrCat = getRHRCategory(rhr);
+    html += `<div class="vital-cell">
+      <div class="vital-label">Resting HR</div>
+      <div class="vital-value">${Math.round(rhr)}<span class="vital-unit">bpm</span></div>
+      <div class="vital-context" style="color:${rhrCat.color}">${rhrCat.label}</div>
+    </div>`;
+  }
 
-// RHR
-const rhr = healthData.resting_heart_rate;
-if (rhr && rhr > 0) {
-const rhrCat = getRHRCategory(rhr);
-html += `<div class="vital-cell"> <div class="vital-label">Resting HR</div> <div class="vital-value">${Math.round(rhr)}<span class="vital-unit">bpm</span></div> <div class="vital-context" style="color:${rhrCat.color}">${rhrCat.label}</div> </div>`;
-}
+  // Cardio Recovery
+  const recovery = healthData.cardio_recovery;
+  if (recovery && recovery > 0) {
+    const recCat = getRecoveryCategory(recovery);
+    html += `<div class="vital-cell">
+      <div class="vital-label">HR Recovery</div>
+      <div class="vital-value">${Math.round(recovery)}<span class="vital-unit">bpm</span></div>
+      <div class="vital-context" style="color:${recCat.color}">${recCat.label}</div>
+    </div>`;
+  }
 
-// Cardio Recovery
-const recovery = healthData.cardio_recovery;
-if (recovery && recovery > 0) {
-const recCat = getRecoveryCategory(recovery);
-html += `<div class="vital-cell"> <div class="vital-label">HR Recovery</div> <div class="vital-value">${Math.round(recovery)}<span class="vital-unit">bpm</span></div> <div class="vital-context" style="color:${recCat.color}">${recCat.label}</div> </div>`;
-}
+  // Steps (7-day avg)
+  const steps = healthData.steps;
+  if (steps && steps > 0) {
+    const stepsK = steps >= 1000 ? (steps / 1000).toFixed(1) + 'k' : Math.round(steps);
+    const stepsColor = steps >= 10000 ? C.accent : steps >= 7000 ? C.blue : C.textMid;
+    html += `<div class="vital-cell">
+      <div class="vital-label">Steps/Day</div>
+      <div class="vital-value">${stepsK}</div>
+      <div class="vital-context" style="color:${stepsColor}">${steps >= 10000 ? 'Active' : steps >= 7000 ? 'Moderate' : 'Low'}</div>
+    </div>`;
+  }
 
-// Steps (7-day avg)
-const steps = healthData.steps;
-if (steps && steps > 0) {
-const stepsK = steps >= 1000 ? (steps / 1000).toFixed(1) + ‘k’ : Math.round(steps);
-const stepsColor = steps >= 10000 ? C.accent : steps >= 7000 ? C.blue : C.textMid;
-html += `<div class="vital-cell"> <div class="vital-label">Steps/Day</div> <div class="vital-value">${stepsK}</div> <div class="vital-context" style="color:${stepsColor}">${steps >= 10000 ? 'Active' : steps >= 7000 ? 'Moderate' : 'Low'}</div> </div>`;
-}
+  // Active Calories
+  const cal = healthData.active_energy_kcal;
+  if (cal && cal > 0) {
+    const calCat = getActiveCalCategory(cal);
+    html += `<div class="vital-cell">
+      <div class="vital-label">Active Cal</div>
+      <div class="vital-value">${Math.round(cal)}<span class="vital-unit">kcal</span></div>
+      <div class="vital-context" style="color:${calCat.color}">${calCat.label}</div>
+    </div>`;
+  }
 
-// Active Calories
-const cal = healthData.active_energy_kcal;
-if (cal && cal > 0) {
-const calCat = getActiveCalCategory(cal);
-html += `<div class="vital-cell"> <div class="vital-label">Active Cal</div> <div class="vital-value">${Math.round(cal)}<span class="vital-unit">kcal</span></div> <div class="vital-context" style="color:${calCat.color}">${calCat.label}</div> </div>`;
-}
+  // Walking HR
+  const whr = healthData.walking_heart_rate_avg;
+  if (whr && whr > 0) {
+    const whrColor = whr < 100 ? C.accent : whr <= 110 ? C.textMid : C.warn;
+    html += `<div class="vital-cell">
+      <div class="vital-label">Walking HR</div>
+      <div class="vital-value">${Math.round(whr)}<span class="vital-unit">bpm</span></div>
+      <div class="vital-context" style="color:${whrColor}">${whr < 100 ? 'Good' : whr <= 110 ? 'Normal' : 'Elevated'}</div>
+    </div>`;
+  }
 
-// Walking HR
-const whr = healthData.walking_heart_rate_avg;
-if (whr && whr > 0) {
-const whrColor = whr < 100 ? C.accent : whr <= 110 ? C.textMid : C.warn;
-html += `<div class="vital-cell"> <div class="vital-label">Walking HR</div> <div class="vital-value">${Math.round(whr)}<span class="vital-unit">bpm</span></div> <div class="vital-context" style="color:${whrColor}">${whr < 100 ? 'Good' : whr <= 110 ? 'Normal' : 'Elevated'}</div> </div>`;
-}
+  // Body Fat % (from Hevy â†’ Apple Health)
+  const bf = healthData.body_fat_pct;
+  if (bf && bf > 0) {
+    const bfColor = bf <= 15 ? C.accent : bf <= 20 ? C.blue : bf <= 25 ? C.warn : C.danger;
+    const bfLabel = bf <= 15 ? 'Athletic' : bf <= 20 ? 'Fit' : bf <= 25 ? 'Average' : 'Above Avg';
+    html += `<div class="vital-cell">
+      <div class="vital-label">Body Fat</div>
+      <div class="vital-value">${bf.toFixed(1)}<span class="vital-unit">%</span></div>
+      <div class="vital-context" style="color:${bfColor}">${bfLabel}</div>
+    </div>`;
+  }
 
-// Body Fat % (from Hevy → Apple Health)
-const bf = healthData.body_fat_pct;
-if (bf && bf > 0) {
-const bfColor = bf <= 15 ? C.accent : bf <= 20 ? C.blue : bf <= 25 ? C.warn : C.danger;
-const bfLabel = bf <= 15 ? ‘Athletic’ : bf <= 20 ? ‘Fit’ : bf <= 25 ? ‘Average’ : ‘Above Avg’;
-html += `<div class="vital-cell"> <div class="vital-label">Body Fat</div> <div class="vital-value">${bf.toFixed(1)}<span class="vital-unit">%</span></div> <div class="vital-context" style="color:${bfColor}">${bfLabel}</div> </div>`;
-}
+  // Lean Body Mass (from Hevy â†’ Apple Health)
+  const lbm = healthData.lean_body_mass_lbs;
+  if (lbm && lbm > 0) {
+    html += `<div class="vital-cell">
+      <div class="vital-label">Lean Mass</div>
+      <div class="vital-value">${Math.round(lbm)}<span class="vital-unit">lbs</span></div>
+      <div class="vital-context">via Apple Health</div>
+    </div>`;
+  }
 
-// Lean Body Mass (from Hevy → Apple Health)
-const lbm = healthData.lean_body_mass_lbs;
-if (lbm && lbm > 0) {
-html += `<div class="vital-cell"> <div class="vital-label">Lean Mass</div> <div class="vital-value">${Math.round(lbm)}<span class="vital-unit">lbs</span></div> <div class="vital-context">via Apple Health</div> </div>`;
-}
+  // Waist (from Hevy â†’ Apple Health)
+  const waistAH = healthData.waist_circumference_in;
+  if (waistAH && waistAH > 0) {
+    const waistDate = healthData.waist_date || '';
+    const waistCtx = waistDate ? waistDate : 'via Apple Health';
+    html += `<div class="vital-cell">
+      <div class="vital-label">Waist</div>
+      <div class="vital-value">${waistAH.toFixed(1)}<span class="vital-unit">in</span></div>
+      <div class="vital-context">${waistCtx}</div>
+    </div>`;
+  }
 
-// Waist (from Hevy → Apple Health)
-const waistAH = healthData.waist_circumference_in;
-if (waistAH && waistAH > 0) {
-const waistDate = healthData.waist_date || ‘’;
-const waistCtx = waistDate ? waistDate : ‘via Apple Health’;
-html += `<div class="vital-cell"> <div class="vital-label">Waist</div> <div class="vital-value">${waistAH.toFixed(1)}<span class="vital-unit">in</span></div> <div class="vital-context">${waistCtx}</div> </div>`;
-}
-
-grid.innerHTML = html;
+  grid.innerHTML = html;
 }
 
 // ============================================================
 // TAB SWITCHING
 // ============================================================
 function switchTab(tab) {
-document.querySelectorAll(’[id^=“tab-”]’).forEach(el => el.classList.add(‘hidden’));
-document.getElementById(`tab-${tab}`).classList.remove(‘hidden’);
-document.querySelectorAll(’.tab’).forEach(el => {
-el.classList.toggle(‘active’, el.dataset.tab === tab);
-});
-if (tab === ‘weight’) {
-setTimeout(renderWeightChart, 50);
-setTimeout(renderHealthVitals, 50);
-setTimeout(renderMeasurementsCard, 50);
-}
+  document.querySelectorAll('[id^="tab-"]').forEach(el => el.classList.add('hidden'));
+  document.getElementById(`tab-${tab}`).classList.remove('hidden');
+  document.querySelectorAll('.tab').forEach(el => {
+    el.classList.toggle('active', el.dataset.tab === tab);
+  });
+  if (tab === 'weight') {
+    setTimeout(renderWeightChart, 50);
+    setTimeout(renderHealthVitals, 50);
+    setTimeout(renderMeasurementsCard, 50);
+  }
 }
 
 // ============================================================
 // APP LIFECYCLE
 // ============================================================
 function showScreen(screen) {
-[‘loading-screen’, ‘dashboard’].forEach(id => {
-document.getElementById(id).classList.toggle(‘hidden’, id !== screen);
-});
+  ['loading-screen', 'dashboard'].forEach(id => {
+    document.getElementById(id).classList.toggle('hidden', id !== screen);
+  });
 }
 
 function updateLoading(text) {
-document.getElementById(‘loading-text’).textContent = text;
+  document.getElementById('loading-text').textContent = text;
 }
 
 function showError(msg) {
-const tabs = document.querySelector(’.tabs’);
-// Remove any existing error
-const existing = document.getElementById(‘inline-error’);
-if (existing) existing.remove();
-// Insert error after tabs
-const errDiv = document.createElement(‘div’);
-errDiv.id = ‘inline-error’;
-errDiv.className = ‘error-msg’;
-errDiv.innerHTML = msg;
-errDiv.style.margin = ‘0 0 14px 0’;
-tabs.insertAdjacentElement(‘afterend’, errDiv);
+  const tabs = document.querySelector('.tabs');
+  // Remove any existing error
+  const existing = document.getElementById('inline-error');
+  if (existing) existing.remove();
+  // Insert error after tabs
+  const errDiv = document.createElement('div');
+  errDiv.id = 'inline-error';
+  errDiv.className = 'error-msg';
+  errDiv.innerHTML = msg;
+  errDiv.style.margin = '0 0 14px 0';
+  tabs.insertAdjacentElement('afterend', errDiv);
 }
 
 // Render dashboard from workouts data (shared by cache + fresh load)
 function renderDashboard(workouts) {
-WEIGHT_DATA = getMergedWeightData();
-if (WEIGHT_DATA.length > 0) PROFILE.bodyweightLbs = WEIGHT_DATA[0].value;
+  WEIGHT_DATA = getMergedWeightData();
+  if (WEIGHT_DATA.length > 0) PROFILE.bodyweightLbs = WEIGHT_DATA[0].value;
 
-// v1.7: Load measurements and compute proportion deficits before recommendations
-latestMeasurements = getLatestMeasurements();
-proportionDeficits = computeProportionDeficits(latestMeasurements);
+  // v1.7: Load measurements and compute proportion deficits before recommendations
+  latestMeasurements = getLatestMeasurements();
+  proportionDeficits = computeProportionDeficits(latestMeasurements);
 
-// v1.1 Task 6: unified preprocess pipeline
-const pp = preprocessWorkouts(workouts, PROFILE.bodyweightLbs, WEIGHT_DATA);
+  // v1.1 Task 6: unified preprocess pipeline
+  const pp = preprocessWorkouts(workouts, PROFILE.bodyweightLbs, WEIGHT_DATA);
 
-exerciseHistory = pp.exerciseHistory;
-muscleAnalysis = pp.muscleStats;
-muscle1RMs = pp.muscle1RMs;
-strengthIndexData = pp.strengthIndexTimeline;
+  exerciseHistory = pp.exerciseHistory;
+  muscleAnalysis = pp.muscleStats;
+  muscle1RMs = pp.muscle1RMs;
+  strengthIndexData = pp.strengthIndexTimeline;
 
-const recs = generateRecommendations(pp.muscleStats);
-LAST_RECS = recs;
+  const recs = generateRecommendations(pp.muscleStats);
+  LAST_RECS = recs;
 
-// Compute consecutive training days for rest day awareness
-_consecutiveTrainDays = countConsecutiveTrainingDays(pp.heatmapDayWorkouts);
+  // Compute consecutive training days for rest day awareness
+  _consecutiveTrainDays = countConsecutiveTrainingDays(pp.heatmapDayWorkouts);
 
-showScreen(‘dashboard’);
+  showScreen('dashboard');
 
-const now = new Date();
-const syncColor = (hevyStatus === ‘ok’ && healthStatus === ‘ok’) ? C.accent
-: (hevyStatus === ‘error’ || healthStatus === ‘missing’) ? C.textDim : C.warn;
-document.getElementById(‘last-updated’).innerHTML =
-`v1.12 \u00b7 ${now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })} <span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${syncColor};margin-left:5px;vertical-align:middle;position:relative;top:-1px;"></span>`;
+  const now = new Date();
+  const syncColor = (hevyStatus === 'ok' && healthStatus === 'ok') ? C.accent
+    : (hevyStatus === 'error' || healthStatus === 'missing') ? C.textDim : C.warn;
+  document.getElementById('last-updated').innerHTML =
+    `v1.12 \u00b7 ${now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })} <span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${syncColor};margin-left:5px;vertical-align:middle;position:relative;top:-1px;"></span>`;
 
-renderConstraintChips();
-renderTimedSession(recs);
-renderMuscleGrid(pp.muscleStats, recs);
-renderWeeklySummary(pp.heatmapDayWorkouts, pp.heatmapDayMuscle, pp.heatmapDayCardio, workouts);
-renderHeatmap(pp.heatmapDayMuscle, pp.heatmapDayWorkouts, pp.heatmapDayCardio);
-renderWeightChart();
-renderHealthVitals();
-renderMeasurementsCard();
-renderCardioPlan(workouts);
+  renderConstraintChips();
+  renderTimedSession(recs);
+  renderMuscleGrid(pp.muscleStats, recs);
+  renderWeeklySummary(pp.heatmapDayWorkouts, pp.heatmapDayMuscle, pp.heatmapDayCardio, workouts);
+  renderHeatmap(pp.heatmapDayMuscle, pp.heatmapDayWorkouts, pp.heatmapDayCardio);
+  renderWeightChart();
+  renderHealthVitals();
+  renderMeasurementsCard();
+  renderCardioPlan(workouts);
 }
 
 async function refreshData() {
-showScreen(‘loading-screen’);
-try {
-updateLoading(‘Refreshing…’);
-const [workouts] = await Promise.all([fetchWorkouts(10, 10), fetchHealthData()]);
-workoutCache = workouts;
-setCachedWorkouts(workouts);
-hevyStatus = ‘ok’;
-renderDashboard(workouts);
-} catch (err) {
-console.error(err);
-hevyStatus = ‘error’;
-showScreen(‘dashboard’);
-showError(`Refresh failed: ${err.message}`);
-}
+  showScreen('loading-screen');
+  try {
+    updateLoading('Refreshing...');
+    const [workouts] = await Promise.all([fetchWorkouts(10, 10), fetchHealthData()]);
+    workoutCache = workouts;
+    setCachedWorkouts(workouts);
+    hevyStatus = 'ok';
+    renderDashboard(workouts);
+  } catch (err) {
+    console.error(err);
+    hevyStatus = 'error';
+    showScreen('dashboard');
+    showError(`Refresh failed: ${err.message}`);
+  }
 }
 
 async function loadDashboard() {
-showScreen(‘loading-screen’);
+  showScreen('loading-screen');
 
-// Start health data fetch in parallel (non-blocking)
-const healthPromise = fetchHealthData();
+  // Start health data fetch in parallel (non-blocking)
+  const healthPromise = fetchHealthData();
 
-try {
-// v1.1 Task 7: Try cache first for instant load
-const cached = getCachedWorkouts();
-if (cached && cached.data && cached.data.length > 0) {
-updateLoading(‘Loading from cache…’);
-workoutCache = cached.data;
-hevyStatus = ‘ok’;
-await healthPromise; // ensure health status is ready
-renderDashboard(cached.data);
-
-```
-  // If stale, refresh in background
-  if (isCacheStale(cached)) {
-    fetchWorkouts(10, 10).then(fresh => {
-      workoutCache = fresh;
-      setCachedWorkouts(fresh);
+  try {
+    // v1.1 Task 7: Try cache first for instant load
+    const cached = getCachedWorkouts();
+    if (cached && cached.data && cached.data.length > 0) {
+      updateLoading('Loading from cache...');
+      workoutCache = cached.data;
       hevyStatus = 'ok';
-      renderDashboard(fresh);
-    }).catch(err => {
-      console.warn('Background refresh failed:', err.message);
-      hevyStatus = 'error';
-    });
+      await healthPromise; // ensure health status is ready
+      renderDashboard(cached.data);
+
+      // If stale, refresh in background
+      if (isCacheStale(cached)) {
+        fetchWorkouts(10, 10).then(fresh => {
+          workoutCache = fresh;
+          setCachedWorkouts(fresh);
+          hevyStatus = 'ok';
+          renderDashboard(fresh);
+        }).catch(err => {
+          console.warn('Background refresh failed:', err.message);
+          hevyStatus = 'error';
+        });
+      }
+      return;
+    }
+
+    // No cache - fresh load
+    updateLoading('Loading workouts...');
+    const workouts = await fetchWorkouts(10, 10);
+    workoutCache = workouts;
+    setCachedWorkouts(workouts);
+    hevyStatus = 'ok';
+    await healthPromise;
+    renderDashboard(workouts);
+  } catch (err) {
+    console.error(err);
+    hevyStatus = 'error';
+    showScreen('dashboard');
+    showError(`Failed to load: ${err.message}`);
   }
-  return;
-}
-
-// No cache - fresh load
-updateLoading('Loading workouts...');
-const workouts = await fetchWorkouts(10, 10);
-workoutCache = workouts;
-setCachedWorkouts(workouts);
-hevyStatus = 'ok';
-await healthPromise;
-renderDashboard(workouts);
-```
-
-} catch (err) {
-console.error(err);
-hevyStatus = ‘error’;
-showScreen(‘dashboard’);
-showError(`Failed to load: ${err.message}`);
-}
 }
 
 // ============================================================
-// DEV TEST HARNESS (guarded behind flag — never runs in production)
+// DEV TEST HARNESS (guarded behind flag â€” never runs in production)
 // ============================================================
 const DEV_TEST_MODE = false;
 
 function runDevTests() {
-if (!DEV_TEST_MODE) return;
-const results = [];
+  if (!DEV_TEST_MODE) return;
+  const results = [];
 
-// Test A1: Tricep Dip classification
-const tricepDip = classifyExercise(‘Tricep Dip’);
-results.push({ test: ‘A1: Tricep Dip → triceps’, pass: tricepDip.primary === ‘triceps’, got: tricepDip.primary });
+  // Test A1: Tricep Dip classification
+  const tricepDip = classifyExercise('Tricep Dip');
+  results.push({ test: 'A1: Tricep Dip â†’ triceps', pass: tricepDip.primary === 'triceps', got: tricepDip.primary });
 
-const chestDip = classifyExercise(‘Chest Dip’);
-results.push({ test: ‘A1: Chest Dip → chest’, pass: chestDip.primary === ‘chest’, got: chestDip.primary });
+  const chestDip = classifyExercise('Chest Dip');
+  results.push({ test: 'A1: Chest Dip â†’ chest', pass: chestDip.primary === 'chest', got: chestDip.primary });
 
-const genericDip = classifyExercise(‘Dips’);
-results.push({ test: ‘A1: Dips → chest (generic)’, pass: genericDip.primary === ‘chest’, got: genericDip.primary });
+  const genericDip = classifyExercise('Dips');
+  results.push({ test: 'A1: Dips â†’ chest (generic)', pass: genericDip.primary === 'chest', got: genericDip.primary });
 
-// Test A2: Curly apostrophe normalization
-const curly1 = normalizeExerciseName(‘Farmer\u2019s Carry’);
-results.push({ test: ‘A2: Right curly → ASCII’, pass: curly1 === “farmer’s carry”, got: curly1 });
-const curly2 = normalizeExerciseName(‘Farmer\u2018s Carry’);
-results.push({ test: ‘A2: Left curly → ASCII’, pass: curly2 === “farmer’s carry”, got: curly2 });
+  // Test A2: Curly apostrophe normalization
+  const curly1 = normalizeExerciseName('Farmer\u2019s Carry');
+  results.push({ test: 'A2: Right curly â†’ ASCII', pass: curly1 === "farmer's carry", got: curly1 });
+  const curly2 = normalizeExerciseName('Farmer\u2018s Carry');
+  results.push({ test: 'A2: Left curly â†’ ASCII', pass: curly2 === "farmer's carry", got: curly2 });
 
-// Test A3: Cardio session counting (mock workout with 2 cardio exercises)
-const mockWorkouts = [{
-start_time: new Date().toISOString(),
-exercises: [
-{ title: ‘Treadmill’, sets: [{ duration_seconds: 1200 }] },
-{ title: ‘Elliptical’, sets: [{ duration_seconds: 900 }] },
-]
-}];
-const cardioResult = analyzeCardioHistory(mockWorkouts);
-results.push({ test: ‘A3: 2 cardio exercises = 1 session’, pass: cardioResult.cardioSessions7d === 1, got: cardioResult.cardioSessions7d });
+  // Test A3: Cardio session counting (mock workout with 2 cardio exercises)
+  const mockWorkouts = [{
+    start_time: new Date().toISOString(),
+    exercises: [
+      { title: 'Treadmill', sets: [{ duration_seconds: 1200 }] },
+      { title: 'Elliptical', sets: [{ duration_seconds: 900 }] },
+    ]
+  }];
+  const cardioResult = analyzeCardioHistory(mockWorkouts);
+  results.push({ test: 'A3: 2 cardio exercises = 1 session', pass: cardioResult.cardioSessions7d === 1, got: cardioResult.cardioSessions7d });
 
-// Test A4: CSS custom properties load correctly (catches en-dash encoding bug)
-const rootStyle = getComputedStyle(document.documentElement);
-const accentVar = rootStyle.getPropertyValue(’–accent’).trim();
-results.push({
-test: ‘A4: CSS –accent resolves to #4ade80’,
-pass: accentVar === ‘#4ade80’,
-got: accentVar || ‘(empty — var() references may use en-dash instead of double-hyphen)’
-});
+  // Test A4: CSS custom properties load correctly (catches en-dash encoding bug)
+  const rootStyle = getComputedStyle(document.documentElement);
+  const accentVar = rootStyle.getPropertyValue('--accent').trim();
+  results.push({
+    test: 'A4: CSS --accent resolves to #4ade80',
+    pass: accentVar === '#4ade80',
+    got: accentVar || '(empty â€” var() references may use en-dash instead of double-hyphen)'
+  });
 
-// Test A5: Universal reset selector is active (catches * vs - typo)
-const testEl = document.querySelector(’.app’) || document.body;
-const boxSizing = getComputedStyle(testEl).boxSizing;
-results.push({
-test: ‘A5: box-sizing is border-box (universal reset)’,
-pass: boxSizing === ‘border-box’,
-got: boxSizing
-});
+  // Test A5: Universal reset selector is active (catches * vs - typo)
+  const testEl = document.querySelector('.app') || document.body;
+  const boxSizing = getComputedStyle(testEl).boxSizing;
+  results.push({
+    test: 'A5: box-sizing is border-box (universal reset)',
+    pass: boxSizing === 'border-box',
+    got: boxSizing
+  });
 
-// Test A6: No markdown code fences leaked into rendered page
-const bodyText = document.body.innerText;
-results.push({
-test: ‘A6: No stray ` in page text', pass: !bodyText.includes('`’),
-got: bodyText.includes(’`') ? 'found ` in rendered text’ : ‘clean’
-});
+  // Test A6: No markdown code fences leaked into rendered page
+  const bodyText = document.body.innerText;
+  results.push({
+    test: 'A6: No stray ``` in page text',
+    pass: !bodyText.includes('```'),
+    got: bodyText.includes('```') ? 'found ``` in rendered text' : 'clean'
+  });
 
-// Test A7: STRENGTH_INDEX_LIFTS is defined (catches reference-before-definition)
-results.push({
-test: ‘A7: STRENGTH_INDEX_LIFTS is defined before use’,
-pass: typeof STRENGTH_INDEX_LIFTS === ‘object’ && STRENGTH_INDEX_LIFTS.bench != null,
-got: typeof STRENGTH_INDEX_LIFTS
-});
+  // Test A7: STRENGTH_INDEX_LIFTS is defined (catches reference-before-definition)
+  results.push({
+    test: 'A7: STRENGTH_INDEX_LIFTS is defined before use',
+    pass: typeof STRENGTH_INDEX_LIFTS === 'object' && STRENGTH_INDEX_LIFTS.bench != null,
+    got: typeof STRENGTH_INDEX_LIFTS
+  });
 
-// Test A8: Storage utility exists and round-trips
-const storageTestKey = ‘**dev_test_storage**’;
-Storage.set(storageTestKey, { ok: true });
-const storageRead = Storage.get(storageTestKey);
-Storage.remove(storageTestKey);
-results.push({
-test: ‘A8: Storage utility round-trips JSON’,
-pass: storageRead && storageRead.ok === true,
-got: JSON.stringify(storageRead)
-});
+  // Test A8: Storage utility exists and round-trips
+  const storageTestKey = '__dev_test_storage__';
+  Storage.set(storageTestKey, { ok: true });
+  const storageRead = Storage.get(storageTestKey);
+  Storage.remove(storageTestKey);
+  results.push({
+    test: 'A8: Storage utility round-trips JSON',
+    pass: storageRead && storageRead.ok === true,
+    got: JSON.stringify(storageRead)
+  });
 
-// Report
-console.group(‘🧪 LiftScript Dev Tests’);
-for (const r of results) {
-console.log(`${r.pass ? '✅' : '❌'} ${r.test}${r.pass ? '' : ' (got: ' + r.got + ')'}`);
-}
-console.groupEnd();
+  // Report
+  console.group('ðŸ§ª LiftScript Dev Tests');
+  for (const r of results) {
+    console.log(`${r.pass ? 'âœ…' : 'âŒ'} ${r.test}${r.pass ? '' : ' (got: ' + r.got + ')'}`);
+  }
+  console.groupEnd();
 }
 
 runDevTests();
 
-// Boot-time CSS sanity check — catches encoding issues like en-dash var() references
+// Boot-time CSS sanity check â€” catches encoding issues like en-dash var() references
 (function checkCSS() {
-const root = getComputedStyle(document.documentElement);
-const test = root.getPropertyValue(’–accent’).trim();
-if (!test) {
-console.error(‘⚠️ CSS custom properties not loading. Check <style> block for encoding issues (e.g. en-dash vs double-hyphen in var() references).’);
-}
+  const root = getComputedStyle(document.documentElement);
+  const test = root.getPropertyValue('--accent').trim();
+  if (!test) {
+    console.error('âš ï¸ CSS custom properties not loading. Check <style> block for encoding issues (e.g. en-dash vs double-hyphen in var() references).');
+  }
 })();
 
 // Boot
