@@ -660,15 +660,11 @@ color: var(--text-dim);
 
 <div id="tab-today">
   <div class="card" style="border:1px solid #2a2a2e;">
-    <div class="card-title">Today's Session</div>
-    <div id="constraints-row" class="constraints-row"></div>
+    <div id="today-hero"></div>
+    <div id="today-chips-wrapper"></div>
     <div id="session-summary"></div>
     <div id="suggested-exercises"></div>
-  </div>
-  <div class="card" id="cardio-card" style="border:1px solid #2a2a2e;">
-    <div class="card-title">Cardio Plan</div>
-    <div id="cardio-summary"></div>
-    <div id="cardio-prescriptions"></div>
+    <div id="cardio-section"></div>
   </div>
 </div>
 
@@ -1541,8 +1537,17 @@ function cycleChip(key) {
   const next = def.values[(idx + 1) % def.values.length];
   sessionPrefs[key] = next;
   savePrefs(sessionPrefs);
-  renderConstraintChips();
+  // Preserve chips-open state across re-render
+  const wrapper = document.getElementById('today-chips-wrapper');
+  const wasOpen = wrapper?.dataset.open === 'true';
   if (LAST_RECS) renderTimedSession(LAST_RECS);
+  const newWrapper = document.getElementById('today-chips-wrapper');
+  if (newWrapper && wasOpen) {
+    newWrapper.dataset.open = 'true';
+    const row = document.getElementById('today-chips-row');
+    if (row) row.style.display = 'flex';
+  }
+  if (workoutCache) renderCardioPlan(workoutCache);
 }
 
 // ============================================================
@@ -2278,55 +2283,55 @@ function buildCardioBreakdownHTML(history) {
 
 function renderCardioPlan(workouts) {
   const result = generateCardioRecommendations(workouts);
-  const summaryEl = document.getElementById('cardio-summary');
-  const rxEl = document.getElementById('cardio-prescriptions');
+  const sectionEl = document.getElementById('cardio-section');
+  if (!sectionEl) return;
 
   // Week progress bar
   const donePct = Math.min(100, Math.round(((result.targetMin - result.remainingMin) / result.targetMin) * 100));
   const doneMin = result.targetMin - result.remainingMin;
   const barColor = donePct >= 100 ? C.accent : donePct >= 50 ? C.blue : C.warn;
 
-  summaryEl.innerHTML = `
-    <div onclick="toggleCardioBreakdown()" style="cursor:pointer;display:flex;align-items:center;gap:10px;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid ${C.border};">
-      <div style="font-family:'Space Grotesk',sans-serif;font-size:14px;color:${C.accent};font-weight:600;white-space:nowrap;">${Math.round(doneMin)}/${result.targetMin}m</div>
-      <div style="flex:1;height:5px;border-radius:3px;background:${C.surface3};overflow:hidden;">
-        <div style="height:100%;border-radius:3px;background:${barColor};width:${donePct}%;transition:width 0.4s ease;"></div>
+  let html = `
+    <div style="margin-top:20px;padding-top:18px;border-top:1px solid ${C.border};">
+      <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:1.2px;color:${C.textDim};margin-bottom:14px;">Cardio Plan</div>
+      <div onclick="toggleCardioBreakdown()" style="cursor:pointer;display:flex;align-items:center;gap:10px;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid ${C.border};">
+        <div style="font-family:'Space Grotesk',sans-serif;font-size:14px;color:${C.accent};font-weight:600;white-space:nowrap;">${Math.round(doneMin)}/${result.targetMin}m</div>
+        <div style="flex:1;height:5px;border-radius:3px;background:${C.surface3};overflow:hidden;">
+          <div style="height:100%;border-radius:3px;background:${barColor};width:${donePct}%;transition:width 0.4s ease;"></div>
+        </div>
+        <div style="font-family:'Space Grotesk',sans-serif;font-size:12px;color:${C.textDim};white-space:nowrap;">this week \u25BE</div>
       </div>
-      <div style="font-family:'Space Grotesk',sans-serif;font-size:12px;color:${C.textDim};white-space:nowrap;">this week \u25BE</div>
-    </div>
-    <div id="cardio-breakdown" style="display:none;margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid ${C.border};">
-      ${buildCardioBreakdownHTML(result.history)}
-    </div>`;
+      <div id="cardio-breakdown" style="display:none;margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid ${C.border};">
+        ${buildCardioBreakdownHTML(result.history)}
+      </div>`;
 
   if (result.weekComplete) {
-    rxEl.innerHTML = `<div style="font-size:14px;color:${C.accent};font-family:'Space Grotesk',sans-serif;padding:8px 0;">\u2713 Weekly cardio target met. Active recovery or rest recommended.</div>`;
-    return;
+    html += `<div style="font-size:14px;color:${C.accent};font-family:'Space Grotesk',sans-serif;padding:8px 0;">\u2713 Weekly cardio target met. Active recovery or rest recommended.</div>`;
+  } else {
+    const zoneStyles = {
+      2: { bg: C.blueDim, color: C.blue, label: 'Zone 2' },
+      4: { bg: C.warnDim, color: C.warn, label: 'Zone 4' },
+      5: { bg: C.dangerDim, color: C.danger, label: 'Zone 5' },
+    };
+
+    for (const rx of result.prescriptions) {
+      const zs = zoneStyles[rx.zone] || zoneStyles[2];
+
+      html += `<div style="padding:12px 0;border-bottom:1px solid ${C.surface2};">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+          <span style="font-size:11px;font-weight:600;padding:3px 8px;border-radius:5px;font-family:'Space Grotesk',sans-serif;text-transform:uppercase;letter-spacing:0.5px;background:${zs.bg};color:${zs.color};">${zs.label}</span>
+          <span style="font-family:'Space Grotesk',sans-serif;font-size:13px;color:${C.accent};font-weight:600;">${rx.durationMin} min</span>
+        </div>
+        <div style="font-size:15px;font-weight:600;color:${C.text};margin-bottom:4px;">${rx.name}</div>
+        <div style="font-size:13px;font-family:'Space Grotesk',sans-serif;color:${C.textMid};line-height:1.5;">${rx.detail}</div>
+        <div style="font-size:12px;font-family:'Space Grotesk',sans-serif;color:${C.textDim};margin-top:2px;">${rx.notes}</div>
+        <div style="display:inline-block;margin-top:6px;font-size:12px;font-family:'Space Grotesk',sans-serif;color:${zs.color};padding:2px 8px;border-radius:4px;background:${zs.bg};">\u2661 ${rx.hrRange} bpm</div>
+      </div>`;
+    }
   }
 
-  // Zone colors matching urgency badge style
-  const zoneStyles = {
-    2: { bg: C.blueDim, color: C.blue, label: 'Zone 2' },
-    4: { bg: C.warnDim, color: C.warn, label: 'Zone 4' },
-    5: { bg: C.dangerDim, color: C.danger, label: 'Zone 5' },
-  };
-
-  let html = '';
-  for (const rx of result.prescriptions) {
-    const zs = zoneStyles[rx.zone] || zoneStyles[2];
-
-    html += `<div style="padding:12px 0;border-bottom:1px solid ${C.surface2};">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
-        <span style="font-size:11px;font-weight:600;padding:3px 8px;border-radius:5px;font-family:'Space Grotesk',sans-serif;text-transform:uppercase;letter-spacing:0.5px;background:${zs.bg};color:${zs.color};">${zs.label}</span>
-        <span style="font-family:'Space Grotesk',sans-serif;font-size:13px;color:${C.accent};font-weight:600;">${rx.durationMin} min</span>
-      </div>
-      <div style="font-size:15px;font-weight:600;color:${C.text};margin-bottom:4px;">${rx.name}</div>
-      <div style="font-size:13px;font-family:'Space Grotesk',sans-serif;color:${C.textMid};line-height:1.5;">${rx.detail}</div>
-      <div style="font-size:12px;font-family:'Space Grotesk',sans-serif;color:${C.textDim};margin-top:2px;">${rx.notes}</div>
-      <div style="display:inline-block;margin-top:6px;font-size:12px;font-family:'Space Grotesk',sans-serif;color:${zs.color};padding:2px 8px;border-radius:4px;background:${zs.bg};">\u2661 ${rx.hrRange} bpm</div>
-    </div>`;
-  }
-
-  rxEl.innerHTML = html;
+  html += `</div>`;
+  sectionEl.innerHTML = html;
 }
 
 // ============================================================
@@ -2620,39 +2625,98 @@ function toggleTodaySort(mode) {
   if (LAST_RECS) renderTimedSession(LAST_RECS);
 }
 
+function toggleTodayChips() {
+  const wrapper = document.getElementById('today-chips-wrapper');
+  const row = document.getElementById('today-chips-row');
+  if (!wrapper || !row) return;
+  const isOpen = wrapper.dataset.open === 'true';
+  wrapper.dataset.open = isOpen ? 'false' : 'true';
+  row.style.display = isOpen ? 'none' : 'flex';
+}
+
 function renderTimedSession(recs) {
   const { exercises, totalSec } = buildTimedSession(recs);
   const totalMin = Math.round(totalSec / 60);
 
-  // B2: Sort toggle UI
-  const urgBtn = todaySortMode === 'urgency';
-  const segStyle = `display:inline-flex;gap:2px;background:${C.surface};border-radius:6px;padding:2px;border:1px solid ${C.border};margin-bottom:12px;`;
-  const btnOn = `padding:4px 10px;font-size:11px;font-weight:600;font-family:'Space Grotesk',sans-serif;border:none;border-radius:5px;cursor:pointer;`;
-  const btnActive = `${btnOn}background:${C.surface3};color:${C.text};`;
-  const btnInactive = `${btnOn}background:none;color:${C.textDim};`;
-
-  document.getElementById('session-summary').innerHTML = `
-    ${_consecutiveTrainDays >= 3 ? `<div style="padding:10px 12px;margin-bottom:12px;border-radius:8px;border:1px solid ${_consecutiveTrainDays >= 5 ? C.danger : C.warn};background:${_consecutiveTrainDays >= 5 ? C.dangerDim : C.warnDim};font-size:13px;font-family:'Space Grotesk',sans-serif;color:${_consecutiveTrainDays >= 5 ? C.danger : C.warn};line-height:1.5;">
-      ${_consecutiveTrainDays >= 5
-        ? `<strong>${_consecutiveTrainDays} days straight.</strong> Your muscles grow during rest, not during training. Take a recovery day.`
-        : `<strong>${_consecutiveTrainDays} days in a row</strong> -- consider a rest or light day. Recovery is when growth happens.`}
-    </div>` : ''}
-    <div class="session-summary">
-      <div class="session-time" style="color:${C.accent}">~${totalMin} min</div>
-      <div class="session-count" style="color:${C.textDim}">${exercises.length} exercises</div>
-    </div>
-    <div style="${segStyle}">
-      <button style="${urgBtn ? btnActive : btnInactive}" onclick="toggleTodaySort('urgency')">Urgency</button>
-      <button style="${!urgBtn ? btnActive : btnInactive}" onclick="toggleTodaySort('anatomy')">Anatomy</button>
-    </div>
-  `;
-
-  const exContainer = document.getElementById('suggested-exercises');
+  // Gather unique muscle groups in display order
   const grouped = {};
   for (const ex of exercises) {
     if (!grouped[ex.muscle]) grouped[ex.muscle] = [];
     grouped[ex.muscle].push(ex);
   }
+
+  // B2: Sort toggle UI
+  const urgBtn = todaySortMode === 'urgency';
+  const segStyle = `display:inline-flex;gap:2px;background:${C.surface};border-radius:6px;padding:2px;border:1px solid ${C.border};`;
+  const btnOn = `padding:4px 10px;font-size:11px;font-weight:600;font-family:'Space Grotesk',sans-serif;border:none;border-radius:5px;cursor:pointer;`;
+  const btnActive = `${btnOn}background:${C.surface3};color:${C.text};`;
+  const btnInactive = `${btnOn}background:none;color:${C.textDim};`;
+
+  // --- HERO BLOCK ---
+  const muscleKeys = Object.keys(grouped);
+  const muscleDots = muscleKeys.map(key => {
+    const meta = MUSCLE_GROUPS[key];
+    if (!meta) return '';
+    return `<span style="display:inline-flex;align-items:center;gap:4px;font-size:13px;font-weight:600;color:${meta.color};font-family:'Space Grotesk',sans-serif;white-space:nowrap;"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${meta.color};"></span>${meta.name}</span>`;
+  }).filter(Boolean).join(`<span style="color:${C.textDark};margin:0 4px;">\u00b7</span>`);
+
+  // Rest-day chip (compact, inline)
+  let restChip = '';
+  if (_consecutiveTrainDays >= 3) {
+    const isHigh = _consecutiveTrainDays >= 5;
+    const chipColor = isHigh ? C.danger : C.warn;
+    const chipBg = isHigh ? C.dangerDim : C.warnDim;
+    const chipText = isHigh
+      ? `${_consecutiveTrainDays} days straight \u2014 rest day recommended`
+      : `${_consecutiveTrainDays} days in a row \u2014 consider resting`;
+    restChip = `<div style="display:inline-flex;align-items:center;gap:5px;padding:5px 10px;border-radius:6px;background:${chipBg};border:1px solid ${chipColor}30;font-size:12px;font-family:'Space Grotesk',sans-serif;color:${chipColor};font-weight:500;margin-top:10px;">${chipText}</div>`;
+  }
+
+  document.getElementById('today-hero').innerHTML = `
+    <div style="margin-bottom:16px;">
+      <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:8px;">
+        <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:1.2px;color:${C.textDim};">Today\u2019s Session</div>
+        <div style="font-family:'Space Grotesk',sans-serif;font-size:20px;font-weight:700;color:${C.accent};">~${totalMin}<span style="font-size:13px;font-weight:500;color:${C.textDim};margin-left:2px;">min</span></div>
+      </div>
+      <div style="display:flex;flex-wrap:wrap;align-items:center;gap:4px 0;line-height:1.8;">${muscleDots}</div>
+      ${restChip}
+    </div>`;
+
+  // --- COLLAPSIBLE CHIPS ---
+  const chipsVisible = document.getElementById('today-chips-wrapper')?.dataset.open === 'true';
+  const chipDefs = CHIP_DEFS.map(def => {
+    const current = sessionPrefs[def.key];
+    const isNonDefault = current !== PREFS_DEFAULTS[def.key];
+    const chipStyle = isNonDefault
+      ? `background:${C.accentDim};color:${C.accent};border:1px solid ${C.accentBorder};padding:5px 10px;font-size:12px;font-weight:500;font-family:Space Grotesk,sans-serif;border-radius:6px;cursor:pointer;user-select:none;`
+      : `background:${C.surface2};color:${C.textDim};border:1px solid ${C.border};padding:5px 10px;font-size:12px;font-weight:500;font-family:Space Grotesk,sans-serif;border-radius:6px;cursor:pointer;user-select:none;`;
+    return `<div style="${chipStyle}" onclick="cycleChip('${def.key}')">${def.label(current)} <span style="opacity:0.35;font-size:9px;margin-left:1px;">\u21BB</span></div>`;
+  }).join('');
+
+  const anyNonDefault = CHIP_DEFS.some(def => sessionPrefs[def.key] !== PREFS_DEFAULTS[def.key]);
+  const toggleColor = anyNonDefault ? C.accent : C.textDim;
+  const toggleBg = anyNonDefault ? C.accentDim : C.surface2;
+
+  const wrapper = document.getElementById('today-chips-wrapper');
+  wrapper.innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:${chipsVisible ? '10' : '14'}px;padding-bottom:12px;border-bottom:1px solid ${C.border};">
+      <div style="${segStyle}">
+        <button style="${urgBtn ? btnActive : btnInactive}" onclick="toggleTodaySort('urgency')">Urgency</button>
+        <button style="${!urgBtn ? btnActive : btnInactive}" onclick="toggleTodaySort('anatomy')">Anatomy</button>
+      </div>
+      <div onclick="toggleTodayChips()" style="display:flex;align-items:center;gap:5px;cursor:pointer;padding:4px 10px;border-radius:6px;background:${toggleBg};border:1px solid ${toggleColor}25;-webkit-tap-highlight-color:transparent;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="${toggleColor}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        <span style="font-size:11px;font-weight:600;font-family:'Space Grotesk',sans-serif;color:${toggleColor};">Filters</span>
+      </div>
+    </div>
+    <div id="today-chips-row" style="display:${chipsVisible ? 'flex' : 'none'};flex-wrap:wrap;gap:6px;margin-bottom:14px;">${chipDefs}</div>`;
+
+  // --- SESSION SUMMARY (just count) ---
+  document.getElementById('session-summary').innerHTML = `
+    <div style="font-family:'Space Grotesk',sans-serif;font-size:12px;color:${C.textDim};margin-bottom:14px;">${exercises.length} exercises across ${muscleKeys.length} muscle groups</div>`;
+
+  // --- EXERCISE LIST ---
+  const exContainer = document.getElementById('suggested-exercises');
 
   // B2: Sort muscle groups by selected mode
   let groupKeys = Object.keys(grouped);
@@ -2663,7 +2727,6 @@ function renderTimedSession(recs) {
       return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi);
     });
   } else {
-    // urgency: sort by recommendation score (highest first)
     const recScores = {};
     recs.forEach(r => { recScores[r.key] = r.score; });
     groupKeys.sort((a, b) => (recScores[b] || 0) - (recScores[a] || 0));
@@ -2683,7 +2746,7 @@ function renderTimedSession(recs) {
     exHtml += `<div class="ex-group">
       <div class="ex-group-title" style="color:${meta.color};cursor:pointer;display:flex;align-items:center;justify-content:space-between;" onclick="toggleSessionExplainer('exp-${key}')">
         <span>${meta.name}</span>
-        <span style="font-size:11px;color:${C.textMid};font-weight:500;letter-spacing:0;background:${C.surface2};padding:2px 8px;border-radius:4px;">\u25BE why</span>
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none" style="transition:transform 0.2s ease;"><path d="M2.5 4.5L6 8L9.5 4.5" stroke="${C.textMid}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </div>`;
 
     // B1: Collapsible "Why this?" explainer
@@ -2727,17 +2790,6 @@ function renderTimedSession(recs) {
     exHtml += `</div>`;
   }
   exContainer.innerHTML = exHtml;
-
-  // Auto-expand first group's explainer to teach discoverability
-  if (groupKeys.length > 0) {
-    const firstId = `exp-${groupKeys[0]}`;
-    const firstEl = document.getElementById(firstId);
-    if (firstEl) {
-      firstEl.classList.add('open');
-      firstEl.style.opacity = '1';
-      firstEl.style.maxHeight = firstEl.scrollHeight + 'px';
-    }
-  }
 }
 
 // Generic collapsible section toggle
@@ -4273,15 +4325,14 @@ function renderDashboard(workouts) {
   document.getElementById('last-updated').innerHTML =
     `v1.13 \u00b7${now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })} <span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${syncColor};margin-left:5px;vertical-align:middle;position:relative;top:-1px;"></span>`;
 
-  renderConstraintChips();
   renderTimedSession(recs);
+  renderCardioPlan(workouts);
   renderMuscleGrid(pp.muscleStats, recs);
   renderWeeklySummary(pp.heatmapDayWorkouts, pp.heatmapDayMuscle, pp.heatmapDayCardio, workouts);
   renderHeatmap(pp.heatmapDayMuscle, pp.heatmapDayWorkouts, pp.heatmapDayCardio);
   renderWeightChart();
   renderHealthVitals();
   renderMeasurementsCard();
-  renderCardioPlan(workouts);
 }
 
 async function refreshData() {
