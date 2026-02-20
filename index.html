@@ -1364,7 +1364,7 @@ const MEASUREMENTS_KEY = 'bodyMeasurements_v1';
 // ---- Embedded measurement baseline (survives localStorage clears) ----
 // To update: import Hevy CSV, tap "Export Data" in footer, paste array here
 const MEASUREMENTS_BASELINE = [
-  // { date: '2026-02-15', neck_in: 15.5, chest_in: 40.0, bicep_in: 14.5, ... },
+  { date: '2026-02-15', neck_in: 14.5625, shoulder_in: 43.125, chest_in: 40.125, bicep_in: 13.28, forearm_in: 10.9375, waist_in: 34.875, thigh_in: 21.25, calf_in: 14.0 },
 ];
 
 // All supported measurement fields
@@ -3909,7 +3909,7 @@ function toggleMeasSparkline(fieldKey) {
 }
 
 function renderProportionsDisplay() {
-  const container = document.getElementById('proportion-analysis');
+  const container = document.getElementById('proportions-display');
   if (!container) return;
   const latest = latestMeasurements;
   if (!latest || Object.keys(latest).filter(k => k !== '_dates').length < 2) {
