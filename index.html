@@ -771,6 +771,19 @@ color: var(–text-dim);
 </div>
 
 <script>
+// Global error handler - shows errors on loading screen
+window.onerror = function(msg, src, line, col, err) {
+  const el = document.getElementById('loading-text');
+  if (el) el.textContent = 'Error: ' + msg + ' (line ' + line + ')';
+  console.error('Global error:', msg, 'at line', line, err);
+  return false;
+};
+window.addEventListener('unhandledrejection', function(e) {
+  const el = document.getElementById('loading-text');
+  if (el) el.textContent = 'Error: ' + (e.reason ? e.reason.message || e.reason : 'unknown');
+  console.error('Unhandled rejection:', e.reason);
+});
+
 // ============================================================
 // LIFTSCRIPT v1.13
 // ============================================================
@@ -1551,6 +1564,16 @@ function cycleChip(key) {
 const API_BASE = 'https://api.hevyapp.com/v1';
 const CACHE_KEY = 'workoutCache_v1';
 const CACHE_STALE_MS = 8 * 60 * 60 * 1000; // 8 hours
+const FETCH_TIMEOUT_MS = 15000; // 15s timeout for all fetches
+
+function fetchWithTimeout(url, options = {}, timeoutMs = FETCH_TIMEOUT_MS) {
+  return Promise.race([
+    fetch(url, options),
+    new Promise((_, reject) =>
+      setTimeout(() => reject(new Error(`Network timeout after ${timeoutMs / 1000}s: ${url.substring(0, 60)}`)), timeoutMs)
+    )
+  ]);
+}
 
 function getCachedWorkouts() {
   const parsed = Storage.get(CACHE_KEY, null);
@@ -1573,7 +1596,7 @@ async function fetchWorkouts(pageSize = 10, maxPages = 10) {
 
   while (page <= totalPages && page <= maxPages) {
     updateLoading(`Loading workouts (${allWorkouts.length})...`);
-    const resp = await fetch(`${API_BASE}/workouts?page=${page}&pageSize=${pageSize}`, {
+    const resp = await fetchWithTimeout(`${API_BASE}/workouts?page=${page}&pageSize=${pageSize}`, {
       headers: { 'api-key': apiKey }
     });
     if (!resp.ok) throw new Error(`API error ${resp.status}: ${resp.statusText}`);
@@ -3986,7 +4009,7 @@ const HEALTH_STALE_HOURS = 48; // consider data stale after 48h
 
 async function fetchHealthData() {
 try {
-const resp = await fetch(HEALTH_DATA_URL + ‘?t=’ + Date.now(), { cache: ‘no-store’ });
+const resp = await fetchWithTimeout(HEALTH_DATA_URL + ‘?t=’ + Date.now(), { cache: ‘no-store’ });
 if (!resp.ok) {
 healthStatus = ‘missing’;
 healthData = null;
@@ -4311,18 +4334,22 @@ showError(`Refresh failed: ${err.message}`);
 
 async function loadDashboard() {
 showScreen(‘loading-screen’);
+updateLoading(‘Starting…’);
 
 // Start health data fetch in parallel (non-blocking)
 const healthPromise = fetchHealthData();
 
 try {
 // v1.1 Task 7: Try cache first for instant load
+updateLoading(‘Checking cache…’);
 const cached = getCachedWorkouts();
 if (cached && cached.data && cached.data.length > 0) {
 updateLoading(‘Loading from cache…’);
 workoutCache = cached.data;
 hevyStatus = ‘ok’;
+updateLoading(‘Waiting for health data…’);
 await healthPromise; // ensure health status is ready
+updateLoading(‘Rendering…’);
 renderDashboard(cached.data);
 
 ```
@@ -4458,7 +4485,11 @@ console.error(‘âš ï¸ CSS custom properties not loading. Check <style> b
 })();
 
 // Boot
-loadDashboard();
+loadDashboard().catch(err => {
+const el = document.getElementById(‘loading-text’);
+if (el) el.textContent = ’Boot error: ’ + (err.message || err);
+console.error(‘loadDashboard fatal:’, err);
+});
 </script>
 
 </body>
