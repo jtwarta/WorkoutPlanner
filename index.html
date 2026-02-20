@@ -771,7 +771,6 @@ color: var(–text-dim);
 </div>
 
 <script>
-// Separate script block: catches parse errors in main script
 window.onerror = function(msg, src, line, col, err) {
   var el = document.getElementById('loading-text');
   if (el) el.textContent = 'JS Error: ' + msg + ' (line ' + line + ')';
@@ -794,7 +793,7 @@ window.addEventListener('unhandledrejection', function(e) {
 // Targets scaled to ~65% of Schoenfeld optimal for recreational gym-goers (3-4x/week)
 // PILLAR 2: Strength Standards / Percentile Benchmarks
 // Based on OpenPowerlifting data, shifted to general gym-going population norms:
-// competition 25th percentile â‰ˆ gym-population 50th percentile
+// competition 25th percentile \u00E2\u2030\u02C6 gym-population 50th percentile
 // PILLAR 3: 1RM Estimation - Brzycki (1993), Epley (1985)
 // PILLAR 4: Progressive Overload - NSCA guideline: +2-10% when target reps achieved
 
@@ -806,7 +805,7 @@ const PROFILE = {
   sex: 'male',
   ethnicity: 'caucasian',
   bodyweightLbs: 166,
-  heightIn: 72, // 6'0" â€” used for proportion rules (waist:height ratio)
+  heightIn: 72, // 6'0"
   wristIn: 6.5625, // 6 9/16" skeletal frame for Casey Butt targets
   get age() {
     const today = new Date();
@@ -818,7 +817,7 @@ const PROFILE = {
   get bodyweightKg() { return this.bodyweightLbs * 0.453592; }
 };
 
-// Local date string helper â€” avoids UTC shift from toISOString()
+// Local date string helper \u00E2\u20AC\u201D avoids UTC shift from toISOString()
 function localDateStr(d) {
   const y = d.getFullYear();
   const m = String(d.getMonth() + 1).padStart(2, '0');
@@ -827,7 +826,7 @@ function localDateStr(d) {
 }
 
 // ============================================================
-// COLOR CONSTANTS (CSS Rendering Guidance Â§4)
+// COLOR CONSTANTS (CSS Rendering Guidance \u00A74)
 // Single source of truth for all JS-rendered inline styles.
 // Hex values here match the CSS custom properties in <style>.
 // ============================================================
@@ -867,7 +866,7 @@ const C = {
 // STRENGTH STANDARDS (Pillar 2)
 // BW multipliers for 1RM - male, general gym-going population, age-adjusted
 // Shifted from OpenPowerlifting competition data to recreational lifter norms:
-// competition 25th â‰ˆ gym-population 50th percentile
+// competition 25th \u00E2\u2030\u02C6 gym-population 50th percentile
 // Percentile: [10th, 25th, 50th, 75th, 90th]
 // ============================================================
 const STRENGTH_STANDARDS = {
@@ -1015,7 +1014,7 @@ const EXERCISE_MUSCLE_MAP = [
   // Specific bench variants (before generic)
   { pattern: /close.?grip.*bench/i, primary: 'triceps', secondary: ['chest'] },
 
-  // Specific dip (chest vs tricep) â€” "Tricep Dip" must match before generic /dip/i
+  // Specific dip (chest vs tricep) \u00E2\u20AC\u201D "Tricep Dip" must match before generic /dip/i
   { pattern: /tricep[s]?\s*dip/i, primary: 'triceps', secondary: ['chest', 'shoulders'] },
   { pattern: /chest dip/i, primary: 'chest', secondary: ['triceps', 'shoulders'] },
 
@@ -1130,7 +1129,7 @@ function classifyExercise(name) {
 // ============================================================
 // MUSCLE GROUP METADATA (Pillar 1)
 // Volume targets: effective range for recreational lifters training 3-4x/week
-// (Schoenfeld optimal â‰ˆ 14-16 sets; these are ~65% of that â€” still productive)
+// (Schoenfeld optimal \u00E2\u2030\u02C6 14-16 sets; these are ~65% of that \u00E2\u20AC\u201D still productive)
 // Frequency: realistic for non-PPL splits (each muscle every 5-7 days)
 // ============================================================
 const MUSCLE_GROUPS = {
@@ -1280,7 +1279,7 @@ const WEIGHT_DATA_BASELINE = [
 ];
 
 // ============================================================
-// STORAGE UTILITY â€” centralized localStorage with error boundaries
+// STORAGE UTILITY \u00E2\u20AC\u201D centralized localStorage with error boundaries
 // ============================================================
 const Storage = {
   get(key, fallback = null) {
@@ -1322,19 +1321,19 @@ function saveWeightEntry(date, value) {
     entries.push({ date, value });
   }
   entries.sort((a, b) => a.date.localeCompare(b.date));
-  // Cap at 400 entries â€” drop oldest
+  // Cap at 400 entries \u00E2\u20AC\u201D drop oldest
   if (entries.length > 400) entries.splice(0, entries.length - 400);
   Storage.set('weightHistory', entries);
 }
 
 function getMergedWeightData() {
   const stored = getStoredWeightEntries();
-  // Apple Health weight entries from iOS Shortcut (via Hevy â†’ HealthKit)
+  // Apple Health weight entries from iOS Shortcut (via Hevy \u00E2\u2020\u2019 HealthKit)
   const appleEntries = (healthData && Array.isArray(healthData.weight_entries))
     ? healthData.weight_entries.map(e => ({ date: e.date, value: parseFloat(e.lbs) || 0 })).filter(e => e.value > 0)
     : [];
   const all = [...WEIGHT_DATA_BASELINE, ...appleEntries, ...stored];
-  // Dedup by date â€” later sources win (stored > apple > baseline)
+  // Dedup by date \u00E2\u20AC\u201D later sources win (stored > apple > baseline)
   const byDate = {};
   for (const entry of all) {
     byDate[entry.date] = entry.value;
@@ -1345,20 +1344,20 @@ function getMergedWeightData() {
 }
 
 // ============================================================
-// BODY MEASUREMENTS SYSTEM (v1.7 â€” Phases 2-4)
+// BODY MEASUREMENTS SYSTEM (v1.7 \u00E2\u20AC\u201D Phases 2-4)
 // ============================================================
 // SCIENTIFIC FOUNDATION
 // Pillar 6: Anthropometric Proportions
-// Source: McRobert (2005) "Build Muscle, Lose Fat, Look Great" â€” ideal
+// Source: McRobert (2005) "Build Muscle, Lose Fat, Look Great" \u00E2\u20AC\u201D ideal
 //   proportional targets for natural lifters based on wrist/ankle bone structure
-// Source: Butt (2010) "Your Muscular Potential" â€” circumference-based
+// Source: Butt (2010) "Your Muscular Potential" \u00E2\u20AC\u201D circumference-based
 //   proportions correlated with lean mass development
-// Source: Katch & McArdle (1983) â€” limb girth norms for athletic males
+// Source: Katch & McArdle (1983) \u00E2\u20AC\u201D limb girth norms for athletic males
 //
 // Target ratio philosophy:
-// - Neck â‰ˆ Calf circumference (classic proportion)
-// - Forearm â‰ˆ 0.80Ã— Bicep circumference (flexed)
-// - Waist < 0.45Ã— Height (health marker â€” WHO guideline)
+// - Neck \u00E2\u2030\u02C6 Calf circumference (classic proportion)
+// - Forearm \u00E2\u2030\u02C6 0.80\u00C3\u2014 Bicep circumference (flexed)
+// - Waist < 0.45\u00C3\u2014 Height (health marker \u00E2\u20AC\u201D WHO guideline)
 // - Chest circumference tracked for development trend
 
 const MEASUREMENTS_KEY = 'bodyMeasurements_v1';
@@ -1392,12 +1391,12 @@ function computeFrameTargets() {
   const h = PROFILE.heightIn || 72;
   return {
     neck_in:     { target: 2.405 * w, muscle: 'neck',     label: 'Neck' },
-    shoulder_in: { target: null,       muscle: null,       label: 'Shoulder' },  // no validated formula
+    shoulder_in: { target: null,       muscle: null,       label: 'Shoulder' },
     chest_in:    { target: 6.500 * w,  muscle: 'chest',    label: 'Chest' },
     bicep_in:    { target: 2.340 * w,  muscle: 'biceps',   label: 'Bicep' },
     forearm_in:  { target: 1.885 * w,  muscle: 'forearms', label: 'Forearm' },
     waist_in:    { target: h * 0.45,   muscle: 'core',     label: 'Waist', inverted: true },
-    hip_in:      { target: null,       muscle: null,       label: 'Hip' },       // not a muscle target
+    hip_in:      { target: null,       muscle: null,       label: 'Hip' },
     thigh_in:    { target: 3.445 * w,  muscle: 'quads',    label: 'Thigh' },
     calf_in:     { target: 2.210 * w,  muscle: 'calves',   label: 'Calf' },
   };
@@ -1436,7 +1435,7 @@ function saveMeasurementEntry(entry) {
 function getLatestMeasurements() {
   const entries = getStoredMeasurements();
   if (entries.length === 0 && !(healthData && healthData.waist_circumference_in)) return null;
-  // Merge all entries â€” latest value per field wins
+  // Merge all entries \u00E2\u20AC\u201D latest value per field wins
   const latest = {};
   const dates = {};
   // Sort chronologically so later entries overwrite
@@ -1542,7 +1541,7 @@ function renderConstraintChips() {
     const chipStyle = isNonDefault
       ? `background:${C.accentDim};color:${C.accent};border:1px solid ${C.accentBorder};padding:5px 10px;font-size:12px;font-weight:500;font-family:Space Grotesk,sans-serif;border-radius:6px;cursor:pointer;user-select:none;`
       : `background:${C.surface2};color:${C.textDim};border:1px solid ${C.border};padding:5px 10px;font-size:12px;font-weight:500;font-family:Space Grotesk,sans-serif;border-radius:6px;cursor:pointer;user-select:none;`;
-    return `<div class="constraint-chip${isNonDefault ? ' active' : ''}" style="${chipStyle}" data-key="${def.key}" onclick="cycleChip('${def.key}')">${def.label(current)} <span style="opacity:0.35;font-size:9px;margin-left:1px;">â†»</span></div>`;
+    return `<div class="constraint-chip${isNonDefault ? ' active' : ''}" style="${chipStyle}" data-key="${def.key}" onclick="cycleChip('${def.key}')">${def.label(current)} <span style="opacity:0.35;font-size:9px;margin-left:1px;">\u00E2\u2020\u00BB</span></div>`;
   }).join('');
 }
 
@@ -1562,18 +1561,19 @@ function cycleChip(key) {
 // API + CACHING (v1.1 Task 7)
 // ============================================================
 const API_BASE = 'https://api.hevyapp.com/v1';
-const CACHE_KEY = 'workoutCache_v1';
-const CACHE_STALE_MS = 8 * 60 * 60 * 1000; // 8 hours
-const FETCH_TIMEOUT_MS = 15000; // 15s timeout for all fetches
+const FETCH_TIMEOUT_MS = 15000;
 
-function fetchWithTimeout(url, options = {}, timeoutMs = FETCH_TIMEOUT_MS) {
+function fetchWithTimeout(url, options, timeoutMs) {
+  timeoutMs = timeoutMs || FETCH_TIMEOUT_MS;
   return Promise.race([
     fetch(url, options),
-    new Promise((_, reject) =>
-      setTimeout(() => reject(new Error(`Network timeout after ${timeoutMs / 1000}s: ${url.substring(0, 60)}`)), timeoutMs)
-    )
+    new Promise(function(_, reject) {
+      setTimeout(function() { reject(new Error('Network timeout after ' + (timeoutMs / 1000) + 's')); }, timeoutMs);
+    })
   ]);
 }
+const CACHE_KEY = 'workoutCache_v1';
+const CACHE_STALE_MS = 8 * 60 * 60 * 1000; // 8 hours
 
 function getCachedWorkouts() {
   const parsed = Storage.get(CACHE_KEY, null);
@@ -1612,7 +1612,7 @@ async function fetchWorkouts(pageSize = 10, maxPages = 10) {
 // STRENGTH INDEX LIFT DEFINITIONS
 // ============================================================
 // p50 = 50th percentile BW multiplier for general gym-going male population
-// Derived from STRENGTH_STANDARDS (competition 25th â‰ˆ gym 50th)
+// Derived from STRENGTH_STANDARDS (competition 25th \u00E2\u2030\u02C6 gym 50th)
 // Age-adjusted dynamically via PROFILE.age
 const STRENGTH_INDEX_LIFTS = {
   bench:    { weight: 0.20, p50: 0.95, patterns: [/bench press.*barbell/i, /^bench press$/i] },
@@ -1643,7 +1643,7 @@ function preprocessWorkouts(workouts, bodyweightLbs, weightData) {
   const siTimeline = [];
   const heatmapDayMuscle = {};
   const heatmapDayWorkouts = {};
-  const heatmapDayCardio = {}; // dateStr â†’ { minutes, sessions: [{ name, minutes, source }] }
+  const heatmapDayCardio = {}; // dateStr \u00E2\u2020\u2019 { minutes, sessions: [{ name, minutes, source }] }
 
   // Init muscle stats
   for (const [key, meta] of Object.entries(MUSCLE_GROUPS)) {
@@ -1905,10 +1905,10 @@ function preprocessWorkouts(workouts, bodyweightLbs, weightData) {
 // Source 2: Seiler (2010) "What is Best Practice for Training Intensity and Duration
 //   Distribution in Endurance Athletes?" - polarized 80/20 model
 // Source 3: Tanaka et al. (2001) "Age-predicted maximal heart rate revisited"
-//   - HRmax = 208 - 0.7 Ã— age (more accurate than 220-age)
+//   - HRmax = 208 - 0.7 \u00C3\u2014 age (more accurate than 220-age)
 // Source 4: Karvonen (1957) "Heart Rate Reserve" method for HR zones
-//   - Target HR = ((HRmax - HRrest) Ã— %intensity) + HRrest
-// Source 5: StÃ¶ggl & Sperlich (2014) "Polarized training has greater impact on key
+//   - Target HR = ((HRmax - HRrest) \u00C3\u2014 %intensity) + HRrest
+// Source 5: St\u00F6ggl & Sperlich (2014) "Polarized training has greater impact on key
 //   endurance variables than threshold, high-intensity, or high-volume training"
 
 // HR Zone calculations
@@ -2144,7 +2144,7 @@ function analyzeCardioHistory(workouts) {
 
   // --- Pass 2: Apple Health Watch workouts ---
   // Everything in healthData.workouts[] was explicitly started on the Watch.
-  // We count all workout types EXCEPT strength/flexibility â€” those aren't cardio.
+  // We count all workout types EXCEPT strength/flexibility \u00E2\u20AC\u201D those aren't cardio.
   const WATCH_NON_CARDIO = /strength|weight\s*train|yoga|pilates|stretch|cool\s*down|flexibility|mind.*body|tai\s*chi/i;
 
   if (healthData && Array.isArray(healthData.workouts)) {
@@ -2273,16 +2273,16 @@ function buildCardioBreakdownHTML(history) {
   if (history.hevySessions > 0) parts.push(`\u{1F3CB}\uFE0F Hevy: ${history.hevySessions} session${history.hevySessions > 1 ? 's' : ''}, ${Math.round(history.hevyMinutes)} min`);
   if (history.appleSessions > 0) parts.push(`\u231A Watch: ${history.appleSessions} session${history.appleSessions > 1 ? 's' : ''}, ${Math.round(history.appleMinutes)} min`);
 
-  let html = `<div style="font-size:11px;font-family:'Space Grotesk',sans-serif;color:${C.textDim};margin-bottom:8px;">${parts.join(' Â· ')}</div>`;
+  let html = `<div style="font-size:11px;font-family:'Space Grotesk',sans-serif;color:${C.textDim};margin-bottom:8px;">${parts.join(' \u00B7 ')}</div>`;
 
   // Per-session rows
   for (const s of sorted) {
     const dayStr = s.date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
     const icon = s.source === 'watch' ? '\u231A' : '\u{1F3CB}\uFE0F';
-    const calStr = s.calories > 0 ? ` Â· ${Math.round(s.calories)} cal` : '';
+    const calStr = s.calories > 0 ? ` \u00B7 ${Math.round(s.calories)} cal` : '';
     html += `<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;font-size:12px;font-family:'Space Grotesk',sans-serif;">
       <span style="color:${C.textMid};">${icon} ${s.type}</span>
-      <span style="color:${C.textDark};">${Math.round(s.minutes)} min${calStr} Â· ${dayStr}</span>
+      <span style="color:${C.textDark};">${Math.round(s.minutes)} min${calStr} \u00B7 ${dayStr}</span>
     </div>`;
   }
 
@@ -2408,7 +2408,7 @@ function generateRecommendations(muscleStats) {
   const imbalanceW = hasProportions ? 0.25 : 0.30;
 
   for (const [key, stat] of Object.entries(muscleStats)) {
-    // Recency uses PRIMARY training date â€” secondary stimulus (e.g. RDLs for back)
+    // Recency uses PRIMARY training date \u00E2\u20AC\u201D secondary stimulus (e.g. RDLs for back)
     // doesn't reset the clock. This prevents back from being deprioritized when
     // only indirect work has been done recently.
     const recencyScore = Math.min(stat.daysSincePrimary / stat.idealFreqDays, 3);
@@ -2439,7 +2439,7 @@ function generateRecommendations(muscleStats) {
     if (stat.daysSincePrimary === Infinity && stat.daysSinceAny === Infinity) {
       explainer = `No ${stat.name.toLowerCase()} training found in your history. This muscle group needs attention to build a balanced physique.`;
     } else if (stat.daysSincePrimary === Infinity) {
-      explainer = `No direct ${stat.name.toLowerCase()} work found â€” only indirect stimulus (${stat.daysSinceAny}d ago). Add dedicated exercises to develop this muscle group.`;
+      explainer = `No direct ${stat.name.toLowerCase()} work found \u00E2\u20AC\u201D only indirect stimulus (${stat.daysSinceAny}d ago). Add dedicated exercises to develop this muscle group.`;
     } else {
       const parts = [];
       if (stat.daysSincePrimary >= stat.idealFreqDays * 2.5) {
@@ -2622,9 +2622,9 @@ function buildTimedSession(recs, prefs) {
 // ============================================================
 // RENDERING
 // ============================================================
-// renderRecommendations removed in v1.7 â€” replaced by renderTimedSession
+// renderRecommendations removed in v1.7 \u00E2\u20AC\u201D replaced by renderTimedSession
 
-// B2: Sort mode state for Today tab â€” 'urgency' (default) or 'anatomy'
+// B2: Sort mode state for Today tab \u00E2\u20AC\u201D 'urgency' (default) or 'anatomy'
 let todaySortMode = 'urgency';
 const ANATOMY_ORDER = ['chest', 'back', 'shoulders', 'quads', 'hamstrings', 'glutes', 'biceps', 'triceps', 'calves', 'core', 'neck', 'forearms'];
 
@@ -2648,7 +2648,7 @@ function renderTimedSession(recs) {
     ${_consecutiveTrainDays >= 3 ? `<div style="padding:10px 12px;margin-bottom:12px;border-radius:8px;border:1px solid ${_consecutiveTrainDays >= 5 ? C.danger : C.warn};background:${_consecutiveTrainDays >= 5 ? C.dangerDim : C.warnDim};font-size:13px;font-family:'Space Grotesk',sans-serif;color:${_consecutiveTrainDays >= 5 ? C.danger : C.warn};line-height:1.5;">
       ${_consecutiveTrainDays >= 5
         ? `<strong>${_consecutiveTrainDays} days straight.</strong> Your muscles grow during rest, not during training. Take a recovery day.`
-        : `<strong>${_consecutiveTrainDays} days in a row</strong> â€” consider a rest or light day. Recovery is when growth happens.`}
+        : `<strong>${_consecutiveTrainDays} days in a row</strong> \u00E2\u20AC\u201D consider a rest or light day. Recovery is when growth happens.`}
     </div>` : ''}
     <div class="session-summary">
       <div class="session-time" style="color:${C.accent}">~${totalMin} min</div>
@@ -2696,12 +2696,12 @@ function renderTimedSession(recs) {
     exHtml += `<div class="ex-group">
       <div class="ex-group-title" style="color:${meta.color};cursor:pointer;display:flex;align-items:center;justify-content:space-between;" onclick="toggleSessionExplainer('exp-${key}')">
         <span>${meta.name}</span>
-        <span style="font-size:11px;color:${C.textMid};font-weight:500;letter-spacing:0;background:${C.surface2};padding:2px 8px;border-radius:4px;">â–¾ why</span>
+        <span style="font-size:11px;color:${C.textMid};font-weight:500;letter-spacing:0;background:${C.surface2};padding:2px 8px;border-radius:4px;">\u00E2\u2013\u00BE why</span>
       </div>`;
 
     // B1: Collapsible "Why this?" explainer
     if (rec) {
-      const daysSince = rec.daysSince === Infinity ? 'âˆž' : rec.daysSince;
+      const daysSince = rec.daysSince === Infinity ? '\u00E2\u02C6\u017E' : rec.daysSince;
       const idealFreq = (muscleAnalysis && muscleAnalysis[key]) ? muscleAnalysis[key].idealFreqDays : '?';
       const volActual = rec.weeklyActual;
       const volIdeal = rec.weeklyIdeal;
@@ -2713,7 +2713,7 @@ function renderTimedSession(recs) {
       if (deficit > 0) {
         bullets.push(`<span style="color:${C.textDim};">Volume gap:</span> <strong>${deficit.toFixed(1)} sets/wk</strong> <span style="color:${C.textDark};">below ${volIdeal}</span>`);
       } else {
-        bullets.push(`<span style="color:${C.textDim};">Volume:</span> <strong>${volActual} / ${volIdeal}</strong> <span style="color:${C.accent};">âœ”</span>`);
+        bullets.push(`<span style="color:${C.textDim};">Volume:</span> <strong>${volActual} / ${volIdeal}</strong> <span style="color:${C.accent};">\u00E2\u0153\u201D</span>`);
       }
       if (propDef && propDef > 0.05) {
         const ft = Object.entries(FRAME_TARGETS).find(([k, v]) => v.muscle === key);
@@ -3030,7 +3030,7 @@ function countConsecutiveTrainingDays(dayWorkoutsMap) {
     if (dayWorkoutsMap[key] && dayWorkoutsMap[key].length > 0) {
       count++;
     } else {
-      // Allow skipping today if it's early â€” check if yesterday continues a streak
+      // Allow skipping today if it's early \u00E2\u20AC\u201D check if yesterday continues a streak
       if (i === 0) continue;
       break;
     }
@@ -3071,7 +3071,7 @@ function renderHeatmap(dayMuscleMap, dayWorkoutsMap, dayCardioMap) {
 
   html += `<div class="heatmap-grid" style="grid-template-columns: ${labelWidth}px repeat(${numDays}, ${cellSize}px); grid-template-rows: 22px repeat(${totalRows}, ${cellSize}px);">`;
 
-  // Day labels row â€” evenly spaced for 14 days
+  // Day labels row \u00E2\u20AC\u201D evenly spaced for 14 days
   html += `<div></div>`;
   for (let i = 0; i < days.length; i++) {
     const d = new Date(days[i] + 'T12:00:00');
@@ -3100,7 +3100,7 @@ function renderHeatmap(dayMuscleMap, dayWorkoutsMap, dayCardioMap) {
     }
   }
 
-  // Cardio row (blue, opacity scales with duration: 15 min â†’ 0.3, 30 â†’ 0.6, 45+ â†’ 1.0)
+  // Cardio row (blue, opacity scales with duration: 15 min \u00E2\u2020\u2019 0.3, 30 \u00E2\u2020\u2019 0.6, 45+ \u00E2\u2020\u2019 1.0)
   html += `<div class="heatmap-label" style="color:${C.blue}">Cardio</div>`;
   for (const day of days) {
     const cd = heatmapDayCardio[day];
@@ -3473,7 +3473,7 @@ function populateStrengthDetail() {
       </div>
       <div style="font-family:'Space Grotesk',sans-serif;font-size:12px;font-weight:600;color:${siColor};padding:2px 8px;border-radius:5px;background:${siColor}18;">${siLevel}</div>
     </div>
-    <div id="si-explainer" style="font-family:'Space Grotesk',sans-serif;font-size:11px;color:${C.textDim};margin-top:4px;max-height:0;overflow:hidden;opacity:0;transition:max-height 0.3s ease,opacity 0.25s ease;">Big-5 estimated 1RM total Ã· bodyweight Â· higher = stronger</div>
+    <div id="si-explainer" style="font-family:'Space Grotesk',sans-serif;font-size:11px;color:${C.textDim};margin-top:4px;max-height:0;overflow:hidden;opacity:0;transition:max-height 0.3s ease,opacity 0.25s ease;">Big-5 estimated 1RM total \u00F7 bodyweight \u00B7 higher = stronger</div>
   </div>`;
 
   // Column labels (no %ile column)
@@ -3524,7 +3524,7 @@ function populateStrengthDetail() {
 
 // ---- Hevy CSV Measurement Import ----
 // Parses exported measurements CSV from Hevy app (Profile > Settings > Export)
-// Handles cm or inch columns, averages L/R measurements, converts cmâ†’in
+// Handles cm or inch columns, averages L/R measurements, converts cm\u00E2\u2020\u2019in
 function importHevyCSV(fileInput) {
   const file = fileInput.files[0];
   if (!file) return;
@@ -3555,7 +3555,7 @@ function importHevyCSV(fileInput) {
       const isCm = headers.some(h => h.endsWith('_cm'));
       const cmToIn = (v) => v / 2.54;
 
-      // Column mapping: Hevy column name â†’ { lsKey, isLeft }
+      // Column mapping: Hevy column name \u00E2\u2020\u2019 { lsKey, isLeft }
       // For L/R pairs, we average them
       const colMap = {};
       const pairBuf = {}; // accumulate L/R values per entry
@@ -3577,7 +3577,7 @@ function importHevyCSV(fileInput) {
         const cells = rows[r];
         if (cells.length <= dateCol) continue;
 
-        // Parse Hevy date format: "23 Oct 2023, 00:00" â†’ "2023-10-23"
+        // Parse Hevy date format: "23 Oct 2023, 00:00" \u00E2\u2020\u2019 "2023-10-23"
         const dateRaw = cells[dateCol].trim();
         const parsedDate = parseHevyDate(dateRaw);
         if (!parsedDate) continue;
@@ -3592,7 +3592,7 @@ function importHevyCSV(fileInput) {
           const val = isCm ? cmToIn(rawVal) : rawVal;
 
           if (mapping.pair) {
-            // L/R measurement â†’ accumulate for averaging
+            // L/R measurement \u00E2\u2020\u2019 accumulate for averaging
             if (!lrAccum[mapping.lsKey]) lrAccum[mapping.lsKey] = [];
             lrAccum[mapping.lsKey].push(val);
           } else {
@@ -3715,7 +3715,7 @@ return rows;
 // Match a Hevy CSV header to a LiftScript measurement key
 function matchHevyColumn(header) {
 const h = header.replace(/[()]/g, ‘’).trim();
-// Map of patterns â†’ { lsKey, pair? }
+// Map of patterns \u00E2\u2020\u2019 { lsKey, pair? }
 const maps = [
 { patterns: [/^neck/],                       lsKey: ‘neck_in’ },
 { patterns: [/^shoulder/],                    lsKey: ‘shoulder_in’ },
@@ -3743,7 +3743,7 @@ return { lsKey: m.lsKey, pair: !!m.pair };
 return null;
 }
 
-// Parse Hevy date: “23 Oct 2023, 00:00” â†’ “2023-10-23”
+// Parse Hevy date: “23 Oct 2023, 00:00” \u00E2\u2020\u2019 “2023-10-23”
 // Also handles ISO “2023-10-23” passthrough
 function parseHevyDate(str) {
 if (!str) return null;
@@ -3902,7 +3902,7 @@ svg += `<text x="${w - pad}" y="${scaleY(lastPt.value) - 6}" fill="${C.text}" fo
 svg += `</svg>`;
 
 // Date range label
-const dateRange = `${points[0].date || ''} â†’ ${points[points.length-1].date || ''}`;
+const dateRange = `${points[0].date || ''} \u00E2\u2020\u2019 ${points[points.length-1].date || ''}`;
 sparkContainer.innerHTML = `<div style="background:${C.surface2};border-radius:8px;border:1px solid ${C.border};padding:10px 8px 6px;">
 ${svg}
 <div style="text-align:center;font-size:10px;font-family:'Space Grotesk',sans-serif;color:${C.textDark};margin-top:2px;">${dateRange} \u00b7 ${points.length} entries</div>
@@ -3913,8 +3913,9 @@ ${svg}
 }
 
 function renderProportionsDisplay() {
-const container = document.getElementById(‘proportions-display’);
+const container = document.getElementById(‘proportion-analysis’);
 if (!container) return;
+
 const latest = latestMeasurements;
 
 if (!latest || Object.keys(latest).filter(k => k !== ‘_dates’).length < 2) {
@@ -4018,9 +4019,9 @@ return;
 // Shortcuts inserts literal newlines in JSON - strip them before parsing
 const rawText = await resp.text();
 let cleanText = rawText.replace(/\n/g, ‘’).replace(/\r/g, ‘’);
-// Fix missing commas between workout objects: }{ â†’ },{
+// Fix missing commas between workout objects: }{ \u00E2\u2020\u2019 },{
 cleanText = cleanText.replace(/}\s*{/g, ‘},{’);
-// Strip unit suffixes from calories: “32 kcal” â†’ “32”, “1,220 kcal” â†’ “1220”
+// Strip unit suffixes from calories: “32 kcal” \u00E2\u2020\u2019 “32”, “1,220 kcal” \u00E2\u2020\u2019 “1220”
 cleanText = cleanText.replace(/(\d),(\d)/g, ‘$1$2’); // remove thousands commas
 cleanText = cleanText.replace(/([\d.]+)\s*kcal/g, ‘$1’);
 const data = JSON.parse(cleanText);
@@ -4205,7 +4206,7 @@ const whrColor = whr < 100 ? C.accent : whr <= 110 ? C.textMid : C.warn;
 html += `<div class="vital-cell"> <div class="vital-label">Walking HR</div> <div class="vital-value">${Math.round(whr)}<span class="vital-unit">bpm</span></div> <div class="vital-context" style="color:${whrColor}">${whr < 100 ? 'Good' : whr <= 110 ? 'Normal' : 'Elevated'}</div> </div>`;
 }
 
-// Body Fat % (from Hevy â†’ Apple Health)
+// Body Fat % (from Hevy \u00E2\u2020\u2019 Apple Health)
 const bf = healthData.body_fat_pct;
 if (bf && bf > 0) {
 const bfColor = bf <= 15 ? C.accent : bf <= 20 ? C.blue : bf <= 25 ? C.warn : C.danger;
@@ -4213,13 +4214,13 @@ const bfLabel = bf <= 15 ? ‘Athletic’ : bf <= 20 ? ‘Fit’ : bf <= 25 ? �
 html += `<div class="vital-cell"> <div class="vital-label">Body Fat</div> <div class="vital-value">${bf.toFixed(1)}<span class="vital-unit">%</span></div> <div class="vital-context" style="color:${bfColor}">${bfLabel}</div> </div>`;
 }
 
-// Lean Body Mass (from Hevy â†’ Apple Health)
+// Lean Body Mass (from Hevy \u00E2\u2020\u2019 Apple Health)
 const lbm = healthData.lean_body_mass_lbs;
 if (lbm && lbm > 0) {
 html += `<div class="vital-cell"> <div class="vital-label">Lean Mass</div> <div class="vital-value">${Math.round(lbm)}<span class="vital-unit">lbs</span></div> <div class="vital-context">via Apple Health</div> </div>`;
 }
 
-// Waist (from Hevy â†’ Apple Health)
+// Waist (from Hevy \u00E2\u2020\u2019 Apple Health)
 const waistAH = healthData.waist_circumference_in;
 if (waistAH && waistAH > 0) {
 const waistDate = healthData.waist_date || ‘’;
@@ -4334,22 +4335,18 @@ showError(`Refresh failed: ${err.message}`);
 
 async function loadDashboard() {
 showScreen(‘loading-screen’);
-updateLoading(‘Starting…’);
 
 // Start health data fetch in parallel (non-blocking)
 const healthPromise = fetchHealthData();
 
 try {
 // v1.1 Task 7: Try cache first for instant load
-updateLoading(‘Checking cache…’);
 const cached = getCachedWorkouts();
 if (cached && cached.data && cached.data.length > 0) {
 updateLoading(‘Loading from cache…’);
 workoutCache = cached.data;
 hevyStatus = ‘ok’;
-updateLoading(‘Waiting for health data…’);
 await healthPromise; // ensure health status is ready
-updateLoading(‘Rendering…’);
 renderDashboard(cached.data);
 
 ```
@@ -4387,7 +4384,7 @@ showError(`Failed to load: ${err.message}`);
 }
 
 // ============================================================
-// DEV TEST HARNESS (guarded behind flag â€” never runs in production)
+// DEV TEST HARNESS (guarded behind flag \u00E2\u20AC\u201D never runs in production)
 // ============================================================
 const DEV_TEST_MODE = false;
 
@@ -4397,19 +4394,19 @@ const results = [];
 
 // Test A1: Tricep Dip classification
 const tricepDip = classifyExercise(‘Tricep Dip’);
-results.push({ test: ‘A1: Tricep Dip â†’ triceps’, pass: tricepDip.primary === ‘triceps’, got: tricepDip.primary });
+results.push({ test: ‘A1: Tricep Dip \u00E2\u2020\u2019 triceps’, pass: tricepDip.primary === ‘triceps’, got: tricepDip.primary });
 
 const chestDip = classifyExercise(‘Chest Dip’);
-results.push({ test: ‘A1: Chest Dip â†’ chest’, pass: chestDip.primary === ‘chest’, got: chestDip.primary });
+results.push({ test: ‘A1: Chest Dip \u00E2\u2020\u2019 chest’, pass: chestDip.primary === ‘chest’, got: chestDip.primary });
 
 const genericDip = classifyExercise(‘Dips’);
-results.push({ test: ‘A1: Dips â†’ chest (generic)’, pass: genericDip.primary === ‘chest’, got: genericDip.primary });
+results.push({ test: ‘A1: Dips \u00E2\u2020\u2019 chest (generic)’, pass: genericDip.primary === ‘chest’, got: genericDip.primary });
 
 // Test A2: Curly apostrophe normalization
 const curly1 = normalizeExerciseName(‘Farmer\u2019s Carry’);
-results.push({ test: ‘A2: Right curly â†’ ASCII’, pass: curly1 === “farmer’s carry”, got: curly1 });
+results.push({ test: ‘A2: Right curly \u00E2\u2020\u2019 ASCII’, pass: curly1 === “farmer’s carry”, got: curly1 });
 const curly2 = normalizeExerciseName(‘Farmer\u2018s Carry’);
-results.push({ test: ‘A2: Left curly â†’ ASCII’, pass: curly2 === “farmer’s carry”, got: curly2 });
+results.push({ test: ‘A2: Left curly \u00E2\u2020\u2019 ASCII’, pass: curly2 === “farmer’s carry”, got: curly2 });
 
 // Test A3: Cardio session counting (mock workout with 2 cardio exercises)
 const mockWorkouts = [{
@@ -4428,7 +4425,7 @@ const accentVar = rootStyle.getPropertyValue(’–accent’).trim();
 results.push({
 test: ‘A4: CSS –accent resolves to #4ade80’,
 pass: accentVar === ‘#4ade80’,
-got: accentVar || ‘(empty â€” var() references may use en-dash instead of double-hyphen)’
+got: accentVar || ‘(empty \u00E2\u20AC\u201D var() references may use en-dash instead of double-hyphen)’
 });
 
 // Test A5: Universal reset selector is active (catches * vs - typo)
@@ -4466,29 +4463,28 @@ got: JSON.stringify(storageRead)
 });
 
 // Report
-console.group(‘ðŸ§ª LiftScript Dev Tests’);
+console.group(’\u00F0\u0178\u00A7\u00AA LiftScript Dev Tests’);
 for (const r of results) {
-console.log(`${r.pass ? 'âœ…' : 'âŒ'} ${r.test}${r.pass ? '' : ' (got: ' + r.got + ')'}`);
+console.log(`${r.pass ? '\u00E2\u0153\u2026' : '\u00E2\u009D\u0152'} ${r.test}${r.pass ? '' : ' (got: ' + r.got + ')'}`);
 }
 console.groupEnd();
 }
 
 runDevTests();
 
-// Boot-time CSS sanity check â€” catches encoding issues like en-dash var() references
+// Boot-time CSS sanity check \u00E2\u20AC\u201D catches encoding issues like en-dash var() references
 (function checkCSS() {
 const root = getComputedStyle(document.documentElement);
 const test = root.getPropertyValue(’–accent’).trim();
 if (!test) {
-console.error(‘âš ï¸ CSS custom properties not loading. Check <style> block for encoding issues (e.g. en-dash vs double-hyphen in var() references).’);
+console.error(’\u00E2\u0161\u00A0\u00EF\u00B8\u008F CSS custom properties not loading. Check <style> block for encoding issues (e.g. en-dash vs double-hyphen in var() references).’);
 }
 })();
 
 // Boot
-loadDashboard().catch(err => {
-const el = document.getElementById(‘loading-text’);
+loadDashboard().catch(function(err) {
+var el = document.getElementById(‘loading-text’);
 if (el) el.textContent = ’Boot error: ’ + (err.message || err);
-console.error(‘loadDashboard fatal:’, err);
 });
 </script>
 
