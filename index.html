@@ -725,6 +725,7 @@ color: var(--text-dim);
     </div>
     <!-- v1.7: Compact strength detail (Option A) -->
     <div id="strength-detail" style="margin-bottom:14px;"></div>
+    <div id="pr-board"></div>
     <div class="weight-chart">
       <canvas id="weight-canvas"></canvas>
     </div>
@@ -3506,6 +3507,132 @@ function renderWeightChart() {
   }
 }
 
+// ============================================================
+// TIER EMBLEMS (v1.13: visual rank icons for categories)
+// ============================================================
+function tierEmblem(label, color) {
+  // Map labels to tier rank (1-5) for distinct icon shapes
+  const tierMap = {
+    'Low': 1, 'Developing': 1, 'Elevated': 1, 'Above Avg': 1, 'Poor': 1,
+    'Normal': 2, 'Fair': 2, 'Moderate': 2,
+    'Good': 3, 'Average': 3, 'Intermediate': 3, 'Fit': 3,
+    'Athletic': 4, 'Active': 4, 'High': 4, 'Advanced': 4,
+    'Elite': 5, 'Excellent': 5,
+  };
+  const tier = tierMap[label] || 2;
+  const s = 12; // svg size
+
+  let icon;
+  if (tier === 1) {
+    // hollow circle
+    icon = `<circle cx="6" cy="6" r="4" fill="none" stroke="${color}" stroke-width="1.5"/>`;
+  } else if (tier === 2) {
+    // filled circle
+    icon = `<circle cx="6" cy="6" r="4" fill="${color}" opacity="0.7"/>`;
+  } else if (tier === 3) {
+    // diamond
+    icon = `<path d="M6 2L10 6L6 10L2 6Z" fill="${color}" opacity="0.8"/>`;
+  } else if (tier === 4) {
+    // shield/chevron up
+    icon = `<path d="M6 1.5L10.5 4V7.5C10.5 9.5 8.5 11 6 11.5C3.5 11 1.5 9.5 1.5 7.5V4L6 1.5Z" fill="${color}" opacity="0.85"/>`;
+  } else {
+    // star
+    icon = `<path d="M6 1L7.5 4.5L11 5L8.5 7.5L9 11L6 9.5L3 11L3.5 7.5L1 5L4.5 4.5Z" fill="${color}"/>`;
+  }
+  return `<svg width="${s}" height="${s}" viewBox="0 0 ${s} ${s}" style="vertical-align:middle;margin-right:3px;flex-shrink:0;">${icon}</svg>`;
+}
+
+// Format a tier badge (emblem + label) for inline use
+function tierBadge(label, color) {
+  return tierEmblem(label, color) + `<span style="color:${color};font-weight:600;">${label}</span>`;
+}
+
+// ============================================================
+// PERSONAL RECORDS BOARD
+// ============================================================
+function renderPRBoard() {
+  const container = document.getElementById('pr-board');
+  if (!container) return;
+  if (strengthIndexData.length === 0) {
+    container.innerHTML = '';
+    return;
+  }
+
+  const liftKeys = {
+    bench:    { label: 'Bench' },
+    squat:    { label: 'Squat' },
+    deadlift: { label: 'Deadlift' },
+    ohp:      { label: 'OHP' },
+    row:      { label: 'Row' },
+  };
+
+  // Scan all SI timeline entries for best RM per lift
+  const prs = {};
+  for (const entry of strengthIndexData) {
+    for (const [key, lift] of Object.entries(entry.lifts)) {
+      if (lift.rm > 0) {
+        if (!prs[key] || lift.rm > prs[key].rm) {
+          prs[key] = { rm: lift.rm, date: entry.date };
+        }
+      }
+    }
+  }
+
+  // Get latest values for comparison
+  const latest = strengthIndexData[strengthIndexData.length - 1];
+
+  let hasAnyPR = Object.keys(prs).length > 0;
+  if (!hasAnyPR) { container.innerHTML = ''; return; }
+
+  let html = `<div style="margin-top:14px;padding-top:12px;border-top:1px solid ${C.border};">
+    <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:1.2px;color:${C.textDim};margin-bottom:10px;font-family:'Space Grotesk',sans-serif;">Personal Records</div>`;
+
+  for (const [key, info] of Object.entries(liftKeys)) {
+    const pr = prs[key];
+    if (!pr) continue;
+
+    const currentRM = latest.lifts[key] ? latest.lifts[key].rm : 0;
+    const isAtPR = currentRM >= pr.rm;
+    const pctOfPR = pr.rm > 0 ? Math.round((currentRM / pr.rm) * 100) : 0;
+
+    // Format PR date
+    const prDate = new Date(pr.date + 'T12:00:00');
+    const dateStr = prDate.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+
+    // Status indicator
+    let statusHtml;
+    if (isAtPR) {
+      statusHtml = `<span style="font-size:10px;font-weight:600;color:${C.accent};padding:2px 6px;border-radius:4px;background:${C.accentDim};">AT PR</span>`;
+    } else {
+      const diff = pr.rm - currentRM;
+      statusHtml = `<span style="font-size:10px;font-weight:600;color:${C.textDim};padding:2px 6px;border-radius:4px;background:${C.surface3};">${pctOfPR}%</span>`;
+    }
+
+    // Bar showing current vs PR
+    const barPct = Math.min(100, pctOfPR);
+    const barColor = isAtPR ? C.accent : pctOfPR >= 90 ? C.warn : C.textDim;
+
+    html += `<div style="margin-bottom:10px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:3px;">
+        <div style="display:flex;align-items:baseline;gap:8px;">
+          <span style="font-size:13px;font-weight:600;color:${C.text};font-family:'Space Grotesk',sans-serif;width:58px;">${info.label}</span>
+          <span style="font-size:15px;font-weight:700;color:${isAtPR ? C.accent : C.strength};font-family:'Space Grotesk',sans-serif;">${pr.rm}<span style="font-size:11px;font-weight:400;color:${C.textDim};"> lbs</span></span>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;">
+          <span style="font-size:10px;color:${C.textDim};font-family:'Space Grotesk',sans-serif;">${dateStr}</span>
+          ${statusHtml}
+        </div>
+      </div>
+      ${!isAtPR ? `<div style="height:3px;border-radius:2px;background:${C.surface3};overflow:hidden;">
+        <div style="height:100%;width:${barPct}%;border-radius:2px;background:${barColor};transition:width 0.4s ease;"></div>
+      </div>` : ''}
+    </div>`;
+  }
+
+  html += '</div>';
+  container.innerHTML = html;
+}
+
 // v1.1: Populate SI detail content (always called, even if weight data is empty)
 let activeStrengthTooltip = null;
 
@@ -3657,7 +3784,7 @@ function populateStrengthDetail() {
         <div style="font-family:'Space Grotesk',sans-serif;font-size:32px;font-weight:700;color:${C.strength};">${latestSI ? latestSI.index.toFixed(2) : '--'}</div>
         <span class="section-chevron" style="font-size:10px;color:${C.textDim};transition:transform 0.3s ease;display:inline-block;">\u25BE</span>
       </div>
-      <div style="font-family:'Space Grotesk',sans-serif;font-size:12px;font-weight:600;color:${siColor};padding:2px 8px;border-radius:5px;background:${siColor}18;">${siLevel}</div>
+      <div style="font-family:'Space Grotesk',sans-serif;font-size:12px;display:inline-flex;align-items:center;padding:2px 8px;border-radius:5px;background:${siColor}18;">${tierBadge(siLevel, siColor)}</div>
     </div>
     <div id="si-explainer" style="font-family:'Space Grotesk',sans-serif;font-size:11px;color:${C.textDim};margin-top:4px;max-height:0;overflow:hidden;opacity:0;transition:max-height 0.3s ease,opacity 0.25s ease;">Big-5 estimated 1RM total / bodyweight \u00B7 higher = stronger</div>
 
@@ -4301,7 +4428,7 @@ function renderHealthVitals() {
 
     document.getElementById('cardio-score-value').textContent = vo2.toFixed(1);
     const labelEl = document.getElementById('cardio-score-label');
-    labelEl.textContent = `${pctile}th %ile \u00b7 ${cat.label}`;
+    labelEl.innerHTML = `<span style="display:inline-flex;align-items:center;gap:4px;">${pctile}th %ile \u00b7 ${tierBadge(cat.label, cat.color)}</span>`;
     labelEl.style.color = cat.color;
 
     const bar = document.getElementById('cardio-score-bar');
@@ -4324,7 +4451,7 @@ function renderHealthVitals() {
     html += `<div class="vital-cell">
       <div class="vital-label">Resting HR</div>
       <div class="vital-value">${Math.round(rhr)}<span class="vital-unit">bpm</span></div>
-      <div class="vital-context" style="color:${rhrCat.color}">${rhrCat.label}</div>
+      <div class="vital-context" style="color:${rhrCat.color};display:flex;align-items:center;">${tierBadge(rhrCat.label, rhrCat.color)}</div>
     </div>`;
   }
 
@@ -4335,7 +4462,7 @@ function renderHealthVitals() {
     html += `<div class="vital-cell">
       <div class="vital-label">HR Recovery</div>
       <div class="vital-value">${Math.round(recovery)}<span class="vital-unit">bpm</span></div>
-      <div class="vital-context" style="color:${recCat.color}">${recCat.label}</div>
+      <div class="vital-context" style="color:${recCat.color};display:flex;align-items:center;">${tierBadge(recCat.label, recCat.color)}</div>
     </div>`;
   }
 
@@ -4347,7 +4474,7 @@ function renderHealthVitals() {
     html += `<div class="vital-cell">
       <div class="vital-label">Steps/Day</div>
       <div class="vital-value">${stepsK}</div>
-      <div class="vital-context" style="color:${stepsColor}">${steps >= 10000 ? 'Active' : steps >= 7000 ? 'Moderate' : 'Low'}</div>
+      <div class="vital-context" style="color:${stepsColor};display:flex;align-items:center;">${tierBadge(steps >= 10000 ? 'Active' : steps >= 7000 ? 'Moderate' : 'Low', stepsColor)}</div>
     </div>`;
   }
 
@@ -4358,7 +4485,7 @@ function renderHealthVitals() {
     html += `<div class="vital-cell">
       <div class="vital-label">Active Cal</div>
       <div class="vital-value">${Math.round(cal)}<span class="vital-unit">kcal</span></div>
-      <div class="vital-context" style="color:${calCat.color}">${calCat.label}</div>
+      <div class="vital-context" style="color:${calCat.color};display:flex;align-items:center;">${tierBadge(calCat.label, calCat.color)}</div>
     </div>`;
   }
 
@@ -4369,7 +4496,7 @@ function renderHealthVitals() {
     html += `<div class="vital-cell">
       <div class="vital-label">Walking HR</div>
       <div class="vital-value">${Math.round(whr)}<span class="vital-unit">bpm</span></div>
-      <div class="vital-context" style="color:${whrColor}">${whr < 100 ? 'Good' : whr <= 110 ? 'Normal' : 'Elevated'}</div>
+      <div class="vital-context" style="color:${whrColor};display:flex;align-items:center;">${tierBadge(whr < 100 ? 'Good' : whr <= 110 ? 'Normal' : 'Elevated', whrColor)}</div>
     </div>`;
   }
 
@@ -4381,7 +4508,7 @@ function renderHealthVitals() {
     html += `<div class="vital-cell">
       <div class="vital-label">Body Fat</div>
       <div class="vital-value">${bf.toFixed(1)}<span class="vital-unit">%</span></div>
-      <div class="vital-context" style="color:${bfColor}">${bfLabel}</div>
+      <div class="vital-context" style="color:${bfColor};display:flex;align-items:center;">${tierBadge(bfLabel, bfColor)}</div>
     </div>`;
   }
 
@@ -4645,6 +4772,7 @@ function renderDashboard(workouts) {
   renderHealthVitals();
   renderMeasurementsCard();
   renderPowerScore();
+  renderPRBoard();
 }
 
 async function refreshData() {
