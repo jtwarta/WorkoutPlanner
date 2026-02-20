@@ -197,33 +197,39 @@ color: var(--text-dim);
 }
 
 .ex-group {
-margin-bottom: 18px;
+margin-bottom: 20px;
+background: var(--surface2);
+border-radius: 10px;
+padding: 0;
+overflow: hidden;
+border: 1px solid var(--border);
 }
 .ex-group:last-child { margin-bottom: 0; }
 .ex-group-title {
 font-size: 15px;
 font-weight: 600;
-margin-bottom: 8px;
-padding-bottom: 6px;
-border-bottom: 1px solid var(--border);
+padding: 10px 14px;
+background: var(--surface);
 }
 .ex-row {
 display: flex;
-align-items: baseline;
-justify-content: space-between;
-padding: 8px 0;
+align-items: center;
+padding: 10px 14px;
+border-top: 1px solid var(--border);
+gap: 8px;
 }
 .ex-name {
-font-size: 15px;
+font-size: 13px;
 font-weight: 500;
 flex: 1;
 min-width: 0;
-padding-right: 12px;
-color: var(--text);
+color: var(--text-mid);
+line-height: 1.3;
 }
 .ex-prescription {
 font-family: 'Space Grotesk', sans-serif;
-font-size: 13px;
+font-size: 14px;
+font-weight: 600;
 color: var(--accent);
 white-space: nowrap;
 flex-shrink: 0;
@@ -234,8 +240,7 @@ font-size: 11px;
 color: var(--text-dim);
 white-space: nowrap;
 flex-shrink: 0;
-margin-left: 8px;
-min-width: 38px;
+min-width: 30px;
 text-align: right;
 }
 
@@ -2316,16 +2321,18 @@ function renderCardioPlan(workouts) {
 
     for (const rx of result.prescriptions) {
       const zs = zoneStyles[rx.zone] || zoneStyles[2];
+      const detailNote = [rx.detail, rx.notes].filter(Boolean).join(' \u00b7 ');
 
-      html += `<div style="padding:12px 0;border-bottom:1px solid ${C.surface2};">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
-          <span style="font-size:11px;font-weight:600;padding:3px 8px;border-radius:5px;font-family:'Space Grotesk',sans-serif;text-transform:uppercase;letter-spacing:0.5px;background:${zs.bg};color:${zs.color};">${zs.label}</span>
-          <span style="font-family:'Space Grotesk',sans-serif;font-size:13px;color:${C.accent};font-weight:600;">${rx.durationMin} min</span>
+      html += `<div style="padding:10px 0;border-bottom:1px solid ${C.surface2};">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+          <span style="font-size:10px;font-weight:600;padding:2px 7px;border-radius:4px;font-family:'Space Grotesk',sans-serif;text-transform:uppercase;letter-spacing:0.5px;background:${zs.bg};color:${zs.color};">${zs.label}</span>
+          <span style="font-size:14px;font-weight:600;color:${C.text};flex:1;">${rx.name}</span>
+          <span style="font-family:'Space Grotesk',sans-serif;font-size:13px;color:${C.accent};font-weight:600;">${rx.durationMin}m</span>
         </div>
-        <div style="font-size:15px;font-weight:600;color:${C.text};margin-bottom:4px;">${rx.name}</div>
-        <div style="font-size:13px;font-family:'Space Grotesk',sans-serif;color:${C.textMid};line-height:1.5;">${rx.detail}</div>
-        <div style="font-size:12px;font-family:'Space Grotesk',sans-serif;color:${C.textDim};margin-top:2px;">${rx.notes}</div>
-        <div style="display:inline-block;margin-top:6px;font-size:12px;font-family:'Space Grotesk',sans-serif;color:${zs.color};padding:2px 8px;border-radius:4px;background:${zs.bg};">\u2661 ${rx.hrRange} bpm</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+          <div style="font-size:12px;font-family:'Space Grotesk',sans-serif;color:${C.textDim};line-height:1.4;flex:1;">${detailNote}</div>
+          <span style="font-size:11px;font-family:'Space Grotesk',sans-serif;color:${zs.color};padding:2px 7px;border-radius:4px;background:${zs.bg};white-space:nowrap;">\u2661 ${rx.hrRange}</span>
+        </div>
       </div>`;
     }
   }
@@ -2743,7 +2750,7 @@ function renderTimedSession(recs) {
     if (!meta) continue;
     const rec = recMap[key];
 
-    exHtml += `<div class="ex-group">
+    exHtml += `<div class="ex-group" style="border-left:3px solid ${meta.color};">
       <div class="ex-group-title" style="color:${meta.color};cursor:pointer;display:flex;align-items:center;justify-content:space-between;" onclick="toggleSessionExplainer('exp-${key}')">
         <span>${meta.name}</span>
         <svg width="12" height="12" viewBox="0 0 12 12" fill="none" style="transition:transform 0.2s ease;"><path d="M2.5 4.5L6 8L9.5 4.5" stroke="${C.textMid}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -2770,8 +2777,8 @@ function renderTimedSession(recs) {
         if (ft) bullets.push(`<span style="color:${C.textDim};">Frame target:</span> <strong>${ft[1].label}</strong> <span style="color:${C.warn};">${Math.round(propDef * 100)}% below potential</span>`);
       }
 
-      exHtml += `<div class="rec-expand" id="exp-${key}" style="max-height:0;overflow:hidden;opacity:0;transition:max-height 0.3s ease,opacity 0.25s ease;">
-        <div class="rec-explainer" style="padding:6px 0 10px 0;font-size:12px;line-height:1.7;">
+      exHtml += `<div class="rec-expand" id="exp-${key}" style="max-height:0;overflow:hidden;opacity:0;transition:max-height 0.3s ease,opacity 0.25s ease;border-top:1px solid ${C.border};">
+        <div class="rec-explainer" style="padding:8px 14px;font-size:12px;line-height:1.7;">
           ${bullets.map(b => `<div>${b}</div>`).join('')}
         </div>
       </div>`;
@@ -2782,7 +2789,7 @@ function renderTimedSession(recs) {
       const timeMin = (ex.timeSec / 60).toFixed(0);
       exHtml += `
         <div class="ex-row">
-          <div class="ex-name" style="color:${C.text}">${ex.name}</div>
+          <div class="ex-name" style="color:${C.textMid}">${ex.name}</div>
           <div class="ex-prescription" style="color:${C.accent}">${rx}</div>
           <div class="ex-time" style="color:${C.textDim}">${timeMin}m</div>
         </div>`;
