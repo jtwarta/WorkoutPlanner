@@ -809,7 +809,7 @@ function localDateStr(d) {
 }
 
 // ============================================================
-// COLOR CONSTANTS (CSS Rendering Guidance Â§4)
+// COLOR CONSTANTS (CSS Rendering Guidance §4)
 // Single source of truth for all JS-rendered inline styles.
 // Hex values here match the CSS custom properties in <style>.
 // ============================================================
@@ -1532,7 +1532,7 @@ function renderConstraintChips() {
     const chipStyle = isNonDefault
       ? `background:${C.accentDim};color:${C.accent};border:1px solid ${C.accentBorder};padding:5px 10px;font-size:12px;font-weight:500;font-family:Space Grotesk,sans-serif;border-radius:6px;cursor:pointer;user-select:none;`
       : `background:${C.surface2};color:${C.textDim};border:1px solid ${C.border};padding:5px 10px;font-size:12px;font-weight:500;font-family:Space Grotesk,sans-serif;border-radius:6px;cursor:pointer;user-select:none;`;
-    return `<div class="constraint-chip${isNonDefault ? ' active' : ''}" style="${chipStyle}" data-key="${def.key}" onclick="cycleChip('${def.key}')">${def.label(current)} <span style="opacity:0.35;font-size:9px;margin-left:1px;">\u21BB</span></div>`;
+    return `<div class="constraint-chip${isNonDefault ? ' active' : ''}" style="${chipStyle}" data-key="${def.key}" onclick="cycleChip('${def.key}')">${def.label(current)} <span style="opacity:0.35;font-size:9px;margin-left:1px;">↻</span></div>`;
   }).join('');
   // Helper text
   html += `<div style="font-size:10px;color:${C.textDark2 || C.textDim};opacity:0.5;width:100%;margin-top:2px;font-family:'Space Grotesk',sans-serif;">Tap to cycle</div>`;
@@ -1896,10 +1896,10 @@ function preprocessWorkouts(workouts, bodyweightLbs, weightData) {
 // Source 2: Seiler (2010) "What is Best Practice for Training Intensity and Duration
 //   Distribution in Endurance Athletes?" - polarized 80/20 model
 // Source 3: Tanaka et al. (2001) "Age-predicted maximal heart rate revisited"
-//   - HRmax = 208 - 0.7 Ã— age (more accurate than 220-age)
+//   - HRmax = 208 - 0.7 × age (more accurate than 220-age)
 // Source 4: Karvonen (1957) "Heart Rate Reserve" method for HR zones
-//   - Target HR = ((HRmax - HRrest) Ã— %intensity) + HRrest
-// Source 5: StÃ¶ggl & Sperlich (2014) "Polarized training has greater impact on key
+//   - Target HR = ((HRmax - HRrest) × %intensity) + HRrest
+// Source 5: Stöggl & Sperlich (2014) "Polarized training has greater impact on key
 //   endurance variables than threshold, high-intensity, or high-volume training"
 
 // HR Zone calculations
@@ -2264,16 +2264,16 @@ function buildCardioBreakdownHTML(history) {
   if (history.hevySessions > 0) parts.push(`\u{1F3CB}\uFE0F Hevy: ${history.hevySessions} session${history.hevySessions > 1 ? 's' : ''}, ${Math.round(history.hevyMinutes)} min`);
   if (history.appleSessions > 0) parts.push(`\u231A Watch: ${history.appleSessions} session${history.appleSessions > 1 ? 's' : ''}, ${Math.round(history.appleMinutes)} min`);
 
-  let html = `<div style="font-size:11px;font-family:'Space Grotesk',sans-serif;color:${C.textDim};margin-bottom:8px;">${parts.join(' Â· ')}</div>`;
+  let html = `<div style="font-size:11px;font-family:'Space Grotesk',sans-serif;color:${C.textDim};margin-bottom:8px;">${parts.join(' · ')}</div>`;
 
   // Per-session rows
   for (const s of sorted) {
     const dayStr = s.date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
     const icon = s.source === 'watch' ? '\u231A' : '\u{1F3CB}\uFE0F';
-    const calStr = s.calories > 0 ? ` Â· ${Math.round(s.calories)} cal` : '';
+    const calStr = s.calories > 0 ? ` · ${Math.round(s.calories)} cal` : '';
     html += `<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;font-size:12px;font-family:'Space Grotesk',sans-serif;">
       <span style="color:${C.textMid};">${icon} ${s.type}</span>
-      <span style="color:${C.textDark};">${Math.round(s.minutes)} min${calStr} Â· ${dayStr}</span>
+      <span style="color:${C.textDark};">${Math.round(s.minutes)} min${calStr} · ${dayStr}</span>
     </div>`;
   }
 
@@ -3490,7 +3490,7 @@ function populateStrengthDetail() {
       </div>
       <div style="font-family:'Space Grotesk',sans-serif;font-size:12px;font-weight:600;color:${siColor};padding:2px 8px;border-radius:5px;background:${siColor}18;">${siLevel}</div>
     </div>
-    <div id="si-explainer" style="font-family:'Space Grotesk',sans-serif;font-size:11px;color:${C.textDim};margin-top:4px;max-height:0;overflow:hidden;opacity:0;transition:max-height 0.3s ease,opacity 0.25s ease;">Big-5 estimated 1RM total Ã· bodyweight Â· higher = stronger</div>
+    <div id="si-explainer" style="font-family:'Space Grotesk',sans-serif;font-size:11px;color:${C.textDim};margin-top:4px;max-height:0;overflow:hidden;opacity:0;transition:max-height 0.3s ease,opacity 0.25s ease;">Big-5 estimated 1RM total ÷ bodyweight · higher = stronger</div>
   </div>`;
 
   // Column labels (no %ile column)
@@ -4292,6 +4292,7 @@ tabs.insertAdjacentElement(‘afterend’, errDiv);
 
 // Render dashboard from workouts data (shared by cache + fresh load)
 function renderDashboard(workouts) {
+try {
 WEIGHT_DATA = getMergedWeightData();
 if (WEIGHT_DATA.length > 0) PROFILE.bodyweightLbs = WEIGHT_DATA[0].value;
 
@@ -4319,7 +4320,7 @@ const now = new Date();
 const syncColor = (hevyStatus === ‘ok’ && healthStatus === ‘ok’) ? C.accent
 : (hevyStatus === ‘error’ || healthStatus === ‘missing’) ? C.textDim : C.warn;
 document.getElementById(‘last-updated’).innerHTML =
-`v1.12 \u00b7 ${now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })} <span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${syncColor};margin-left:5px;vertical-align:middle;position:relative;top:-1px;"></span>`;
+`v1.13 \u00b7 ${now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })} <span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${syncColor};margin-left:5px;vertical-align:middle;position:relative;top:-1px;"></span>`;
 
 renderConstraintChips();
 renderTimedSession(recs);
@@ -4330,6 +4331,11 @@ renderWeightChart();
 renderHealthVitals();
 renderMeasurementsCard();
 renderCardioPlan(workouts);
+} catch(e) {
+console.error(‘renderDashboard error:’, e);
+showScreen(‘dashboard’);
+document.getElementById(‘loading-text’).textContent = ’Render error: ’ + e.message;
+}
 }
 
 async function refreshData() {
@@ -4503,7 +4509,7 @@ console.groupEnd();
 runDevTests();
 
 // Dev: CSS reset verification (non-fatal)
-(function checkCSSReset() {
+try { (function checkCSSReset() {
 const div = document.createElement(‘div’);
 document.body.appendChild(div);
 const cs = getComputedStyle(div);
@@ -4513,10 +4519,10 @@ document.body.removeChild(div);
 if (!boxOK) console.warn(’[DEV] CSS reset: box-sizing is’, cs.boxSizing, ‘(expected border-box)’);
 if (!marginOK) console.warn(’[DEV] CSS reset: body margin is’, getComputedStyle(document.body).margin, ‘(expected 0px)’);
 if (boxOK && marginOK) console.log(’[DEV] CSS reset: OK’);
-})();
+})(); } catch(e) { console.warn(’[DEV] checkCSSReset error:’, e.message); }
 
 // Dev: Mojibake DOM scanner (non-fatal)
-(function scanMojibake() {
+try { (function scanMojibake() {
 const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
 const bad = [];
 while (walker.nextNode()) {
@@ -4530,19 +4536,22 @@ console.warn(’[DEV] Mojibake in ’ + bad.length + ’ DOM nodes:’, bad);
 } else {
 console.log(’[DEV] Mojibake scan: clean’);
 }
-})();
+})(); } catch(e) { console.warn(’[DEV] scanMojibake error:’, e.message); }
 
 // Boot-time CSS sanity check — catches encoding issues like en-dash var() references
-(function checkCSS() {
+try { (function checkCSS() {
 const root = getComputedStyle(document.documentElement);
 const test = root.getPropertyValue(’–accent’).trim();
 if (!test) {
 console.error(‘⚠️ CSS custom properties not loading. Check <style> block for encoding issues (e.g. en-dash vs double-hyphen in var() references).’);
 }
-})();
+})(); } catch(e) { console.warn(’[DEV] checkCSS error:’, e.message); }
 
 // Boot
-loadDashboard();
+loadDashboard().catch(e => {
+console.error(‘loadDashboard fatal:’, e);
+document.getElementById(‘loading-text’).textContent = ’Error: ’ + e.message;
+});
 </script>
 
 </body>
