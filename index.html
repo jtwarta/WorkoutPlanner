@@ -254,7 +254,7 @@ gap: 10px;
 }
 .muscle-cell {
 border-radius: 10px;
-padding: 12px;
+padding: 10px 12px;
 transition: all 0.3s ease;
 border: 1px solid var(--border);
 cursor: pointer;
@@ -265,9 +265,10 @@ cursor: pointer;
 display: flex;
 align-items: center;
 justify-content: space-between;
+margin-bottom: 8px;
 }
 .muscle-name {
-font-size: 17px;
+font-size: 15px;
 font-weight: 600;
 }
 .muscle-urgency {
@@ -2862,31 +2863,80 @@ function renderMuscleGrid(muscleStats, recs) {
     return scoreB - scoreA;
   });
 
-  grid.innerHTML = entries.map(([key, stat]) => {
-    let daysText;
-    if (stat.daysSincePrimary === Infinity && stat.daysSinceAny === Infinity) {
-      daysText = 'no data';
-    } else if (stat.daysSincePrimary === Infinity) {
-      daysText = `indirect ${stat.daysSinceAny}d`;
+  // SVG arc helper for recency ring
+  function recencyRingSvg(daysSince, idealDays) {
+    const size = 28;
+    const r = 10;
+    const cx = size / 2;
+    const cy = size / 2;
+    const stroke = 3;
+    const circumference = 2 * Math.PI * r;
+
+    // How much time remains: 1.0 = just trained, 0.0 = at/past ideal
+    let remaining;
+    if (daysSince === Infinity) {
+      remaining = 0;
     } else {
-      daysText = `${stat.daysSincePrimary}d ago`;
+      remaining = Math.max(0, 1 - (daysSince / idealDays));
     }
-    const weeklyVol = (stat.totalSets30d / 4.3).toFixed(1);
+    const arcLen = remaining * circumference;
+    const gapLen = circumference - arcLen;
+
+    // Color based on remaining
+    let arcColor;
+    if (remaining >= 0.6) arcColor = C.accent;
+    else if (remaining >= 0.2) arcColor = C.warn;
+    else arcColor = C.danger;
+
+    // Day label
+    const label = daysSince === Infinity ? '?' : daysSince;
+    const fontSize = String(label).length > 1 ? 9 : 10;
+
+    return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" style="flex-shrink:0;">
+      <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${C.surface3}" stroke-width="${stroke}"/>
+      <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${arcColor}" stroke-width="${stroke}"
+        stroke-dasharray="${arcLen} ${gapLen}" stroke-linecap="round"
+        transform="rotate(-90 ${cx} ${cy})" style="transition:stroke-dasharray 0.4s ease;"/>
+      <text x="${cx}" y="${cy}" text-anchor="middle" dominant-baseline="central"
+        fill="${arcColor}" font-family="Space Grotesk,sans-serif" font-size="${fontSize}" font-weight="600">${label}</text>
+    </svg>`;
+  }
+
+  grid.innerHTML = entries.map(([key, stat]) => {
+    const weeklyVol = parseFloat((stat.totalSets30d / 4.3).toFixed(1));
     const rec = recMap[key];
     const urgency = rec ? rec.urgency : 'low';
+
+    // Volume bar color
+    const volRatio = stat.idealSetsPerWeek > 0 ? weeklyVol / stat.idealSetsPerWeek : 1;
+    let volColor;
+    if (volRatio >= 0.8) volColor = C.accent;
+    else if (volRatio >= 0.5) volColor = C.warn;
+    else volColor = C.danger;
+    const volPct = Math.min(100, Math.round(volRatio * 100));
+
+    // Recency ring
+    const daysSrc = stat.daysSincePrimary;
+    const ring = recencyRingSvg(daysSrc, stat.idealFreqDays);
+
+    // Volume label
+    const volLabel = `${weeklyVol % 1 === 0 ? weeklyVol.toFixed(0) : weeklyVol.toFixed(1)}/${stat.idealSetsPerWeek}`;
+
+    // Left border uses urgency color
     const urgencyColors = { high: C.danger, med: C.warn, low: C.accent };
     const uColor = urgencyColors[urgency] || C.accent;
-    const volPct = Math.min(100, Math.round((parseFloat(weeklyVol) / stat.idealSetsPerWeek) * 100));
 
     return `
       <div class="muscle-cell" style="background:${C.surface2};border-color:${C.border};border-left:3px solid ${uColor}" onclick="toggleMuscleDetail('${key}')">
         <div class="muscle-cell-header">
           <div class="muscle-name" style="color:${C.text}">${stat.name}</div>
-          <div style="width:8px;height:8px;border-radius:50%;background:${uColor};flex-shrink:0;"></div>
+          ${ring}
         </div>
-        <div class="muscle-stat" style="color:${C.textMid};font-family:'Space Grotesk',sans-serif;font-size:12px;margin-top:5px;">${daysText} \u00b7 ${weeklyVol}/${stat.idealSetsPerWeek}/wk</div>
-        <div style="height:2px;border-radius:1px;background:${C.surface3};margin-top:6px;overflow:hidden;">
-          <div style="height:100%;width:${volPct}%;border-radius:1px;background:${uColor};opacity:0.7;transition:width 0.4s ease;"></div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <div style="flex:1;height:4px;border-radius:2px;background:${C.surface3};overflow:hidden;">
+            <div style="height:100%;width:${volPct}%;border-radius:2px;background:${volColor};opacity:0.8;transition:width 0.4s ease;"></div>
+          </div>
+          <div style="font-family:'Space Grotesk',sans-serif;font-size:11px;font-weight:600;color:${volColor};white-space:nowrap;">${volLabel}</div>
         </div>
       </div>`;
   }).join('');
@@ -2895,10 +2945,12 @@ function renderMuscleGrid(muscleStats, recs) {
   const prevLegend = document.getElementById('muscle-grid-legend');
   if (prevLegend) prevLegend.remove();
   grid.insertAdjacentHTML('afterend',
-    `<div id="muscle-grid-legend" style="display:flex;gap:14px;justify-content:center;margin-top:10px;font-size:11px;font-family:'Space Grotesk',sans-serif;color:${C.textDim};max-height:0;overflow:hidden;opacity:0;transition:max-height 0.3s ease,opacity 0.25s ease;">
-      <span><span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${C.danger};margin-right:3px;vertical-align:middle;"></span>Needs work</span>
-      <span><span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${C.warn};margin-right:3px;vertical-align:middle;"></span>Due soon</span>
-      <span><span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${C.accent};margin-right:3px;vertical-align:middle;"></span>On track</span>
+    `<div id="muscle-grid-legend" style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:10px;font-size:10px;font-family:'Space Grotesk',sans-serif;color:${C.textDim};max-height:0;overflow:hidden;opacity:0;transition:max-height 0.3s ease,opacity 0.25s ease;">
+      <span style="display:flex;align-items:center;gap:3px;"><span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:${C.danger};"></span>Overdue</span>
+      <span style="display:flex;align-items:center;gap:3px;"><span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:${C.warn};"></span>Due soon</span>
+      <span style="display:flex;align-items:center;gap:3px;"><span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:${C.accent};"></span>On track</span>
+      <span style="display:flex;align-items:center;gap:3px;"><svg width="16" height="16" viewBox="0 0 16 16"><circle cx="8" cy="8" r="5" fill="none" stroke="${C.textDim}" stroke-width="1.5"/></svg>Ring = days since</span>
+      <span style="display:flex;align-items:center;gap:3px;"><span style="display:inline-block;width:12px;height:3px;border-radius:1px;background:${C.textDim};"></span>Bar = sets/wk</span>
     </div>`);
 
   // Store recs for detail panel
