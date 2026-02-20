@@ -644,16 +644,20 @@ color: var(--text-dim);
 
   <div id="dashboard" class="hidden">
     <div class="header">
-      <div style="display:flex;align-items:baseline;gap:10px;">
+      <div style="display:flex;align-items:center;gap:10px;">
         <h1>LiftScript</h1>
         <div class="subtitle" id="last-updated">v1.13</div>
-        <button id="header-refresh-btn" onclick="refreshData()" title="Refresh data" style="background:none;border:none;cursor:pointer;padding:2px 4px;margin-left:auto;position:relative;top:1px;line-height:1;-webkit-tap-highlight-color:transparent;">
+        <div id="power-score-wrap" style="margin-left:auto;display:flex;align-items:center;gap:6px;cursor:pointer;-webkit-tap-highlight-color:transparent;" onclick="togglePowerScoreDetail()">
+          <div id="power-score-ring"></div>
+        </div>
+        <button id="header-refresh-btn" onclick="refreshData()" title="Refresh data" style="background:none;border:none;cursor:pointer;padding:2px 4px;position:relative;top:1px;line-height:1;-webkit-tap-highlight-color:transparent;">
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style="display:block;">
             <path d="M13.65 2.35A7.96 7.96 0 008 0C3.58 0 .01 3.58.01 8S3.58 16 8 16c3.73 0 6.84-2.55 7.73-6h-2.08A5.99 5.99 0 018 14 6 6 0 012 8a6 6 0 016-6c1.66 0 3.14.69 4.22 1.78L9 7h7V0l-2.35 2.35z" fill="#8e8e98"/>
           </svg>
         </button>
       </div>
     </div>
+    <div id="power-score-detail" style="display:none;margin-top:10px;padding:12px 14px;border-radius:10px;background:var(--surface2);border:1px solid var(--border);"></div>
 
 <div class="tabs">
   <button class="tab active" data-tab="today" onclick="switchTab('today')">Today</button>
@@ -4450,6 +4454,158 @@ function showError(msg) {
 }
 
 // Render dashboard from workouts data (shared by cache + fresh load)
+// ============================================================
+// POWER SCORE (Composite fitness metric, 0-100)
+// ============================================================
+function computePowerScore() {
+  const components = [];
+
+  // 1. Strength (35%) - map SI to 0-100
+  if (strengthIndexData.length > 0) {
+    const si = strengthIndexData[strengthIndexData.length - 1].index;
+    // Piecewise: 0->0, 3.0->50, 4.5->70, 6.0->90, 8.0->100
+    let sScore;
+    if (si >= 6.0) sScore = 90 + ((si - 6.0) / 2.0) * 10;
+    else if (si >= 4.5) sScore = 70 + ((si - 4.5) / 1.5) * 20;
+    else if (si >= 3.0) sScore = 50 + ((si - 3.0) / 1.5) * 20;
+    else sScore = (si / 3.0) * 50;
+    components.push({ key: 'strength', label: 'Strength', value: Math.min(100, Math.round(sScore)), weight: 35, detail: 'SI ' + si.toFixed(2) });
+  }
+
+  // 2. Cardio (25%) - VO2max percentile
+  if (healthData && healthData.cardio_fitness && healthData.cardio_fitness > 0) {
+    const vo2Pctile = estimateVO2Percentile(healthData.cardio_fitness, PROFILE.age);
+    components.push({ key: 'cardio', label: 'Cardio', value: Math.round(vo2Pctile), weight: 25, detail: 'VO2 ' + healthData.cardio_fitness.toFixed(1) });
+  }
+
+  // 3. Body Comp (20%) - body fat % (male scale)
+  if (healthData && healthData.body_fat_pct && healthData.body_fat_pct > 0) {
+    const bf = healthData.body_fat_pct;
+    // 10%->100, 15%->80, 20%->60, 25%->40, 30%->20, 35%->0
+    const bScore = Math.max(0, Math.min(100, Math.round(100 - ((bf - 10) / 25) * 100)));
+    const bfLabel = bf.toFixed(1) + '% BF';
+    components.push({ key: 'body', label: 'Body Comp', value: bScore, weight: 20, detail: bfLabel });
+  }
+
+  // 4. Consistency (20%) - sessions last 7d + muscle coverage
+  if (muscleAnalysis) {
+    const totalMuscles = Object.keys(MUSCLE_GROUPS).length;
+    let sessionsThisWeek = 0;
+    let musclesHit = 0;
+    const now = new Date();
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(now);
+      d.setDate(d.getDate() - i);
+      const key = localDateStr(d);
+      // Count from muscleAnalysis day data isn't directly available, use heatmap data
+    }
+    // Use muscle stats: count muscles trained in last 7 days
+    for (const [, stat] of Object.entries(muscleAnalysis)) {
+      if (stat.daysSincePrimary <= 7) musclesHit++;
+      if (stat.daysSincePrimary <= 1) sessionsThisWeek++;
+    }
+    // Normalize: 4 sessions = target = 100, coverage bonus
+    const sessionScore = Math.min(100, (sessionsThisWeek / 4) * 60);
+    const coverageScore = (musclesHit / totalMuscles) * 40;
+    const cScore = Math.min(100, Math.round(sessionScore + coverageScore));
+    components.push({ key: 'consistency', label: 'Consistency', value: cScore, weight: 20, detail: musclesHit + '/' + totalMuscles + ' muscles' });
+  }
+
+  if (components.length === 0) return { score: 0, components: [] };
+
+  // Redistribute weights proportionally for available components
+  const totalWeight = components.reduce((sum, c) => sum + c.weight, 0);
+  let score = 0;
+  for (const c of components) {
+    const normalizedWeight = c.weight / totalWeight;
+    score += c.value * normalizedWeight;
+    c.normalizedWeight = normalizedWeight;
+  }
+
+  return { score: Math.round(score), components };
+}
+
+function renderPowerScore() {
+  const ring = document.getElementById('power-score-ring');
+  if (!ring) return;
+
+  const ps = computePowerScore();
+  if (ps.score === 0 && ps.components.length === 0) {
+    ring.parentElement.style.display = 'none';
+    return;
+  }
+  ring.parentElement.style.display = 'flex';
+
+  // Store for detail panel
+  window._powerScoreData = ps;
+
+  const size = 38;
+  const r = 14;
+  const cx = size / 2;
+  const cy = size / 2;
+  const stroke = 3.5;
+  const circumference = 2 * Math.PI * r;
+  const fillLen = (ps.score / 100) * circumference;
+  const gapLen = circumference - fillLen;
+
+  // Color based on score
+  const scoreColor = ps.score >= 70 ? C.accent : ps.score >= 45 ? C.warn : C.danger;
+
+  ring.innerHTML = `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
+    <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${C.surface3}" stroke-width="${stroke}"/>
+    <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${scoreColor}" stroke-width="${stroke}"
+      stroke-dasharray="${fillLen.toFixed(1)} ${gapLen.toFixed(1)}" stroke-linecap="round"
+      transform="rotate(-90 ${cx} ${cy})" style="transition:stroke-dasharray 0.6s ease;"/>
+    <text x="${cx}" y="${cy}" text-anchor="middle" dominant-baseline="central"
+      fill="${scoreColor}" font-family="Space Grotesk,sans-serif" font-size="12" font-weight="700">${ps.score}</text>
+  </svg>`;
+}
+
+function togglePowerScoreDetail() {
+  const panel = document.getElementById('power-score-detail');
+  if (!panel) return;
+  const ps = window._powerScoreData;
+  if (!ps || ps.components.length === 0) return;
+
+  if (panel.style.display !== 'none') {
+    panel.style.display = 'none';
+    return;
+  }
+
+  const scoreColor = ps.score >= 70 ? C.accent : ps.score >= 45 ? C.warn : C.danger;
+  let html = `<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+    <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:${C.textDim};font-family:'Space Grotesk',sans-serif;">Power Score</div>
+    <div style="font-family:'Space Grotesk',sans-serif;font-size:20px;font-weight:700;color:${scoreColor};">${ps.score}<span style="font-size:12px;font-weight:500;color:${C.textDim};">/100</span></div>
+  </div>`;
+
+  for (const c of ps.components) {
+    const barColor = c.value >= 70 ? C.accent : c.value >= 45 ? C.warn : C.danger;
+    const weightPct = Math.round((c.normalizedWeight || 0) * 100);
+    html += `<div style="margin-bottom:8px;">
+      <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:3px;font-family:'Space Grotesk',sans-serif;">
+        <span style="font-size:12px;font-weight:600;color:${C.text};">${c.label} <span style="font-size:10px;font-weight:400;color:${C.textDim};">${weightPct}%</span></span>
+        <span style="font-size:11px;color:${C.textDim};">${c.detail} <span style="font-weight:600;color:${barColor};">${c.value}</span></span>
+      </div>
+      <div style="height:4px;border-radius:2px;background:${C.surface3};overflow:hidden;">
+        <div style="height:100%;width:${c.value}%;border-radius:2px;background:${barColor};transition:width 0.4s ease;"></div>
+      </div>
+    </div>`;
+  }
+
+  panel.innerHTML = html;
+  panel.style.display = 'block';
+}
+
+// Dismiss power score detail on outside click
+document.addEventListener('click', function(e) {
+  const panel = document.getElementById('power-score-detail');
+  if (panel && panel.style.display !== 'none') {
+    if (!e.target.closest('#power-score-detail') && !e.target.closest('#power-score-wrap')) {
+      panel.style.display = 'none';
+    }
+  }
+});
+
 function renderDashboard(workouts) {
   WEIGHT_DATA = getMergedWeightData();
   if (WEIGHT_DATA.length > 0) PROFILE.bodyweightLbs = WEIGHT_DATA[0].value;
@@ -4488,6 +4644,7 @@ function renderDashboard(workouts) {
   renderWeightChart();
   renderHealthVitals();
   renderMeasurementsCard();
+  renderPowerScore();
 }
 
 async function refreshData() {
