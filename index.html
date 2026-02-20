@@ -2,6 +2,11 @@
 
 <!--
   LiftScript v1.13
+  Changes from v1.12:
+  11. Frame-adjusted muscle size targets (Casey Butt formulas, wrist-based)
+  12. Proportion analysis replaced with progress bars toward genetic potential
+  13. Error handler and fetch timeouts for reliability
+  14. Full ASCII encoding (immune to iOS Smart Punctuation corruption)
   Changes from v1.11:
   1.  Hevy CSV measurement import: tap "Import Hevy" on Body Measurements card
   2.  Added shoulder, hip, and thigh to MEASUREMENT_FIELDS
@@ -635,7 +640,7 @@ color: var(--text-dim);
     <div class="header">
       <div style="display:flex;align-items:baseline;gap:10px;">
         <h1>LiftScript</h1>
-        <div class="subtitle" id="last-updated">v1.12</div>
+        <div class="subtitle" id="last-updated">v1.13</div>
         <button id="header-refresh-btn" onclick="refreshData()" title="Refresh data" style="background:none;border:none;cursor:pointer;padding:2px 4px;margin-left:auto;position:relative;top:1px;line-height:1;-webkit-tap-highlight-color:transparent;">
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style="display:block;">
             <path d="M13.65 2.35A7.96 7.96 0 008 0C3.58 0 .01 3.58.01 8S3.58 16 8 16c3.73 0 6.84-2.55 7.73-6h-2.08A5.99 5.99 0 018 14 6 6 0 012 8a6 6 0 016-6c1.66 0 3.14.69 4.22 1.78L9 7h7V0l-2.35 2.35z" fill="#8e8e98"/>
@@ -1309,20 +1314,6 @@ const Storage = {
 // ============================================================
 function getStoredWeightEntries() {
   return Storage.get('weightHistory', []);
-}
-
-function saveWeightEntry(date, value) {
-  const entries = getStoredWeightEntries();
-  const idx = entries.findIndex(e => e.date === date);
-  if (idx !== -1) {
-    entries[idx].value = value;          // overwrite existing date
-  } else {
-    entries.push({ date, value });
-  }
-  entries.sort((a, b) => a.date.localeCompare(b.date));
-  // Cap at 400 entries -- drop oldest
-  if (entries.length > 400) entries.splice(0, entries.length - 400);
-  Storage.set('weightHistory', entries);
 }
 
 function getMergedWeightData() {
@@ -2796,11 +2787,6 @@ function toggleSessionExplainer(id) {
 // ============================================================
 // MUSCLE GRID (v1.1 Task 3: simplified - no percentile text, no bar)
 // ============================================================
-function getMuscleCardColor(muscleKey, daysSinceTrained, idealFreqDays) {
-  // v1.12: Simplified - returns only urgency info, tiles use uniform background
-  return { bg: C.surface2, border: C.border };
-}
-
 function renderMuscleGrid(muscleStats, recs) {
   const grid = document.getElementById('muscle-grid');
 
@@ -3554,8 +3540,7 @@ function importHevyCSV(fileInput) {
       // Column mapping: Hevy column name -> { lsKey, isLeft }
       // For L/R pairs, we average them
       const colMap = {};
-      const pairBuf = {}; // accumulate L/R values per entry
-
+      
       // Build mapping from headers
       for (let i = 0; i < headers.length; i++) {
         const h = headers[i];
@@ -4011,18 +3996,6 @@ async function fetchHealthData() {
   }
 }
 
-function getHealthStatusTitle() {
-  if (healthStatus === 'ok') {
-    const ago = healthData && healthData.updated
-      ? Math.round((Date.now() - new Date(healthData.updated).getTime()) / (1000 * 60 * 60)) + 'h ago'
-      : '';
-    return `Apple Health: synced ${ago}`;
-  }
-  if (healthStatus === 'stale') return 'Apple Health: data is stale (>48h)';
-  if (healthStatus === 'missing') return 'Apple Health: no data found';
-  return 'Apple Health: loading...';
-}
-
 // ============================================================
 // VO2 MAX / CARDIO FITNESS PERCENTILES
 // ACSM norms for males, interpolated for age
@@ -4298,7 +4271,7 @@ function renderDashboard(workouts) {
   const syncColor = (hevyStatus === 'ok' && healthStatus === 'ok') ? C.accent
     : (hevyStatus === 'error' || healthStatus === 'missing') ? C.textDim : C.warn;
   document.getElementById('last-updated').innerHTML =
-    `v1.12 \u00b7 ${now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })} <span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${syncColor};margin-left:5px;vertical-align:middle;position:relative;top:-1px;"></span>`;
+    `v1.13 \u00b7${now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })} <span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${syncColor};margin-left:5px;vertical-align:middle;position:relative;top:-1px;"></span>`;
 
   renderConstraintChips();
   renderTimedSession(recs);
