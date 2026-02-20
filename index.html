@@ -771,19 +771,19 @@ color: var(–text-dim);
 </div>
 
 <script>
-// Global error handler - shows errors on loading screen
+// Separate script block: catches parse errors in main script
 window.onerror = function(msg, src, line, col, err) {
-  const el = document.getElementById('loading-text');
-  if (el) el.textContent = 'Error: ' + msg + ' (line ' + line + ')';
-  console.error('Global error:', msg, 'at line', line, err);
+  var el = document.getElementById('loading-text');
+  if (el) el.textContent = 'JS Error: ' + msg + ' (line ' + line + ')';
   return false;
 };
 window.addEventListener('unhandledrejection', function(e) {
-  const el = document.getElementById('loading-text');
-  if (el) el.textContent = 'Error: ' + (e.reason ? e.reason.message || e.reason : 'unknown');
-  console.error('Unhandled rejection:', e.reason);
+  var el = document.getElementById('loading-text');
+  if (el) el.textContent = 'Promise Error: ' + (e.reason ? e.reason.message || e.reason : 'unknown');
 });
+</script>
 
+<script>
 // ============================================================
 // LIFTSCRIPT v1.13
 // ============================================================
