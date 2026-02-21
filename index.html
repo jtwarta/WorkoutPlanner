@@ -148,10 +148,6 @@ background: var(--surface3);
 color: var(--text);
 }
 
-.urgency-high { background: var(--danger-dim); color: var(--danger); }
-.urgency-med { background: var(--warn-dim); color: var(--warn); }
-.urgency-low { background: var(--accent-dim); color: var(--accent); }
-
 /* Expandable explainer */
 .rec-expand {
 max-height: 0;
@@ -183,17 +179,6 @@ justify-content: space-between;
 margin-bottom: 14px;
 padding-bottom: 10px;
 border-bottom: 1px solid var(--border);
-}
-.session-time {
-font-family: 'Space Grotesk', sans-serif;
-font-size: 15px;
-font-weight: 600;
-color: var(--accent);
-}
-.session-count {
-font-family: 'Space Grotesk', sans-serif;
-font-size: 13px;
-color: var(--text-dim);
 }
 
 .ex-group {
@@ -270,21 +255,6 @@ margin-bottom: 8px;
 .muscle-name {
 font-size: 15px;
 font-weight: 600;
-}
-.muscle-urgency {
-font-size: 9px;
-font-weight: 600;
-padding: 2px 6px;
-border-radius: 4px;
-font-family: 'Space Grotesk', sans-serif;
-text-transform: uppercase;
-letter-spacing: 0.5px;
-}
-.muscle-stat {
-font-size: 12px;
-color: var(--text-mid);
-font-family: 'Space Grotesk', sans-serif;
-margin-top: 5px;
 }
 .muscle-detail {
 max-height: 0;
@@ -874,6 +844,7 @@ const C = {
   cyan:      '#50b8c8',
   teal:      '#5ec4b0',
   cardio:    '#e8a060',
+  gold:      '#facc15',
 };
 
 // ============================================================
@@ -1148,17 +1119,17 @@ function classifyExercise(name) {
 // ============================================================
 const MUSCLE_GROUPS = {
   chest:      { name: 'Chest',      idealFreqDays: 5, color: '#e88080', idealSetsPerWeek: 10 },
-  back:       { name: 'Back',       idealFreqDays: 5, color: '#7eb8e8', idealSetsPerWeek: 12 },
-  shoulders:  { name: 'Shoulders',  idealFreqDays: 5, color: '#b8a0e8', idealSetsPerWeek: 10 },
-  biceps:     { name: 'Biceps',     idealFreqDays: 6, color: '#5ec4b0', idealSetsPerWeek: 6 },
+  back:       { name: 'Back',       idealFreqDays: 5, color: C.blue, idealSetsPerWeek: 12 },
+  shoulders:  { name: 'Shoulders',  idealFreqDays: 5, color: C.purple, idealSetsPerWeek: 10 },
+  biceps:     { name: 'Biceps',     idealFreqDays: 6, color: C.teal, idealSetsPerWeek: 6 },
   triceps:    { name: 'Triceps',    idealFreqDays: 6, color: '#e8c870', idealSetsPerWeek: 6 },
-  quads:      { name: 'Quads',      idealFreqDays: 5, color: '#e8a060', idealSetsPerWeek: 10 },
-  hamstrings: { name: 'Hamstrings', idealFreqDays: 6, color: '#e090b8', idealSetsPerWeek: 8 },
-  glutes:     { name: 'Glutes',     idealFreqDays: 6, color: '#a898e0', idealSetsPerWeek: 8 },
+  quads:      { name: 'Quads',      idealFreqDays: 5, color: C.cardio, idealSetsPerWeek: 10 },
+  hamstrings: { name: 'Hamstrings', idealFreqDays: 6, color: C.pink, idealSetsPerWeek: 8 },
+  glutes:     { name: 'Glutes',     idealFreqDays: 6, color: C.purpleLt, idealSetsPerWeek: 8 },
   calves:     { name: 'Calves',     idealFreqDays: 6, color: '#50c8b8', idealSetsPerWeek: 6 },
-  core:       { name: 'Core',       idealFreqDays: 4, color: '#d090e8', idealSetsPerWeek: 6 },
+  core:       { name: 'Core',       idealFreqDays: 4, color: C.fuchsia, idealSetsPerWeek: 6 },
   neck:       { name: 'Neck',       idealFreqDays: 5, color: '#d8b060', idealSetsPerWeek: 4 },
-  forearms:   { name: 'Forearms',   idealFreqDays: 5, color: '#50b8c8', idealSetsPerWeek: 4 },
+  forearms:   { name: 'Forearms',   idealFreqDays: 5, color: C.cyan, idealSetsPerWeek: 4 },
 };
 
 // ============================================================
@@ -3819,10 +3790,10 @@ let activeStrengthTooltip = null;
 
 // SI tier tooltip for tappable XP bar segments
 const _siTierInfo = [
-  { label: 'Developing', range: '0 \u2013 2.99', color: '#f87171', desc: 'Building foundation \u00b7 Focus on form and consistency' },
-  { label: 'Intermediate', range: '3.0 \u2013 4.49', color: '#facc15', desc: 'Solid base \u00b7 Progressing beyond beginner gains' },
-  { label: 'Advanced', range: '4.5 \u2013 5.99', color: '#5eead4', desc: 'Strong lifter \u00b7 Approaching natural potential' },
-  { label: 'Elite', range: '6.0+', color: '#8f9ae8', desc: 'Exceptional strength \u00b7 Top-tier natural lifter' },
+  { label: 'Developing', range: '0 \u2013 2.99', color: C.danger, desc: 'Building foundation \u00b7 Focus on form and consistency' },
+  { label: 'Intermediate', range: '3.0 \u2013 4.49', color: C.gold, desc: 'Solid base \u00b7 Progressing beyond beginner gains' },
+  { label: 'Advanced', range: '4.5 \u2013 5.99', color: C.accent, desc: 'Strong lifter \u00b7 Approaching natural potential' },
+  { label: 'Elite', range: '6.0+', color: C.strength, desc: 'Exceptional strength \u00b7 Top-tier natural lifter' },
 ];
 let _activeSITier = -1;
 
@@ -4139,7 +4110,7 @@ function importHevyCSV(fileInput) {
   const showStatus = (msg, isError) => {
     statusEl.style.display = 'block';
     statusEl.style.background = isError ? 'rgba(248,113,113,0.12)' : 'rgba(94,234,212,0.12)';
-    statusEl.style.color = isError ? '#f87171' : '#5eead4';
+    statusEl.style.color = isError ? C.danger : C.accent;
     statusEl.style.border = `1px solid ${isError ? 'rgba(248,113,113,0.2)' : 'rgba(94,234,212,0.2)'}`;
     statusEl.textContent = msg;
     setTimeout(() => { statusEl.style.display = 'none'; }, 5000);
@@ -4267,8 +4238,8 @@ function exportEmbeddableData() {
 function showExportStatus(msg) {
   const el = document.getElementById('hevy-import-status');
   el.style.display = 'block';
-  el.style.background = 'rgba(126,184,232,0.12)';
-  el.style.color = '#7eb8e8';
+  el.style.background = C.blueDim;
+  el.style.color = C.blue;
   el.style.border = '1px solid rgba(96,165,250,0.2)';
   el.textContent = msg;
   setTimeout(() => { el.style.display = 'none'; }, 6000);
@@ -4278,10 +4249,10 @@ function showExportFallback(json) {
   // Fallback for iOS Safari where clipboard API may not work
   const el = document.getElementById('hevy-import-status');
   el.style.display = 'block';
-  el.style.background = 'rgba(126,184,232,0.12)';
-  el.style.color = '#7eb8e8';
+  el.style.background = C.blueDim;
+  el.style.color = C.blue;
   el.style.border = '1px solid rgba(96,165,250,0.2)';
-  el.innerHTML = '<div style="margin-bottom:6px;">Select all & copy:</div><textarea style="width:100%;height:120px;background:#1c2b35;color:#e6eef5;border:1px solid rgba(180,197,219,0.10);border-radius:4px;font-size:11px;font-family:monospace;padding:6px;" readonly onclick="this.select()">' +
+  el.innerHTML = '<div style="margin-bottom:6px;">Select all & copy:</div><textarea style="width:100%;height:120px;background:' + C.bg + ';color:' + C.text + ';border:1px solid ' + C.border + ';border-radius:4px;font-size:11px;font-family:monospace;padding:6px;" readonly onclick="this.select()">' +
     json.replace(/</g, '&lt;') + '</textarea>';
 }
 
