@@ -1906,26 +1906,54 @@ function preprocessWorkouts(workouts, bodyweightLbs, weightData) {
   ]);
   const allDatesArr = [...allActivityDates].sort();
 
-  // Build vitals lookup maps (historical arrays if present, else static)
-  const rhrHist = (healthData && Array.isArray(healthData.rhr_history))
-    ? healthData.rhr_history.sort((a, b) => a.date.localeCompare(b.date)) : null;
-  const vo2Hist = (healthData && Array.isArray(healthData.vo2_history))
-    ? healthData.vo2_history.sort((a, b) => a.date.localeCompare(b.date)) : null;
-  const recHist = (healthData && Array.isArray(healthData.recovery_history))
-    ? healthData.recovery_history.sort((a, b) => a.date.localeCompare(b.date)) : null;
-
-  function lookupVital(histArr, dateStr, fallback) {
-    if (!histArr || histArr.length === 0) return fallback;
-    let best = histArr[0].value;
-    for (const h of histArr) {
-      if (h.date <= dateStr) best = h.value;
-      else break;
-    }
-    return best;
+  // Build vitals interpolation from quarterly snapshots (12m, 6m, 3m, current)
+  // Each returns a sorted array of {date, value} for linear interpolation
+  function buildVitalTimeline(v12m, v6m, v3m, vNow) {
+    const now = new Date();
+    const points = [];
+    const addPoint = (monthsAgo, val) => {
+      if (val && val > 0) {
+        const d = new Date(now);
+        d.setMonth(d.getMonth() - monthsAgo);
+        points.push({ date: d.toISOString().substring(0, 10), value: val });
+      }
+    };
+    addPoint(12, v12m);
+    addPoint(6, v6m);
+    addPoint(3, v3m);
+    addPoint(0, vNow);
+    return points.sort((a, b) => a.date.localeCompare(b.date));
   }
-  const staticRHR = (healthData && healthData.resting_heart_rate > 0) ? healthData.resting_heart_rate : null;
-  const staticVO2 = (healthData && healthData.cardio_fitness > 0) ? healthData.cardio_fitness : null;
-  const staticRec = (healthData && healthData.cardio_recovery > 0) ? healthData.cardio_recovery : null;
+
+  function interpolateVital(timeline, dateStr) {
+    if (!timeline || timeline.length === 0) return null;
+    if (timeline.length === 1) return timeline[0].value;
+    if (dateStr <= timeline[0].date) return timeline[0].value;
+    if (dateStr >= timeline[timeline.length - 1].date) return timeline[timeline.length - 1].value;
+    for (let i = 0; i < timeline.length - 1; i++) {
+      if (dateStr >= timeline[i].date && dateStr <= timeline[i + 1].date) {
+        const t0 = new Date(timeline[i].date).getTime();
+        const t1 = new Date(timeline[i + 1].date).getTime();
+        const t = new Date(dateStr).getTime();
+        const frac = t1 > t0 ? (t - t0) / (t1 - t0) : 0;
+        return timeline[i].value + frac * (timeline[i + 1].value - timeline[i].value);
+      }
+    }
+    return timeline[timeline.length - 1].value;
+  }
+
+  const rhrTimeline = healthData ? buildVitalTimeline(
+    healthData.rhr_12m, healthData.rhr_6m, healthData.rhr_3m,
+    healthData.resting_heart_rate
+  ) : [];
+  const vo2Timeline = healthData ? buildVitalTimeline(
+    healthData.vo2_12m, healthData.vo2_6m, healthData.vo2_3m,
+    healthData.cardio_fitness
+  ) : [];
+  const recTimeline = healthData ? buildVitalTimeline(
+    healthData.rec_12m, healthData.rec_6m, healthData.rec_3m,
+    healthData.cardio_recovery
+  ) : [];
 
   for (const dateStr of allDatesArr) {
     const d = new Date(dateStr + 'T12:00:00');
@@ -1940,7 +1968,7 @@ function preprocessWorkouts(workouts, bodyweightLbs, weightData) {
     const activitySignal = Math.min(weekMin / 150, 2.0);
 
     // VO2 signal
-    const vo2Val = lookupVital(vo2Hist, dateStr, staticVO2);
+    const vo2Val = interpolateVital(vo2Timeline, dateStr);
     let vo2Signal = null;
     if (vo2Val && vo2Val > 0) {
       const pctile = estimateVO2Percentile(vo2Val, PROFILE.age);
@@ -1948,14 +1976,14 @@ function preprocessWorkouts(workouts, bodyweightLbs, weightData) {
     }
 
     // RHR signal (inverted: lower is better)
-    const rhrVal = lookupVital(rhrHist, dateStr, staticRHR);
+    const rhrVal = interpolateVital(rhrTimeline, dateStr);
     let rhrSignal = null;
     if (rhrVal && rhrVal > 0) {
       rhrSignal = Math.max(0.5, Math.min(1.5, 60 / rhrVal));
     }
 
     // Recovery signal
-    const recVal = lookupVital(recHist, dateStr, staticRec);
+    const recVal = interpolateVital(recTimeline, dateStr);
     let recSignal = null;
     if (recVal && recVal > 0) {
       recSignal = Math.min(recVal / 20, 2.0);
