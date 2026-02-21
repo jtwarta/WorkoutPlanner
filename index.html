@@ -2276,9 +2276,11 @@ function analyzeCardioHistory() {
     const cd = heatmapDayCardio[key];
     if (!cd || !cd.sessions) continue;
 
+    // Use cd.minutes for total (same as weekStats in History tab)
+    estimatedMinutes7d += cd.minutes;
+
     for (const sess of cd.sessions) {
       cardioSessions7d++;
-      estimatedMinutes7d += sess.minutes;
 
       if (sess.source === 'hevy') {
         hevySessions++;
@@ -5077,6 +5079,7 @@ function renderDashboard(workouts) {
     `v1.14 \u00b7${now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })} <span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${syncColor};margin-left:5px;vertical-align:middle;position:relative;top:-1px;"></span>`;
 
   renderTimedSession(recs);
+  heatmapDayCardio = pp.heatmapDayCardio || {};
   renderCardioPlan(workouts);
   renderMuscleGrid(pp.muscleStats, recs);
   renderWeeklySummary(pp.heatmapDayWorkouts, pp.heatmapDayMuscle, pp.heatmapDayCardio, workouts);
