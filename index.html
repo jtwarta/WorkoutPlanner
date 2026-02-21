@@ -27,47 +27,47 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="theme-color" content="#1c2b35">
+<meta name="theme-color" content="#f2efe6">
 <title>LiftScript</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Pangolin&family=Sriracha&display=swap" rel="stylesheet">
 <style>
 :root {
-  --bg: #1c2b35;
-  --surface: #263a47;
-  --surface2: #2e4553;
-  --surface3: #374857;
-  --border: rgba(180,197,219,0.10);
-  --border-light: rgba(180,197,219,0.16);
-  --text: #e6eef5;
-  --text-mid: #b4c5db;
-  --text-dim: #728495;
-  --accent: #5eead4;
-  --accent-dim: rgba(94, 234, 212, 0.12);
-  --warn: #fbbf24;
-  --warn-dim: rgba(251, 191, 36, 0.12);
-  --danger: #f87171;
-  --danger-dim: rgba(248, 113, 113, 0.10);
-  --blue: #7eb8e8;
-  --blue-dim: rgba(126, 184, 232, 0.12);
-  --purple: #b8a0e8;
-  --purple-dim: rgba(184, 160, 232, 0.12);
-  --strength: #8f9ae8;
-  --strength-dim: rgba(143, 154, 232, 0.12);
-  color-scheme: dark;
+  --bg: #f2efe6;
+  --surface: rgba(40,35,28,0.03);
+  --surface2: rgba(40,35,28,0.05);
+  --surface3: rgba(40,35,28,0.08);
+  --border: rgba(40,35,28,0.10);
+  --border-light: rgba(40,35,28,0.16);
+  --text: #28231c;
+  --text-mid: #4a4438;
+  --text-dim: #a09888;
+  --accent: #28231c;
+  --accent-dim: rgba(40,35,28,0.08);
+  --warn: #c4720a;
+  --warn-dim: rgba(196,114,10,0.12);
+  --danger: #a03020;
+  --danger-dim: rgba(160,48,32,0.10);
+  --blue: #4a6878;
+  --blue-dim: rgba(58,88,112,0.12);
+  --purple: #6a5a78;
+  --purple-dim: rgba(106,90,120,0.12);
+  --strength: #4a4870;
+  --strength-dim: rgba(74,72,112,0.12);
+  color-scheme: light;
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
 html, body {
-background: #1c2b35;
-background-color: #1c2b35;
-color-scheme: dark;
+background: #f2efe6;
+background-color: #f2efe6;
+color-scheme: light;
 overscroll-behavior-y: none;
 }
 
 body {
-font-family: 'Figtree', -apple-system, sans-serif;
+font-family: 'Pangolin', cursive;
 color: var(--text);
 min-height: 100vh;
 -webkit-font-smoothing: antialiased;
@@ -80,7 +80,7 @@ max-width: 480px;
 margin: 0 auto;
 padding: 20px 18px;
 padding-bottom: 120px;
-background: #1c2b35;
+background: #f2efe6;
 }
 
 /* Header */
@@ -98,54 +98,60 @@ color: var(--text);
 .header .subtitle {
 font-size: 13px;
 color: var(--text-dim);
-font-family: 'Space Grotesk', sans-serif;
+font-family: 'Pangolin', cursive;
 }
 
 /* Cards */
 .card {
-background: var(--surface);
-border: 1px solid var(--border);
-border-radius: 20px;
-padding: 20px;
+background: transparent;
+border: none;
+border-radius: 2px;
+padding: 20px 0;
 margin-bottom: 14px;
+border-bottom: 1px solid rgba(40,35,28,0.08);
 }
 .card-title {
 font-size: 14px;
-font-weight: 600;
+font-weight: 400;
 text-transform: uppercase;
-letter-spacing: 1.2px;
+letter-spacing: 1.5px;
 color: var(--text-dim);
 margin-bottom: 14px;
+font-family: 'Sriracha', cursive;
 }
 
 /* Tabs */
 .tabs {
 display: flex;
-gap: 4px;
+gap: 0;
 margin-bottom: 18px;
-background: var(--surface);
-border-radius: 16px;
-padding: 4px;
-border: 1px solid var(--border);
+background: transparent;
+border-radius: 0;
+padding: 0;
+border: none;
+border-bottom: 2.5px solid #28231c;
 }
 .tab {
 flex: 1;
 padding: 9px 6px;
 text-align: center;
 font-size: 16px;
-font-weight: 600;
-border-radius: 12px;
+font-weight: 400;
+border-radius: 0;
 cursor: pointer;
-color: var(--text-dim);
+color: #c0b8a8;
 transition: all 0.25s ease;
 border: none;
 background: none;
-font-family: 'Figtree', sans-serif;
+font-family: 'Sriracha', cursive;
 -webkit-tap-highlight-color: transparent;
+border-bottom: 2.5px solid transparent;
+margin-bottom: -2.5px;
 }
 .tab.active {
-background: var(--surface3);
-color: var(--text);
+background: none;
+color: #28231c;
+border-bottom-color: #28231c;
 }
 
 /* Expandable explainer */
@@ -175,18 +181,20 @@ font-weight: 600;
 
 .ex-group {
 margin-bottom: 20px;
-background: var(--surface2);
-border-radius: 10px;
+background: transparent;
+border-radius: 2px;
 padding: 0;
 overflow: hidden;
-border: 1px solid var(--border);
+border: none;
+border-bottom: 1px solid rgba(40,35,28,0.08);
 }
 .ex-group:last-child { margin-bottom: 0; }
 .ex-group-title {
 font-size: 15px;
-font-weight: 600;
+font-weight: 400;
 padding: 10px 14px;
-background: var(--surface);
+background: rgba(40,35,28,0.03);
+font-family: 'Sriracha', cursive;
 }
 .ex-row {
 display: flex;
@@ -204,15 +212,15 @@ color: var(--text-mid);
 line-height: 1.3;
 }
 .ex-prescription {
-font-family: 'Space Grotesk', sans-serif;
+font-family: 'Sriracha', cursive;
 font-size: 14px;
-font-weight: 600;
+font-weight: 400;
 color: var(--accent);
 white-space: nowrap;
 flex-shrink: 0;
 }
 .ex-time {
-font-family: 'Space Grotesk', sans-serif;
+font-family: 'Pangolin', cursive;
 font-size: 11px;
 color: var(--text-dim);
 white-space: nowrap;
@@ -230,12 +238,13 @@ grid-template-columns: 1fr 1fr;
 gap: 10px;
 }
 .muscle-cell {
-border-radius: 10px;
+border-radius: 2px;
 padding: 10px 12px;
 transition: all 0.3s ease;
-border: 1px solid var(--border);
+border: 1px solid rgba(40,35,28,0.10);
 cursor: pointer;
 -webkit-tap-highlight-color: transparent;
+background: rgba(40,35,28,0.02);
 }
 .muscle-cell:active { opacity: 0.85; }
 .muscle-cell-header {
@@ -260,9 +269,9 @@ opacity: 1;
 }
 .muscle-detail-inner {
 padding: 14px;
-background: var(--surface2);
-border-radius: 10px;
-border: 1px solid var(--border);
+background: rgba(40,35,28,0.03);
+border-radius: 2px;
+border: 1px solid rgba(40,35,28,0.10);
 font-size: 14px;
 color: var(--text-mid);
 line-height: 1.55;
@@ -293,14 +302,14 @@ position: relative;
 }
 .weight-chart canvas { width: 100%; height: 100%; }
 .weight-current {
-font-family: 'Space Grotesk', sans-serif;
+font-family: 'Sriracha', cursive;
 font-size: 32px;
-font-weight: 700;
+font-weight: 400;
 letter-spacing: -1px;
 color: var(--text);
 }
 .weight-delta {
-font-family: 'Space Grotesk', sans-serif;
+font-family: 'Pangolin', cursive;
 font-size: 14px;
 }
 .weight-unit {
@@ -318,12 +327,12 @@ margin-bottom: 14px;
 .constraint-chip {
 padding: 5px 10px;
 font-size: 13px;
-font-weight: 500;
-font-family: 'Space Grotesk', sans-serif;
-background: var(--surface2);
+font-weight: 400;
+font-family: 'Pangolin', cursive;
+background: rgba(40,35,28,0.03);
 color: var(--text-dim);
-border: 1px solid var(--border);
-border-radius: 6px;
+border: 1px solid rgba(40,35,28,0.10);
+border-radius: 2px;
 cursor: pointer;
 -webkit-tap-highlight-color: transparent;
 transition: all 0.15s ease;
@@ -333,16 +342,16 @@ user-select: none;
 transform: scale(0.96);
 }
 .constraint-chip.active {
-color: var(--accent);
-border-color: rgba(94, 234, 212, 0.3);
-background: var(--accent-dim);
+color: #28231c;
+border-color: rgba(40,35,28,0.3);
+background: rgba(40,35,28,0.08);
 }
 .chart-legend {
 display: flex;
 gap: 16px;
 margin-top: 12px;
 font-size: 12px;
-font-family: 'Space Grotesk', sans-serif;
+font-family: 'Pangolin', cursive;
 color: var(--text-mid);
 }
 .legend-dot {
@@ -358,13 +367,13 @@ vertical-align: middle;
 .btn-log-weight {
 padding: 5px 12px;
 font-size: 13px;
-font-weight: 600;
-background: var(--accent-dim);
-color: var(--accent);
-border: 1px solid rgba(94, 234, 212, 0.25);
-border-radius: 7px;
+font-weight: 400;
+background: rgba(40,35,28,0.08);
+color: #28231c;
+border: 1px solid rgba(40,35,28,0.2);
+border-radius: 2px;
 cursor: pointer;
-font-family: 'Figtree', sans-serif;
+font-family: 'Pangolin', cursive;
 -webkit-tap-highlight-color: transparent;
 transition: all 0.2s ease;
 }
@@ -383,7 +392,7 @@ gap: 3px;
 }
 .heatmap-label {
 font-size: 12px;
-font-family: 'Space Grotesk', sans-serif;
+font-family: 'Pangolin', cursive;
 color: var(--text-mid);
 display: flex;
 align-items: center;
@@ -391,13 +400,13 @@ padding-right: 6px;
 white-space: nowrap;
 position: sticky;
 left: 0;
-background: var(--surface);
+background: #f2efe6;
 z-index: 2;
 }
 .heatmap-cell {
 width: 16px;
 height: 16px;
-border-radius: 3px;
+border-radius: 1px;
 background: var(--surface2);
 cursor: pointer;
 transition: opacity 0.15s ease;
@@ -407,7 +416,7 @@ opacity: 0.7;
 }
 .heatmap-day-labels {
 font-size: 10px;
-font-family: 'Space Grotesk', sans-serif;
+font-family: 'Pangolin', cursive;
 color: var(--text-dim);
 display: flex;
 align-items: flex-end;
@@ -429,7 +438,7 @@ margin-top: 12px;
 .heatmap-day-detail-inner {
 padding: 14px;
 background: var(--surface2);
-border-radius: 10px;
+border-radius: 2px;
 border: 1px solid var(--border);
 font-size: 14px;
 line-height: 1.6;
@@ -438,7 +447,7 @@ line-height: 1.6;
 font-weight: 600;
 margin-bottom: 8px;
 font-size: 13px;
-font-family: 'Space Grotesk', sans-serif;
+font-family: 'Pangolin', cursive;
 color: var(--text-mid);
 }
 .heatmap-day-detail-inner .detail-exercise {
@@ -454,7 +463,7 @@ color: var(--text);
 }
 .heatmap-day-detail-inner .detail-sets {
 font-size: 12px;
-font-family: 'Space Grotesk', sans-serif;
+font-family: 'Pangolin', cursive;
 color: var(--accent);
 flex-shrink: 0;
 }
@@ -481,12 +490,12 @@ animation: spin 0.75s linear infinite;
 .loading-text {
 font-size: 14px;
 color: var(--text-dim);
-font-family: 'Space Grotesk', sans-serif;
+font-family: 'Pangolin', cursive;
 }
 .error-msg {
 background: var(--danger-dim);
 border: 1px solid rgba(248,113,113,0.2);
-border-radius: 10px;
+border-radius: 2px;
 padding: 14px;
 font-size: 14px;
 color: var(--danger);
@@ -503,7 +512,7 @@ margin-top: 14px;
 }
 .vital-cell {
 padding: 12px;
-border-radius: 10px;
+border-radius: 2px;
 border: 1px solid var(--border);
 background: var(--surface2);
 }
@@ -516,7 +525,7 @@ color: var(--text-dim);
 margin-bottom: 6px;
 }
 .vital-value {
-font-family: 'Space Grotesk', sans-serif;
+font-family: 'Pangolin', cursive;
 font-size: 22px;
 font-weight: 700;
 color: var(--text);
@@ -530,7 +539,7 @@ margin-left: 2px;
 }
 .vital-context {
 font-size: 11px;
-font-family: 'Space Grotesk', sans-serif;
+font-family: 'Pangolin', cursive;
 color: var(--text-dim);
 margin-top: 4px;
 }
@@ -553,7 +562,7 @@ align-items: baseline;
 gap: 6px;
 }
 .cardio-score-value {
-font-family: 'Space Grotesk', sans-serif;
+font-family: 'Pangolin', cursive;
 font-size: 28px;
 font-weight: 700;
 color: var(--text);
@@ -563,7 +572,7 @@ font-size: 12px;
 color: var(--text-dim);
 }
 .cardio-score-label {
-font-family: 'Space Grotesk', sans-serif;
+font-family: 'Pangolin', cursive;
 font-size: 14px;
 font-weight: 600;
 }
@@ -584,7 +593,7 @@ display: flex;
 justify-content: space-between;
 margin-top: 4px;
 font-size: 10px;
-font-family: 'Space Grotesk', sans-serif;
+font-family: 'Pangolin', cursive;
 color: var(--text-dim);
 }
 
@@ -619,7 +628,7 @@ color: var(--text-dim);
         </button>
       </div>
     </div>
-    <div id="power-score-detail" style="display:none;margin-top:10px;padding:12px 14px;border-radius:10px;background:var(--surface2);border:1px solid var(--border);"></div>
+    <div id="power-score-detail" style="display:none;margin-top:10px;padding:12px 14px;border-radius:2px;background:rgba(40,35,28,0.03);border:1px solid rgba(40,35,28,0.10);"></div>
 
 <div class="tabs">
   <button class="tab active" data-tab="today" onclick="switchTab('today')">Today</button>
@@ -701,7 +710,7 @@ color: var(--text-dim);
   <div class="card" id="health-vitals-card" style="display:none;">
     <div class="card-title" style="display:flex;align-items:center;justify-content:space-between;">
       <span>Health Vitals</span>
-      <span class="health-sync-time" id="health-sync-time" style="font-size:11px;font-family:'Space Grotesk',sans-serif;color:var(--text-dim);text-transform:none;letter-spacing:0;"></span>
+      <span class="health-sync-time" id="health-sync-time" style="font-size:11px;font-family:'Sriracha',cursive;color:var(--text-dim);text-transform:none;letter-spacing:0;"></span>
     </div>
     <!-- Cardio Fitness Score -->
     <div class="cardio-score-row" id="cardio-score-row">
@@ -730,11 +739,11 @@ color: var(--text-dim);
       <span>Body Measurements</span>
       <div style="display:flex;gap:6px;">
         <button class="btn-log-weight" onclick="exportEmbeddableData()" style="background:rgba(142,142,152,0.12);color:#728495;font-size:11px;padding:4px 8px;">Export</button>
-        <button class="btn-log-weight" onclick="document.getElementById('hevy-csv-input').click()" style="background:rgba(126,184,232,0.12);color:#7eb8e8;">Import Hevy</button>
+        <button class="btn-log-weight" onclick="document.getElementById('hevy-csv-input').click()" style="background:rgba(58,88,112,0.12);color:#4a6878;">Import Hevy</button>
       </div>
     </div>
     <input type="file" id="hevy-csv-input" accept=".csv" style="display:none;" onchange="importHevyCSV(this)">
-    <div id="hevy-import-status" style="display:none;padding:10px 12px;border-radius:8px;margin-bottom:12px;font-size:13px;font-family:'Space Grotesk',sans-serif;"></div>
+    <div id="hevy-import-status" style="display:none;padding:10px 12px;border-radius:8px;margin-bottom:12px;font-size:13px;font-family:'Sriracha',cursive;"></div>
     <div id="measurements-display"></div>
     <div id="proportions-display" style="margin-top:14px;"></div>
   </div>
@@ -803,37 +812,37 @@ function localDateStr(d) {
 // Hex values here match the CSS custom properties in <style>.
 // ============================================================
 const C = {
-  bg:        '#1c2b35',
-  surface:   '#263a47',
-  surface2:  '#2e4553',
-  surface3:  '#374857',
-  border:    'rgba(180,197,219,0.10)',
-  text:      '#e6eef5',
-  textMid:   '#b4c5db',
-  textDim:   '#728495',
-  textDark:  '#5a6f80',
-  textDark2: '#8a9bac',
-  accent:    '#5eead4',
-  accentMid: '#2dd4bf',
-  accentDim: 'rgba(94,234,212,0.12)',
-  accentBorder: 'rgba(94,234,212,0.3)',
-  warn:      '#fbbf24',
-  warnDim:   'rgba(251,191,36,0.12)',
-  amber:     '#f59e0b',
-  amberLt:   '#fbbf24',
-  danger:    '#f87171',
-  dangerDim: 'rgba(248,113,113,0.10)',
-  blue:      '#7eb8e8',
-  blueDim:   'rgba(126,184,232,0.12)',
-  strength:  '#8f9ae8',
-  purple:    '#b8a0e8',
-  purpleLt:  '#a898e0',
-  pink:      '#e090b8',
-  fuchsia:   '#d090e8',
-  cyan:      '#50b8c8',
-  teal:      '#5ec4b0',
-  cardio:    '#e8a060',
-  gold:      '#facc15',
+  bg:        '#f2efe6',
+  surface:   'rgba(40,35,28,0.03)',
+  surface2:  'rgba(40,35,28,0.05)',
+  surface3:  'rgba(40,35,28,0.08)',
+  border:    'rgba(40,35,28,0.10)',
+  text:      '#28231c',
+  textMid:   '#4a4438',
+  textDim:   '#a09888',
+  textDark:  '#c0b8a8',
+  textDark2: '#807870',
+  accent:    '#28231c',
+  accentMid: '#3a3428',
+  accentDim: 'rgba(40,35,28,0.08)',
+  accentBorder: 'rgba(40,35,28,0.25)',
+  warn:      '#c4720a',
+  warnDim:   'rgba(196,114,10,0.12)',
+  amber:     '#c4720a',
+  amberLt:   '#d88830',
+  danger:    '#a03020',
+  dangerDim: 'rgba(160,48,32,0.10)',
+  blue:      '#4a6878',
+  blueDim:   'rgba(58,88,112,0.12)',
+  strength:  '#4a4870',
+  purple:    '#6a5a78',
+  purpleLt:  '#685870',
+  pink:      '#804058',
+  fuchsia:   '#684080',
+  cyan:      '#2a6870',
+  teal:      '#3a6858',
+  cardio:    '#8a5820',
+  gold:      '#8a6a10',
 };
 
 // ============================================================
@@ -1107,17 +1116,17 @@ function classifyExercise(name) {
 // Frequency: realistic for non-PPL splits (each muscle every 5-7 days)
 // ============================================================
 const MUSCLE_GROUPS = {
-  chest:      { name: 'Chest',      idealFreqDays: 5, color: '#e88080', idealSetsPerWeek: 10 },
+  chest:      { name: 'Chest',      idealFreqDays: 5, color: '#8a4a40', idealSetsPerWeek: 10 },
   back:       { name: 'Back',       idealFreqDays: 5, color: C.blue, idealSetsPerWeek: 12 },
   shoulders:  { name: 'Shoulders',  idealFreqDays: 5, color: C.purple, idealSetsPerWeek: 10 },
   biceps:     { name: 'Biceps',     idealFreqDays: 6, color: C.teal, idealSetsPerWeek: 6 },
-  triceps:    { name: 'Triceps',    idealFreqDays: 6, color: '#e8c870', idealSetsPerWeek: 6 },
+  triceps:    { name: 'Triceps',    idealFreqDays: 6, color: '#8a7a30', idealSetsPerWeek: 6 },
   quads:      { name: 'Quads',      idealFreqDays: 5, color: C.cardio, idealSetsPerWeek: 10 },
   hamstrings: { name: 'Hamstrings', idealFreqDays: 6, color: C.pink, idealSetsPerWeek: 8 },
   glutes:     { name: 'Glutes',     idealFreqDays: 6, color: C.purpleLt, idealSetsPerWeek: 8 },
-  calves:     { name: 'Calves',     idealFreqDays: 6, color: '#50c8b8', idealSetsPerWeek: 6 },
+  calves:     { name: 'Calves',     idealFreqDays: 6, color: '#3a7868', idealSetsPerWeek: 6 },
   core:       { name: 'Core',       idealFreqDays: 4, color: C.fuchsia, idealSetsPerWeek: 6 },
-  neck:       { name: 'Neck',       idealFreqDays: 5, color: '#d8b060', idealSetsPerWeek: 4 },
+  neck:       { name: 'Neck',       idealFreqDays: 5, color: '#807040', idealSetsPerWeek: 4 },
   forearms:   { name: 'Forearms',   idealFreqDays: 5, color: C.cyan, idealSetsPerWeek: 4 },
 };
 
@@ -1498,8 +1507,8 @@ function renderConstraintChips() {
     const current = sessionPrefs[def.key];
     const isNonDefault = current !== PREFS_DEFAULTS[def.key];
     const chipStyle = isNonDefault
-      ? `background:${C.accentDim};color:${C.accent};border:1px solid ${C.accentBorder};padding:5px 10px;font-size:12px;font-weight:500;font-family:Space Grotesk,sans-serif;border-radius:6px;cursor:pointer;user-select:none;`
-      : `background:${C.surface2};color:${C.textDim};border:1px solid ${C.border};padding:5px 10px;font-size:12px;font-weight:500;font-family:Space Grotesk,sans-serif;border-radius:6px;cursor:pointer;user-select:none;`;
+      ? `background:${C.accentDim};color:${C.accent};border:1px solid ${C.accentBorder};padding:5px 10px;font-size:12px;font-weight:500;font-family:Pangolin,cursive;border-radius:6px;cursor:pointer;user-select:none;`
+      : `background:${C.surface2};color:${C.textDim};border:1px solid ${C.border};padding:5px 10px;font-size:12px;font-weight:500;font-family:Pangolin,cursive;border-radius:6px;cursor:pointer;user-select:none;`;
     return `<div class="constraint-chip${isNonDefault ? ' active' : ''}" style="${chipStyle}" data-key="${def.key}" onclick="cycleChip('${def.key}')">${def.label(current)} <span style="opacity:0.35;font-size:9px;margin-left:1px;">\u21BB</span></div>`;
   }).join('');
 }
@@ -2350,7 +2359,7 @@ function toggleCardioBreakdown() {
 function buildCardioBreakdownHTML(history) {
   const log = history.cardioLog || [];
   if (log.length === 0) {
-    return `<div style="font-size:12px;font-family:'Space Grotesk',sans-serif;color:${C.textDark};">No cardio sessions this week.</div>`;
+    return `<div style="font-size:12px;font-family:'Sriracha',cursive;color:${C.textDark};">No cardio sessions this week.</div>`;
   }
 
   // Sort by date descending
@@ -2361,14 +2370,14 @@ function buildCardioBreakdownHTML(history) {
   if (history.hevySessions > 0) parts.push(`\u{1F3CB}\uFE0F Hevy: ${history.hevySessions} session${history.hevySessions > 1 ? 's' : ''}, ${Math.round(history.hevyMinutes)} min`);
   if (history.appleSessions > 0) parts.push(`\u231A Watch: ${history.appleSessions} session${history.appleSessions > 1 ? 's' : ''}, ${Math.round(history.appleMinutes)} min`);
 
-  let html = `<div style="font-size:11px;font-family:'Space Grotesk',sans-serif;color:${C.textDim};margin-bottom:8px;">${parts.join(' \u00B7 ')}</div>`;
+  let html = `<div style="font-size:11px;font-family:'Sriracha',cursive;color:${C.textDim};margin-bottom:8px;">${parts.join(' \u00B7 ')}</div>`;
 
   // Per-session rows
   for (const s of sorted) {
     const dayStr = s.date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
     const icon = s.source === 'watch' ? '\u231A' : '\u{1F3CB}\uFE0F';
     const calStr = s.calories > 0 ? ` \u00B7 ${Math.round(s.calories)} cal` : '';
-    html += `<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;font-size:12px;font-family:'Space Grotesk',sans-serif;">
+    html += `<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;font-size:12px;font-family:'Sriracha',cursive;">
       <span style="color:${C.textMid};">${icon} ${s.type}</span>
       <span style="color:${C.textDark};">${Math.round(s.minutes)} min${calStr} \u00B7 ${dayStr}</span>
     </div>`;
@@ -2391,18 +2400,18 @@ function renderCardioPlan(workouts) {
     <div style="margin-top:20px;padding-top:18px;border-top:1px solid ${C.border};">
       <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:1.2px;color:${C.textDim};margin-bottom:14px;">Cardio Plan</div>
       <div onclick="toggleCardioBreakdown()" style="cursor:pointer;display:flex;align-items:center;gap:10px;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid ${C.border};">
-        <div style="font-family:'Space Grotesk',sans-serif;font-size:14px;color:${C.accent};font-weight:600;white-space:nowrap;">${Math.round(doneMin)}/${result.targetMin}m</div>
+        <div style="font-family:'Sriracha',cursive;font-size:14px;color:${C.accent};font-weight:600;white-space:nowrap;">${Math.round(doneMin)}/${result.targetMin}m</div>
         <div style="flex:1;height:5px;border-radius:3px;background:${C.surface3};overflow:hidden;">
           <div style="height:100%;border-radius:3px;background:${barColor};width:${donePct}%;transition:width 0.4s ease;"></div>
         </div>
-        <div style="font-family:'Space Grotesk',sans-serif;font-size:12px;color:${C.textDim};white-space:nowrap;">this week \u25BE</div>
+        <div style="font-family:'Sriracha',cursive;font-size:12px;color:${C.textDim};white-space:nowrap;">this week \u25BE</div>
       </div>
       <div id="cardio-breakdown" style="display:none;margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid ${C.border};">
         ${buildCardioBreakdownHTML(result.history)}
       </div>`;
 
   if (result.weekComplete) {
-    html += `<div style="font-size:14px;color:${C.accent};font-family:'Space Grotesk',sans-serif;padding:8px 0;">\u2713 Weekly cardio target met. Active recovery or rest recommended.</div>`;
+    html += `<div style="font-size:14px;color:${C.accent};font-family:'Sriracha',cursive;padding:8px 0;">\u2713 Weekly cardio target met. Active recovery or rest recommended.</div>`;
   } else {
     const zoneStyles = {
       2: { bg: C.blueDim, color: C.blue, label: 'Zone 2' },
@@ -2416,13 +2425,13 @@ function renderCardioPlan(workouts) {
 
       html += `<div style="padding:10px 0;border-bottom:1px solid ${C.surface2};">
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
-          <span style="font-size:10px;font-weight:600;padding:2px 7px;border-radius:4px;font-family:'Space Grotesk',sans-serif;text-transform:uppercase;letter-spacing:0.5px;background:${zs.bg};color:${zs.color};">${zs.label}</span>
+          <span style="font-size:10px;font-weight:600;padding:2px 7px;border-radius:4px;font-family:'Sriracha',cursive;text-transform:uppercase;letter-spacing:0.5px;background:${zs.bg};color:${zs.color};">${zs.label}</span>
           <span style="font-size:14px;font-weight:600;color:${C.text};flex:1;">${rx.name}</span>
-          <span style="font-family:'Space Grotesk',sans-serif;font-size:13px;color:${C.accent};font-weight:600;">${rx.durationMin}m</span>
+          <span style="font-family:'Sriracha',cursive;font-size:13px;color:${C.accent};font-weight:600;">${rx.durationMin}m</span>
         </div>
         <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
-          <div style="font-size:12px;font-family:'Space Grotesk',sans-serif;color:${C.textDim};line-height:1.4;flex:1;">${detailNote}</div>
-          <span style="font-size:11px;font-family:'Space Grotesk',sans-serif;color:${zs.color};padding:2px 7px;border-radius:4px;background:${zs.bg};white-space:nowrap;">\u2661 ${rx.hrRange}</span>
+          <div style="font-size:12px;font-family:'Sriracha',cursive;color:${C.textDim};line-height:1.4;flex:1;">${detailNote}</div>
+          <span style="font-size:11px;font-family:'Sriracha',cursive;color:${zs.color};padding:2px 7px;border-radius:4px;background:${zs.bg};white-space:nowrap;">\u2661 ${rx.hrRange}</span>
         </div>
       </div>`;
     }
@@ -2742,7 +2751,7 @@ function renderTimedSession(recs) {
   const muscleDots = muscleKeys.map(key => {
     const meta = MUSCLE_GROUPS[key];
     if (!meta) return '';
-    return `<span style="display:inline-flex;align-items:center;gap:4px;font-size:13px;font-weight:600;color:${meta.color};font-family:'Space Grotesk',sans-serif;white-space:nowrap;"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${meta.color};"></span>${meta.name}</span>`;
+    return `<span style="display:inline-flex;align-items:center;gap:4px;font-size:13px;font-weight:600;color:${meta.color};font-family:'Sriracha',cursive;white-space:nowrap;"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${meta.color};"></span>${meta.name}</span>`;
   }).filter(Boolean).join(`<span style="color:${C.textDark};margin:0 4px;">\u00b7</span>`);
 
   // Rest-day chip (compact, inline)
@@ -2754,14 +2763,14 @@ function renderTimedSession(recs) {
     const chipText = isHigh
       ? `${_consecutiveTrainDays} days straight \u2014 rest day recommended`
       : `${_consecutiveTrainDays} days in a row \u2014 consider resting`;
-    restChip = `<div style="display:inline-flex;align-items:center;gap:5px;padding:5px 10px;border-radius:6px;background:${chipBg};border:1px solid ${chipColor}30;font-size:12px;font-family:'Space Grotesk',sans-serif;color:${chipColor};font-weight:500;margin-top:10px;">${chipText}</div>`;
+    restChip = `<div style="display:inline-flex;align-items:center;gap:5px;padding:5px 10px;border-radius:6px;background:${chipBg};border:1px solid ${chipColor}30;font-size:12px;font-family:'Sriracha',cursive;color:${chipColor};font-weight:500;margin-top:10px;">${chipText}</div>`;
   }
 
   document.getElementById('today-hero').innerHTML = `
     <div style="margin-bottom:16px;">
       <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:8px;">
         <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:1.2px;color:${C.textDim};">Today\u2019s Session</div>
-        <div style="font-family:'Space Grotesk',sans-serif;font-size:20px;font-weight:700;color:${C.accent};">~${totalMin}<span style="font-size:13px;font-weight:500;color:${C.textDim};margin-left:2px;">min</span></div>
+        <div style="font-family:'Sriracha',cursive;font-size:20px;font-weight:700;color:${C.accent};">~${totalMin}<span style="font-size:13px;font-weight:500;color:${C.textDim};margin-left:2px;">min</span></div>
       </div>
       <div style="display:flex;flex-wrap:wrap;align-items:center;gap:4px 0;line-height:1.8;">${muscleDots}</div>
       ${restChip}
@@ -2773,8 +2782,8 @@ function renderTimedSession(recs) {
     const current = sessionPrefs[def.key];
     const isNonDefault = current !== PREFS_DEFAULTS[def.key];
     const chipStyle = isNonDefault
-      ? `background:${C.accentDim};color:${C.accent};border:1px solid ${C.accentBorder};padding:5px 10px;font-size:12px;font-weight:500;font-family:Space Grotesk,sans-serif;border-radius:6px;cursor:pointer;user-select:none;`
-      : `background:${C.surface2};color:${C.textDim};border:1px solid ${C.border};padding:5px 10px;font-size:12px;font-weight:500;font-family:Space Grotesk,sans-serif;border-radius:6px;cursor:pointer;user-select:none;`;
+      ? `background:${C.accentDim};color:${C.accent};border:1px solid ${C.accentBorder};padding:5px 10px;font-size:12px;font-weight:500;font-family:Pangolin,cursive;border-radius:6px;cursor:pointer;user-select:none;`
+      : `background:${C.surface2};color:${C.textDim};border:1px solid ${C.border};padding:5px 10px;font-size:12px;font-weight:500;font-family:Pangolin,cursive;border-radius:6px;cursor:pointer;user-select:none;`;
     return `<div style="${chipStyle}" onclick="cycleChip('${def.key}')">${def.label(current)} <span style="opacity:0.35;font-size:9px;margin-left:1px;">\u21BB</span></div>`;
   }).join('');
 
@@ -2787,7 +2796,7 @@ function renderTimedSession(recs) {
     <div style="display:flex;align-items:center;justify-content:flex-end;margin-bottom:${chipsVisible ? '10' : '14'}px;padding-bottom:12px;border-bottom:1px solid ${C.border};">
       <div onclick="toggleTodayChips()" style="display:flex;align-items:center;gap:5px;cursor:pointer;padding:4px 10px;border-radius:6px;background:${toggleBg};border:1px solid ${toggleColor}25;-webkit-tap-highlight-color:transparent;">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="${toggleColor}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-        <span style="font-size:11px;font-weight:600;font-family:'Space Grotesk',sans-serif;color:${toggleColor};">Filters</span>
+        <span style="font-size:11px;font-weight:600;font-family:'Sriracha',cursive;color:${toggleColor};">Filters</span>
       </div>
     </div>
     <div id="today-chips-row" style="display:${chipsVisible ? 'flex' : 'none'};flex-wrap:wrap;gap:6px;margin-bottom:14px;">${chipDefs}</div>`;
@@ -2961,7 +2970,7 @@ function renderMuscleGrid(muscleStats, recs) {
         stroke-dasharray="${arcLen} ${gapLen}" stroke-linecap="round"
         transform="rotate(-90 ${cx} ${cy})" style="transition:stroke-dasharray 0.4s ease;"/>
       <text x="${cx}" y="${cy}" text-anchor="middle" dominant-baseline="central"
-        fill="${arcColor}" font-family="Space Grotesk,sans-serif" font-size="${fontSize}" font-weight="600">${label}</text>
+        fill="${arcColor}" font-family="Pangolin,cursive" font-size="${fontSize}" font-weight="600">${label}</text>
     </svg>`;
   }
 
@@ -2999,7 +3008,7 @@ function renderMuscleGrid(muscleStats, recs) {
           <div style="flex:1;height:4px;border-radius:2px;background:${C.surface3};overflow:hidden;">
             <div style="height:100%;width:${volPct}%;border-radius:2px;background:${volColor};opacity:0.8;transition:width 0.4s ease;"></div>
           </div>
-          <div style="font-family:'Space Grotesk',sans-serif;font-size:11px;font-weight:600;color:${volColor};white-space:nowrap;">${volLabel}</div>
+          <div style="font-family:'Sriracha',cursive;font-size:11px;font-weight:600;color:${volColor};white-space:nowrap;">${volLabel}</div>
         </div>
       </div>`;
   }).join('');
@@ -3008,7 +3017,7 @@ function renderMuscleGrid(muscleStats, recs) {
   const prevLegend = document.getElementById('muscle-grid-legend');
   if (prevLegend) prevLegend.remove();
   grid.insertAdjacentHTML('afterend',
-    `<div id="muscle-grid-legend" style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:10px;font-size:10px;font-family:'Space Grotesk',sans-serif;color:${C.textDim};max-height:0;overflow:hidden;opacity:0;transition:max-height 0.3s ease,opacity 0.25s ease;">
+    `<div id="muscle-grid-legend" style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:10px;font-size:10px;font-family:'Sriracha',cursive;color:${C.textDim};max-height:0;overflow:hidden;opacity:0;transition:max-height 0.3s ease,opacity 0.25s ease;">
       <span style="display:flex;align-items:center;gap:3px;"><span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:${C.danger};"></span>Overdue</span>
       <span style="display:flex;align-items:center;gap:3px;"><span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:${C.warn};"></span>Due soon</span>
       <span style="display:flex;align-items:center;gap:3px;"><span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:${C.accent};"></span>On track</span>
@@ -3127,7 +3136,7 @@ function renderWeeklySummary(dayWorkoutsMap, dayMuscleMap, dayCardioMap, workout
     const diff = curr - prev;
     if (diff === 0 || prev === 0) return '';
     const sign = diff > 0 ? '+' : '';
-    return `<span style="font-size:10px;font-family:'Space Grotesk',sans-serif;color:${diff > 0 ? C.accent : C.warn};margin-left:4px;">${sign}${diff}</span>`;
+    return `<span style="font-size:10px;font-family:'Sriracha',cursive;color:${diff > 0 ? C.accent : C.warn};margin-left:4px;">${sign}${diff}</span>`;
   }
 
   // Cardio bar
@@ -3136,9 +3145,9 @@ function renderWeeklySummary(dayWorkoutsMap, dayMuscleMap, dayCardioMap, workout
   const cardioBarColor = cardioPct >= 100 ? C.accent : cardioPct >= 50 ? C.blue : C.warn;
 
   const statStyle = `padding:12px;border-radius:8px;border:1px solid ${C.border};background:${C.surface2};text-align:center;`;
-  const labelStyle = `font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:${C.textDim};font-family:'Space Grotesk',sans-serif;margin-bottom:4px;`;
-  const valueStyle = `font-family:'Space Grotesk',sans-serif;font-size:22px;font-weight:700;color:${C.text};line-height:1.2;`;
-  const subStyle = `font-size:11px;font-family:'Space Grotesk',sans-serif;color:${C.textDark};`;
+  const labelStyle = `font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:${C.textDim};font-family:'Sriracha',cursive;margin-bottom:4px;`;
+  const valueStyle = `font-family:'Sriracha',cursive;font-size:22px;font-weight:700;color:${C.text};line-height:1.2;`;
+  const subStyle = `font-size:11px;font-family:'Sriracha',cursive;color:${C.textDark};`;
 
   container.innerHTML = `
     <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px;">
@@ -3159,11 +3168,11 @@ function renderWeeklySummary(dayWorkoutsMap, dayMuscleMap, dayCardioMap, workout
       </div>
     </div>
     <div style="display:flex;align-items:center;gap:10px;">
-      <div style="font-family:'Space Grotesk',sans-serif;font-size:13px;color:${cardioPct >= 100 ? C.accent : C.text};font-weight:600;white-space:nowrap;">${Math.round(thisWeek.cardioMin)}/${cardioTarget}m</div>
+      <div style="font-family:'Sriracha',cursive;font-size:13px;color:${cardioPct >= 100 ? C.accent : C.text};font-weight:600;white-space:nowrap;">${Math.round(thisWeek.cardioMin)}/${cardioTarget}m</div>
       <div style="flex:1;height:5px;border-radius:3px;background:${C.surface3};overflow:hidden;">
         <div style="height:100%;border-radius:3px;background:${cardioBarColor};width:${cardioPct}%;transition:width 0.4s ease;"></div>
       </div>
-      <div style="font-family:'Space Grotesk',sans-serif;font-size:11px;color:${C.textDim};white-space:nowrap;">cardio${delta(Math.round(thisWeek.cardioMin), Math.round(lastWeek.cardioMin))}</div>
+      <div style="font-family:'Sriracha',cursive;font-size:11px;color:${C.textDim};white-space:nowrap;">cardio${delta(Math.round(thisWeek.cardioMin), Math.round(lastWeek.cardioMin))}</div>
     </div>`;
 }
 
@@ -3251,7 +3260,7 @@ function renderHeatmap(dayMuscleMap, dayWorkoutsMap, dayCardioMap) {
     for (const day of days) {
       const sets = (dayMuscleMap[day] && dayMuscleMap[day][mKey]) || 0;
       const opacity = sets > 0 ? Math.max(0.25, Math.min(sets / maxSets, 1)) : 0;
-      const bgColor = sets > 0 ? `rgba(94, 234, 212, ${opacity})` : C.surface2; // accent RGB with dynamic opacity
+      const bgColor = sets > 0 ? `rgba(40, 35, 28, ${opacity})` : C.surface2; // ink with dynamic opacity
       html += `<div class="heatmap-cell" style="background:${bgColor}" data-day="${day}" onclick="selectHeatmapDay('${day}')" title="${day}: ${formatSets(sets)} sets"></div>`;
     }
   }
@@ -3264,7 +3273,7 @@ function renderHeatmap(dayMuscleMap, dayWorkoutsMap, dayCardioMap) {
     let bgColor = C.surface2;
     if (min >= CARDIO_THRESHOLD_MIN) {
       const opacity = Math.max(0.3, Math.min((min - 15) / 30 + 0.3, 1));
-      bgColor = `rgba(96, 165, 250, ${opacity.toFixed(2)})`; // blue RGB
+      bgColor = `rgba(138, 88, 32, ${opacity.toFixed(2)})`; // warm ink
     }
     const title = min > 0 ? `${day}: ${Math.round(min)} min cardio` : day;
     html += `<div class="heatmap-cell" style="background:${bgColor}" data-day="${day}" onclick="selectHeatmapDay('${day}')" title="${title}"></div>`;
@@ -3379,7 +3388,7 @@ function showChartTooltip(canvas, pt) {
   // Clamp horizontal position
   const tipX = Math.max(40, Math.min(pt.x, parent.offsetWidth - 40));
   const above = pt.y > 60;
-  tip.style.cssText = `position:absolute;left:${tipX}px;${above ? 'top' : 'bottom'}:${above ? (pt.y - 44) + 'px' : (150 - pt.y + 12) + 'px'};transform:translateX(-50%);background:${C.surface3};border:1px solid ${C.border};border-radius:6px;padding:4px 8px;font-family:'Space Grotesk',sans-serif;font-size:11px;color:${C.text};text-align:center;white-space:nowrap;pointer-events:none;z-index:10;opacity:1;transition:opacity 0.6s ease;line-height:1.4;`;
+  tip.style.cssText = `position:absolute;left:${tipX}px;${above ? 'top' : 'bottom'}:${above ? (pt.y - 44) + 'px' : (150 - pt.y + 12) + 'px'};transform:translateX(-50%);background:${C.surface3};border:1px solid ${C.border};border-radius:6px;padding:4px 8px;font-family:'Sriracha',cursive;font-size:11px;color:${C.text};text-align:center;white-space:nowrap;pointer-events:none;z-index:10;opacity:1;transition:opacity 0.6s ease;line-height:1.4;`;
   tip.innerHTML = `<div style="font-weight:600;">${label}</div><div style="font-size:10px;color:${C.textDim};">${dateStr}</div>`;
   parent.appendChild(tip);
 
@@ -3476,8 +3485,8 @@ function renderWeightChart() {
   ctx.lineTo(pad.left, h - pad.bottom);
   ctx.closePath();
   const gradient = ctx.createLinearGradient(0, 0, 0, h);
-  gradient.addColorStop(0, 'rgba(94, 234, 212, 0.10)'); // accent RGB gradient
-  gradient.addColorStop(1, 'rgba(94, 234, 212, 0)');
+  gradient.addColorStop(0, 'rgba(40, 35, 28, 0.10)'); // ink gradient
+  gradient.addColorStop(1, 'rgba(40, 35, 28, 0)');
   ctx.fillStyle = gradient;
   ctx.fill();
 
@@ -3596,7 +3605,7 @@ function renderWeightChart() {
 
   // Date labels
   ctx.fillStyle = C.textDark2;
-  ctx.font = '12px Space Grotesk, sans-serif';
+  ctx.font = '12px Pangolin, cursive';
   ctx.textAlign = 'left';
   ctx.fillText(recent[0].date.substring(5), pad.left, h - 4);
   ctx.textAlign = 'right';
@@ -3707,7 +3716,7 @@ function renderPRBoard() {
   if (!hasAnyPR) { container.innerHTML = ''; return; }
 
   let html = `<div style="margin-top:14px;padding-top:12px;border-top:1px solid ${C.border};">
-    <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:1.2px;color:${C.textDim};margin-bottom:10px;font-family:'Space Grotesk',sans-serif;">Personal Records</div>`;
+    <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:1.2px;color:${C.textDim};margin-bottom:10px;font-family:'Sriracha',cursive;">Personal Records</div>`;
 
   for (const [key, info] of Object.entries(liftKeys)) {
     const pr = prs[key];
@@ -3737,11 +3746,11 @@ function renderPRBoard() {
     html += `<div style="margin-bottom:10px;">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:3px;">
         <div style="display:flex;align-items:baseline;gap:8px;">
-          <span style="font-size:13px;font-weight:600;color:${C.text};font-family:'Space Grotesk',sans-serif;width:58px;">${info.label}</span>
-          <span style="font-size:15px;font-weight:700;color:${isAtPR ? C.accent : C.strength};font-family:'Space Grotesk',sans-serif;">${pr.rm}<span style="font-size:11px;font-weight:400;color:${C.textDim};"> lbs</span></span>
+          <span style="font-size:13px;font-weight:600;color:${C.text};font-family:'Sriracha',cursive;width:58px;">${info.label}</span>
+          <span style="font-size:15px;font-weight:700;color:${isAtPR ? C.accent : C.strength};font-family:'Sriracha',cursive;">${pr.rm}<span style="font-size:11px;font-weight:400;color:${C.textDim};"> lbs</span></span>
         </div>
         <div style="display:flex;align-items:center;gap:6px;">
-          <span style="font-size:10px;color:${C.textDim};font-family:'Space Grotesk',sans-serif;">${dateStr}</span>
+          <span style="font-size:10px;color:${C.textDim};font-family:'Sriracha',cursive;">${dateStr}</span>
           ${statusHtml}
         </div>
       </div>
@@ -3897,32 +3906,32 @@ function populateStrengthDetail() {
     const isCurrent = siVal >= seg.floor && (siVal < seg.ceil || (i === siTierSegs.length - 1 && siVal >= seg.floor));
     const labelColor = isCurrent ? C.text : C.textDim;
     const labelWeight = isCurrent ? '700' : '600';
-    labelHtml += '<div style="flex:' + segWidthPct + ';text-align:center;font-family:Space Grotesk,sans-serif;font-size:9px;font-weight:' + labelWeight + ';letter-spacing:0.5px;color:' + labelColor + ';cursor:pointer;-webkit-tap-highlight-color:transparent;" onclick="showSITierTooltip(event,' + i + ')">' + seg.abbr + '</div>';
+    labelHtml += '<div style="flex:' + segWidthPct + ';text-align:center;font-family:Pangolin,cursive;font-size:9px;font-weight:' + labelWeight + ';letter-spacing:0.5px;color:' + labelColor + ';cursor:pointer;-webkit-tap-highlight-color:transparent;" onclick="showSITierTooltip(event,' + i + ')">' + seg.abbr + '</div>';
   }
 
   let html = `<div style="margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid ${C.border};">
     <div style="display:flex;align-items:baseline;justify-content:space-between;cursor:pointer;" onclick="toggleSectionExplainer('si-explainer',this)">
       <div style="display:flex;align-items:baseline;gap:6px;">
-        <div style="font-family:'Space Grotesk',sans-serif;font-size:32px;font-weight:700;color:${C.strength};">${latestSI ? latestSI.index.toFixed(2) : '--'}</div>
+        <div style="font-family:'Sriracha',cursive;font-size:32px;font-weight:700;color:${C.strength};">${latestSI ? latestSI.index.toFixed(2) : '--'}</div>
         <span class="section-chevron" style="font-size:10px;color:${C.textDim};transition:transform 0.3s ease;display:inline-block;">\u25BE</span>
       </div>
-      <div style="font-family:'Space Grotesk',sans-serif;font-size:12px;display:inline-flex;align-items:center;padding:2px 8px;border-radius:5px;background:${siColor}18;">${tierBadge(siLevel, siColor)}</div>
+      <div style="font-family:'Sriracha',cursive;font-size:12px;display:inline-flex;align-items:center;padding:2px 8px;border-radius:5px;background:${siColor}18;">${tierBadge(siLevel, siColor)}</div>
     </div>
-    <div id="si-explainer" style="font-family:'Space Grotesk',sans-serif;font-size:11px;color:${C.textDim};margin-top:4px;max-height:0;overflow:hidden;opacity:0;transition:max-height 0.3s ease,opacity 0.25s ease;">Big-5 estimated 1RM total / bodyweight \u00B7 higher = stronger</div>
+    <div id="si-explainer" style="font-family:'Sriracha',cursive;font-size:11px;color:${C.textDim};margin-top:4px;max-height:0;overflow:hidden;opacity:0;transition:max-height 0.3s ease,opacity 0.25s ease;">Big-5 estimated 1RM total / bodyweight \u00B7 higher = stronger</div>
 
     ${latestSI ? `<div style="margin-top:12px;">
       <div style="display:flex;align-items:center;">${segHtml}</div>
       <div style="display:flex;align-items:center;margin-top:4px;">${labelHtml}</div>
-      <div id="si-tier-tooltip" style="display:none;margin-top:8px;padding:8px 12px;border-radius:8px;background:${C.surface2};border:1px solid ${C.border};font-family:'Space Grotesk',sans-serif;transition:opacity 0.2s ease;"></div>
-      <div style="font-family:'Space Grotesk',sans-serif;font-size:11px;color:${siColor};margin-top:6px;text-align:center;">${xpLabel}</div>
+      <div id="si-tier-tooltip" style="display:none;margin-top:8px;padding:8px 12px;border-radius:8px;background:${C.surface2};border:1px solid ${C.border};font-family:'Sriracha',cursive;transition:opacity 0.2s ease;"></div>
+      <div style="font-family:'Sriracha',cursive;font-size:11px;color:${siColor};margin-top:6px;text-align:center;">${xpLabel}</div>
     </div>` : ''}
   </div>`;
 
   // Column labels (no %ile column)
   html += `<div style="display:flex;align-items:center;gap:10px;padding:0 0 6px 0;">
-    <div style="width:58px;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:${C.textDim};font-family:'Space Grotesk',sans-serif;flex-shrink:0;">Lift</div>
-    <div style="flex:1;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:${C.textDim};font-family:'Space Grotesk',sans-serif;text-align:center;">Percentile</div>
-    <div style="width:56px;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:${C.textDim};font-family:'Space Grotesk',sans-serif;text-align:right;flex-shrink:0;">Est 1RM</div>
+    <div style="width:58px;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:${C.textDim};font-family:'Sriracha',cursive;flex-shrink:0;">Lift</div>
+    <div style="flex:1;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:${C.textDim};font-family:'Sriracha',cursive;text-align:center;">Percentile</div>
+    <div style="width:56px;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:${C.textDim};font-family:'Sriracha',cursive;text-align:right;flex-shrink:0;">Est 1RM</div>
   </div>`;
 
   // Lift rows
@@ -3948,9 +3957,9 @@ function populateStrengthDetail() {
       <div data-str-bar style="flex:1;height:14px;border-radius:3px;background:${C.surface3};position:relative;overflow:visible;cursor:pointer;-webkit-tap-highlight-color:transparent;" onclick="showStrengthPctile(this)">
         <div style="position:absolute;top:4px;left:0;right:0;height:6px;border-radius:3px;background:linear-gradient(90deg,${C.danger} 0%,${C.warn} 40%,${C.accent} 100%);opacity:0.3;"></div>
         ${hasData ? `<div style="position:absolute;top:50%;left:${markerLeft}%;width:10px;height:10px;border-radius:50%;background:${markerColor};transform:translate(-50%,-50%);border:1.5px solid ${C.surface};pointer-events:none;"></div>` : ''}
-        ${hasData ? `<div data-pctile-tip style="position:absolute;top:50%;left:${markerLeft}%;background:${pctColor};color:${C.bg};font-family:'Space Grotesk',sans-serif;font-size:11px;font-weight:700;padding:2px 6px;border-radius:4px;pointer-events:none;white-space:nowrap;opacity:0;transform:translate(-50%,-50%) scale(0.7);transition:opacity 0.2s ease,transform 0.2s ease;z-index:5;">${pctile}th</div>` : ''}
+        ${hasData ? `<div data-pctile-tip style="position:absolute;top:50%;left:${markerLeft}%;background:${pctColor};color:${C.bg};font-family:'Sriracha',cursive;font-size:11px;font-weight:700;padding:2px 6px;border-radius:4px;pointer-events:none;white-space:nowrap;opacity:0;transform:translate(-50%,-50%) scale(0.7);transition:opacity 0.2s ease,transform 0.2s ease;z-index:5;">${pctile}th</div>` : ''}
       </div>
-      <div style="width:56px;font-family:'Space Grotesk',sans-serif;font-size:12px;color:${C.textDim};text-align:right;flex-shrink:0;">${weightStr}<span style="font-size:10px;color:${C.textDark};"> lbs</span></div>
+      <div style="width:56px;font-family:'Sriracha',cursive;font-size:12px;color:${C.textDim};text-align:right;flex-shrink:0;">${weightStr}<span style="font-size:10px;color:${C.textDark};"> lbs</span></div>
     </div>`;
   }
 
@@ -4202,7 +4211,7 @@ function renderMeasurementsDisplay() {
   const latest = latestMeasurements;
 
   if (!latest) {
-    container.innerHTML = `<div style="font-size:13px;color:${C.textDim};font-family:'Space Grotesk',sans-serif;padding:4px 0;">No measurements yet. Use Import Hevy to start tracking.</div>`;
+    container.innerHTML = `<div style="font-size:13px;color:${C.textDim};font-family:'Sriracha',cursive;padding:4px 0;">No measurements yet. Use Import Hevy to start tracking.</div>`;
     return;
   }
 
@@ -4226,9 +4235,9 @@ function renderMeasurementsDisplay() {
     const borderStyle = isSelected ? `border:1px solid ${C.accent}` : `border:1px solid ${C.border}`;
 
     html += `<div style="padding:10px;border-radius:8px;${borderStyle};background:${C.surface2};cursor:pointer;-webkit-tap-highlight-color:transparent;transition:border-color 0.2s ease;" onclick="toggleMeasSparkline('${field.key}')">
-      <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:${C.textDim};font-family:'Space Grotesk',sans-serif;margin-bottom:4px;">${field.label}</div>
-      <div style="font-family:'Space Grotesk',sans-serif;font-size:20px;font-weight:700;color:${C.text};line-height:1.2;">${val.toFixed(1)}<span style="font-size:11px;font-weight:400;color:${C.textDim};margin-left:2px;">${field.unit}</span></div>
-      <div style="font-size:10px;font-family:'Space Grotesk',sans-serif;color:${ageColor};margin-top:2px;">${ageLabel}</div>
+      <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:${C.textDim};font-family:'Sriracha',cursive;margin-bottom:4px;">${field.label}</div>
+      <div style="font-family:'Sriracha',cursive;font-size:20px;font-weight:700;color:${C.text};line-height:1.2;">${val.toFixed(1)}<span style="font-size:11px;font-weight:400;color:${C.textDim};margin-left:2px;">${field.unit}</span></div>
+      <div style="font-size:10px;font-family:'Sriracha',cursive;color:${ageColor};margin-top:2px;">${ageLabel}</div>
     </div>`;
   }
   html += `</div>`;
@@ -4237,7 +4246,7 @@ function renderMeasurementsDisplay() {
   html += `<div id="meas-sparkline-container" style="max-height:0;overflow:hidden;opacity:0;transition:max-height 0.4s ease,opacity 0.3s ease;margin-top:8px;"></div>`;
 
   if (!hasAny) {
-    container.innerHTML = `<div style="font-size:13px;color:${C.textDim};font-family:'Space Grotesk',sans-serif;padding:4px 0;">No measurements yet. Use Import Hevy to start tracking.</div>`;
+    container.innerHTML = `<div style="font-size:13px;color:${C.textDim};font-family:'Sriracha',cursive;padding:4px 0;">No measurements yet. Use Import Hevy to start tracking.</div>`;
     return;
   }
   container.innerHTML = html;
@@ -4286,7 +4295,7 @@ function toggleMeasSparkline(fieldKey) {
   points.sort((a, b) => (a.date || '').localeCompare(b.date || ''));
 
   if (points.length < 2) {
-    sparkContainer.innerHTML = `<div style="padding:12px;text-align:center;font-size:12px;font-family:'Space Grotesk',sans-serif;color:${C.textDim};">Need 2+ entries to chart ${field.label}.</div>`;
+    sparkContainer.innerHTML = `<div style="padding:12px;text-align:center;font-size:12px;font-family:'Sriracha',cursive;color:${C.textDim};">Need 2+ entries to chart ${field.label}.</div>`;
     sparkContainer.style.opacity = '1';
     sparkContainer.style.maxHeight = '60px';
     return;
@@ -4335,8 +4344,8 @@ function toggleMeasSparkline(fieldKey) {
 
   // Labels at first and last points
   const firstPt = points[0], lastPt = points[points.length - 1];
-  svg += `<text x="${pad}" y="${scaleY(firstPt.value) - 6}" fill="${C.textDim}" font-size="9" font-family="Space Grotesk,sans-serif" text-anchor="start">${firstPt.value.toFixed(1)}</text>`;
-  svg += `<text x="${w - pad}" y="${scaleY(lastPt.value) - 6}" fill="${C.text}" font-size="9" font-family="Space Grotesk,sans-serif" text-anchor="end">${lastPt.value.toFixed(1)}</text>`;
+  svg += `<text x="${pad}" y="${scaleY(firstPt.value) - 6}" fill="${C.textDim}" font-size="9" font-family="Pangolin,cursive" text-anchor="start">${firstPt.value.toFixed(1)}</text>`;
+  svg += `<text x="${w - pad}" y="${scaleY(lastPt.value) - 6}" fill="${C.text}" font-size="9" font-family="Pangolin,cursive" text-anchor="end">${lastPt.value.toFixed(1)}</text>`;
 
   svg += `</svg>`;
 
@@ -4344,7 +4353,7 @@ function toggleMeasSparkline(fieldKey) {
   const dateRange = `${points[0].date || ''} -> ${points[points.length-1].date || ''}`;
   sparkContainer.innerHTML = `<div style="background:${C.surface2};border-radius:8px;border:1px solid ${C.border};padding:10px 8px 6px;">
     ${svg}
-    <div style="text-align:center;font-size:10px;font-family:'Space Grotesk',sans-serif;color:${C.textDark};margin-top:2px;">${dateRange} \u00b7 ${points.length} entries</div>
+    <div style="text-align:center;font-size:10px;font-family:'Sriracha',cursive;color:${C.textDark};margin-top:2px;">${dateRange} \u00b7 ${points.length} entries</div>
   </div>`;
   sparkContainer.style.opacity = '1';
   sparkContainer.style.maxHeight = sparkContainer.scrollHeight + 'px';
@@ -4381,10 +4390,10 @@ function renderProportionsDisplay() {
     return a.pct - b.pct;
   });
   let html = '<div style="padding-top:12px;border-top:1px solid ' + C.border + ';">' +
-    '<div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:1.2px;color:' + C.textDim + ';margin-bottom:10px;font-family:Space Grotesk,sans-serif;">Frame-Adjusted Targets</div>';
+    '<div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:1.2px;color:' + C.textDim + ';margin-bottom:10px;font-family:Pangolin,cursive;">Frame-Adjusted Targets</div>';
   for (const bar of bars) {
     if (bar.target == null) {
-      html += '<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 0;font-family:Space Grotesk,sans-serif;">' +
+      html += '<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 0;font-family:Pangolin,cursive;">' +
         '<span style="font-size:12px;font-weight:600;color:' + C.textMid + ';min-width:70px;">' + bar.label + '</span>' +
         '<span style="font-size:12px;color:' + C.textDim + ';">' + bar.current.toFixed(1) + ' in</span></div>';
       continue;
@@ -4394,7 +4403,7 @@ function renderProportionsDisplay() {
     const fillW = Math.min(pct, 100);
     const pctLabel = bar.inverted ? (pct >= 100 ? 'On target' : pct + '%') : pct + '%';
     html += '<div style="margin-bottom:8px;">' +
-      '<div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:3px;font-family:Space Grotesk,sans-serif;">' +
+      '<div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:3px;font-family:Pangolin,cursive;">' +
       '<span style="font-size:12px;font-weight:600;color:' + C.textMid + ';">' + bar.label + '</span>' +
       '<span style="font-size:11px;color:' + C.textDim + ';">' + bar.current.toFixed(1) + ' / ' + bar.target.toFixed(1) + ' in <span style="color:' + barColor + ';font-weight:600;">(' + pctLabel + ')</span></span>' +
       '</div>' +
@@ -4402,7 +4411,7 @@ function renderProportionsDisplay() {
       '<div style="height:100%;width:' + fillW + '%;background:' + barColor + ';border-radius:3px;transition:width 0.4s ease;"></div>' +
       '</div></div>';
   }
-  html += '<div style="display:flex;justify-content:space-between;margin-top:6px;font-size:9px;font-family:Space Grotesk,sans-serif;color:' + C.textDark + ';">' +
+  html += '<div style="display:flex;justify-content:space-between;margin-top:6px;font-size:9px;font-family:Pangolin,cursive;color:' + C.textDark + ';">' +
     '<span>100% natural max (Casey Butt, wrist: ' + PROFILE.wristIn + '")</span></div></div>';
   container.innerHTML = html;
 }
@@ -4803,7 +4812,7 @@ function renderPowerScore() {
       stroke-dasharray="${fillLen.toFixed(1)} ${gapLen.toFixed(1)}" stroke-linecap="round"
       transform="rotate(-90 ${cx} ${cy})" style="transition:stroke-dasharray 0.6s ease;"/>
     <text x="${cx}" y="${cy}" text-anchor="middle" dominant-baseline="central"
-      fill="${scoreColor}" font-family="Space Grotesk,sans-serif" font-size="12" font-weight="700">${ps.score}</text>
+      fill="${scoreColor}" font-family="Pangolin,cursive" font-size="12" font-weight="700">${ps.score}</text>
   </svg>`;
 }
 
@@ -4820,15 +4829,15 @@ function togglePowerScoreDetail() {
 
   const scoreColor = ps.score >= 70 ? C.accent : ps.score >= 45 ? C.warn : C.danger;
   let html = `<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
-    <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:${C.textDim};font-family:'Space Grotesk',sans-serif;">Power Score</div>
-    <div style="font-family:'Space Grotesk',sans-serif;font-size:20px;font-weight:700;color:${scoreColor};">${ps.score}<span style="font-size:12px;font-weight:500;color:${C.textDim};">/100</span></div>
+    <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:${C.textDim};font-family:'Sriracha',cursive;">Power Score</div>
+    <div style="font-family:'Sriracha',cursive;font-size:20px;font-weight:700;color:${scoreColor};">${ps.score}<span style="font-size:12px;font-weight:500;color:${C.textDim};">/100</span></div>
   </div>`;
 
   for (const c of ps.components) {
     const barColor = c.value >= 70 ? C.accent : c.value >= 45 ? C.warn : C.danger;
     const weightPct = Math.round((c.normalizedWeight || 0) * 100);
     html += `<div style="margin-bottom:8px;">
-      <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:3px;font-family:'Space Grotesk',sans-serif;">
+      <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:3px;font-family:'Sriracha',cursive;">
         <span style="font-size:12px;font-weight:600;color:${C.text};">${c.label} <span style="font-size:10px;font-weight:400;color:${C.textDim};">${weightPct}%</span></span>
         <span style="font-size:11px;color:${C.textDim};">${c.detail} <span style="font-weight:600;color:${barColor};">${c.value}</span></span>
       </div>
