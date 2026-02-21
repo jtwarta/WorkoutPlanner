@@ -1,5 +1,5 @@
 {"updated":"
-2026-02-21T11:28:46-08:00
+2026-02-21T12:07:43-08:00
 ","resting_heart_rate":
 59
 ,"cardio_fitness":
@@ -7,12 +7,19 @@
 ,"cardio_recovery":
 36.63855095766542
 ,"steps":
-11392.625
+12007.875
 ,"active_energy_kcal":
-511.986916666666
+525.313041666666
 ,"walking_heart_rate_avg":
 89
-,"workouts":[{"type":"Stair Climbing
+,"workouts":[{"type":"Walking
+
+","start":"Feb 21, 2026 at 11:35 AM
+
+","duration_min":30.3
+
+,"calories":82 kcal}
+{"type":"Stair Climbing
 
 ","start":"Feb 19, 2026 at 8:31 PM
 
@@ -354,14 +361,7 @@
 
 ","duration_min":95.7
 
-,"calories":317 kcal}
-{"type":"Stair Climbing
-
-","start":"Dec 2, 2025 at 5:04 PM
-
-","duration_min":21.6
-
-,"calories":199 kcal}]
+,"calories":317 kcal}]
 ,"weight_entries": [{"date":"2026-02-16","lbs":166.0001974158344}
 
 {"date":"2026-02-12","lbs":167.0001986050864}
