@@ -1756,7 +1756,7 @@ function preprocessWorkouts(workouts, bodyweightLbs, weightData) {
         if (cardioMin > 0) {
           if (!heatmapDayCardio[dateStr]) heatmapDayCardio[dateStr] = { minutes: 0, sessions: [] };
           heatmapDayCardio[dateStr].minutes += cardioMin;
-          heatmapDayCardio[dateStr].sessions.push({ name, minutes: Math.round(cardioMin), source: 'hevy' });
+          heatmapDayCardio[dateStr].sessions.push({ name, minutes: Math.round(cardioMin), source: 'hevy', timestamp: wDate.getTime() });
         }
       }
 
@@ -1898,13 +1898,12 @@ function preprocessWorkouts(workouts, bodyweightLbs, weightData) {
   // Merge Apple Watch cardio into heatmap (dedup against Hevy within 30 min)
   const WATCH_NON_CARDIO_HM = /strength|weight\s*train|yoga|pilates|stretch|cool\s*down|flexibility|mind.*body|tai\s*chi/i;
   if (healthData && Array.isArray(healthData.workouts)) {
-    // Collect Hevy cardio timestamps for dedup
+    // Collect actual Hevy cardio timestamps for accurate dedup
     const hevyCardioTs = [];
-    for (const [dateStr, cd] of Object.entries(heatmapDayCardio)) {
+    for (const [, cd] of Object.entries(heatmapDayCardio)) {
       for (const sess of cd.sessions) {
-        if (sess.source === 'hevy') {
-          // Approximate timestamp from date
-          hevyCardioTs.push(new Date(dateStr + 'T12:00:00').getTime());
+        if (sess.source === 'hevy' && sess.timestamp) {
+          hevyCardioTs.push(sess.timestamp);
         }
       }
     }
@@ -1922,7 +1921,7 @@ function preprocessWorkouts(workouts, bodyweightLbs, weightData) {
       if (isDup) continue;
       if (!heatmapDayCardio[dateStr]) heatmapDayCardio[dateStr] = { minutes: 0, sessions: [] };
       heatmapDayCardio[dateStr].minutes += dur;
-      heatmapDayCardio[dateStr].sessions.push({ name: aw.type || 'Cardio', minutes: Math.round(dur), source: 'watch' });
+      heatmapDayCardio[dateStr].sessions.push({ name: aw.type || 'Cardio', minutes: Math.round(dur), source: 'watch', timestamp: awDate.getTime() });
     }
   }
 
@@ -2258,114 +2257,52 @@ function resolveAppleCardioModality(type) {
   return null; // not a recognized cardio type
 }
 
-function analyzeCardioHistory(workouts) {
+function analyzeCardioHistory() {
+  // Single source of truth: heatmapDayCardio (already deduped in preprocessWorkouts)
   const now = new Date();
-  const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-
   let cardioSessions7d = 0;
   let estimatedMinutes7d = 0;
   const recentModalities = [];
-  // Track session timestamps for dedup against Apple Health
-  const hevyCardioTimestamps = [];
-  // Track per-source breakdown for UI
   let hevySessions = 0;
   let appleSessions = 0;
   let hevyMinutes = 0;
   let appleMinutes = 0;
-  const cardioLog = []; // per-session detail for breakdown
+  const cardioLog = [];
 
-  // --- Pass 1: Hevy workouts ---
-  for (const w of workouts) {
-    const wDate = new Date(w.start_time || w.created_at);
-    if (wDate < sevenDaysAgo) continue;
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(now);
+    d.setDate(d.getDate() - i);
+    const key = localDateStr(d);
+    const cd = heatmapDayCardio[key];
+    if (!cd || !cd.sessions) continue;
 
-    let workoutHasCardio = false;
-    let workoutCardioMin = 0;
-    let workoutCardioName = '';
+    for (const sess of cd.sessions) {
+      cardioSessions7d++;
+      estimatedMinutes7d += sess.minutes;
 
-    for (const ex of (w.exercises || [])) {
-      const name = ex.title || '';
-      const isCardio = CARDIO_PATTERNS.some(p => p.test(name));
-      if (!isCardio) continue;
-
-      workoutHasCardio = true;
-      if (!workoutCardioName) workoutCardioName = name;
-      let sessionMin = 0;
-      for (const s of (ex.sets || [])) {
-        if (s.duration_seconds && s.duration_seconds > 0) {
-          sessionMin += s.duration_seconds / 60;
-        } else {
-          sessionMin = 20;
-          break;
-        }
+      if (sess.source === 'hevy') {
+        hevySessions++;
+        hevyMinutes += sess.minutes;
+      } else {
+        appleSessions++;
+        appleMinutes += sess.minutes;
       }
-      estimatedMinutes7d += sessionMin;
-      hevyMinutes += sessionMin;
-      workoutCardioMin += sessionMin;
 
-      const modality = name.toLowerCase();
+      // Modality tagging for variety tracking
+      const modality = (sess.name || '').toLowerCase();
       if (/treadmill|walk|run/i.test(modality)) recentModalities.push('treadmill');
       else if (/bike|cycl/i.test(modality)) recentModalities.push('bike');
       else if (/elliptical/i.test(modality)) recentModalities.push('elliptical');
       else if (/stair/i.test(modality)) recentModalities.push('stairclimber');
       else if (/row/i.test(modality)) recentModalities.push('rower');
-    }
+      else recentModalities.push('other');
 
-    if (workoutHasCardio) {
-      cardioSessions7d++;
-      hevySessions++;
-      hevyCardioTimestamps.push(wDate.getTime());
       cardioLog.push({
-        source: 'hevy',
-        type: workoutCardioName,
-        date: wDate,
-        minutes: workoutCardioMin,
+        source: sess.source === 'hevy' ? 'hevy' : 'watch',
+        type: sess.name || 'Unknown',
+        date: sess.timestamp ? new Date(sess.timestamp) : d,
+        minutes: sess.minutes,
         calories: 0,
-      });
-    }
-  }
-
-  // --- Pass 2: Apple Health Watch workouts ---
-  // Everything in healthData.workouts[] was explicitly started on the Watch.
-  // We count all workout types EXCEPT strength/flexibility -- those aren't cardio.
-  const WATCH_NON_CARDIO = /strength|weight\s*train|yoga|pilates|stretch|cool\s*down|flexibility|mind.*body|tai\s*chi/i;
-
-  if (healthData && Array.isArray(healthData.workouts)) {
-    for (const aw of healthData.workouts) {
-      // Parse flexible date: ISO or Shortcuts format "Feb 14, 2026 at 5:10 PM"
-      const startStr = (aw.start || '').replace(/\s+at\s+/i, ' ');
-      const awDate = new Date(startStr);
-      if (isNaN(awDate.getTime()) || awDate < sevenDaysAgo) continue;
-
-      // Skip non-cardio workout types (strength training, yoga, etc.)
-      if (WATCH_NON_CARDIO.test(aw.type || '')) continue;
-
-      // Dedup: skip if a Hevy cardio session started within 30 min
-      const DEDUP_WINDOW_MS = 30 * 60 * 1000;
-      const isDuplicate = hevyCardioTimestamps.some(
-        ts => Math.abs(ts - awDate.getTime()) < DEDUP_WINDOW_MS
-      );
-      if (isDuplicate) continue;
-
-      const dur = parseFloat(aw.duration_min) || 0;
-      if (dur <= 0) continue;
-
-      cardioSessions7d++;
-      appleSessions++;
-      estimatedMinutes7d += dur;
-      appleMinutes += dur;
-
-      // Best-effort modality tag for variety tracking
-      const modality = resolveAppleCardioModality(aw.type) || 'other';
-      recentModalities.push(modality);
-
-      // Log for breakdown
-      cardioLog.push({
-        source: 'watch',
-        type: aw.type || 'Unknown',
-        date: awDate,
-        minutes: dur,
-        calories: parseFloat(aw.calories) || 0,
       });
     }
   }
@@ -2381,7 +2318,7 @@ function analyzeCardioHistory(workouts) {
 function generateCardioRecommendations(workouts) {
   const rhr = healthData ? healthData.resting_heart_rate : null;
   const zones = calculateHRZones(PROFILE.age, rhr);
-  const history = analyzeCardioHistory(workouts);
+  const history = analyzeCardioHistory();
 
   const targetMin = CARDIO_WEEKLY_TARGETS.totalMinModerate;
   const remainingMin = Math.max(0, targetMin - history.estimatedMinutes7d);
@@ -5240,16 +5177,16 @@ function runDevTests() {
   const curly2 = normalizeExerciseName('Farmer\u2018s Carry');
   results.push({ test: 'A2: Left curly -> ASCII', pass: curly2 === "farmer's carry", got: curly2 });
 
-  // Test A3: Cardio session counting (mock workout with 2 cardio exercises)
-  const mockWorkouts = [{
-    start_time: new Date().toISOString(),
-    exercises: [
-      { title: 'Treadmill', sets: [{ duration_seconds: 1200 }] },
-      { title: 'Elliptical', sets: [{ duration_seconds: 900 }] },
-    ]
-  }];
-  const cardioResult = analyzeCardioHistory(mockWorkouts);
-  results.push({ test: 'A3: 2 cardio exercises = 1 session', pass: cardioResult.cardioSessions7d === 1, got: cardioResult.cardioSessions7d });
+  // Test A3: analyzeCardioHistory reads from heatmapDayCardio (unified source)
+  const _testDate = localDateStr(new Date());
+  const _savedCd = heatmapDayCardio[_testDate];
+  heatmapDayCardio[_testDate] = { minutes: 35, sessions: [
+    { name: 'Treadmill', minutes: 20, source: 'hevy', timestamp: Date.now() },
+    { name: 'Elliptical', minutes: 15, source: 'hevy', timestamp: Date.now() },
+  ]};
+  const cardioResult = analyzeCardioHistory();
+  if (_savedCd) heatmapDayCardio[_testDate] = _savedCd; else delete heatmapDayCardio[_testDate];
+  results.push({ test: 'A3: cardio reads from heatmapDayCardio', pass: cardioResult.estimatedMinutes7d >= 35, got: cardioResult.estimatedMinutes7d });
 
   // Test A4: CSS custom properties load correctly (catches en-dash encoding bug)
   const rootStyle = getComputedStyle(document.documentElement);
