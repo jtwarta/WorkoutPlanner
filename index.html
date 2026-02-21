@@ -172,14 +172,6 @@ font-weight: 600;
 /* ===================== */
 /* EXERCISE PRESCRIPTIONS */
 /* ===================== */
-.session-summary {
-display: flex;
-align-items: center;
-justify-content: space-between;
-margin-bottom: 14px;
-padding-bottom: 10px;
-border-bottom: 1px solid var(--border);
-}
 
 .ex-group {
 margin-bottom: 20px;
@@ -642,7 +634,6 @@ color: var(--text-dim);
   <div class="card" style="border:1px solid rgba(180,197,219,0.10);">
     <div id="today-hero"></div>
     <div id="today-chips-wrapper"></div>
-    <div id="session-summary"></div>
     <div id="suggested-exercises"></div>
     <div id="cardio-section"></div>
   </div>
@@ -683,8 +674,14 @@ color: var(--text-dim);
 
 <div id="tab-weight" class="hidden">
   <div class="card">
+    <div class="card-title">Strength Index</div>
+    <div id="strength-detail" style="margin-bottom:14px;"></div>
+    <div id="pr-board"></div>
+  </div>
+
+  <div class="card">
     <div class="card-title" style="display:flex;align-items:center;justify-content:space-between;">
-      <span>Body Weight & Strength</span>
+      <span>Weight & Trends</span>
     </div>
     <div class="weight-header">
       <div class="weight-left">
@@ -693,18 +690,10 @@ color: var(--text-dim);
         <span class="weight-unit">lbs</span>
       </div>
     </div>
-    <!-- v1.7: Compact strength detail (Option A) -->
-    <div id="strength-detail" style="margin-bottom:14px;"></div>
-    <div id="cardio-detail" style="margin-bottom:14px;"></div>
-    <div id="pr-board"></div>
     <div class="weight-chart">
       <canvas id="weight-canvas"></canvas>
     </div>
-    <div class="chart-legend">
-      <span><span class="legend-dot" style="background:#5eead4"></span>Weight</span>
-      <span><span class="legend-dot" style="background:#8f9ae8"></span>Strength Score</span>
-      <span><span class="legend-dot" style="background:#e8a060"></span>Cardio Score</span>
-    </div>
+    <div id="weight-chart-legend" class="chart-legend"></div>
   </div>
 
   <!-- Health Vitals Card -->
@@ -2726,13 +2715,7 @@ function buildTimedSession(recs, prefs) {
 // renderRecommendations removed in v1.7 -- replaced by renderTimedSession
 
 // B2: Sort mode state for Today tab -- 'urgency' (default) or 'anatomy'
-let todaySortMode = 'urgency';
 const ANATOMY_ORDER = ['chest', 'back', 'shoulders', 'quads', 'hamstrings', 'glutes', 'biceps', 'triceps', 'calves', 'core', 'neck', 'forearms'];
-
-function toggleTodaySort(mode) {
-  todaySortMode = mode;
-  if (LAST_RECS) renderTimedSession(LAST_RECS);
-}
 
 function toggleTodayChips() {
   const wrapper = document.getElementById('today-chips-wrapper');
@@ -2753,13 +2736,6 @@ function renderTimedSession(recs) {
     if (!grouped[ex.muscle]) grouped[ex.muscle] = [];
     grouped[ex.muscle].push(ex);
   }
-
-  // B2: Sort toggle UI
-  const urgBtn = todaySortMode === 'urgency';
-  const segStyle = `display:inline-flex;gap:2px;background:${C.surface};border-radius:6px;padding:2px;border:1px solid ${C.border};`;
-  const btnOn = `padding:4px 10px;font-size:11px;font-weight:600;font-family:'Space Grotesk',sans-serif;border:none;border-radius:5px;cursor:pointer;`;
-  const btnActive = `${btnOn}background:${C.surface3};color:${C.text};`;
-  const btnInactive = `${btnOn}background:none;color:${C.textDim};`;
 
   // --- HERO BLOCK ---
   const muscleKeys = Object.keys(grouped);
@@ -2808,11 +2784,7 @@ function renderTimedSession(recs) {
 
   const wrapper = document.getElementById('today-chips-wrapper');
   wrapper.innerHTML = `
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:${chipsVisible ? '10' : '14'}px;padding-bottom:12px;border-bottom:1px solid ${C.border};">
-      <div style="${segStyle}">
-        <button style="${urgBtn ? btnActive : btnInactive}" onclick="toggleTodaySort('urgency')">Urgency</button>
-        <button style="${!urgBtn ? btnActive : btnInactive}" onclick="toggleTodaySort('anatomy')">Anatomy</button>
-      </div>
+    <div style="display:flex;align-items:center;justify-content:flex-end;margin-bottom:${chipsVisible ? '10' : '14'}px;padding-bottom:12px;border-bottom:1px solid ${C.border};">
       <div onclick="toggleTodayChips()" style="display:flex;align-items:center;gap:5px;cursor:pointer;padding:4px 10px;border-radius:6px;background:${toggleBg};border:1px solid ${toggleColor}25;-webkit-tap-highlight-color:transparent;">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="${toggleColor}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
         <span style="font-size:11px;font-weight:600;font-family:'Space Grotesk',sans-serif;color:${toggleColor};">Filters</span>
@@ -2820,26 +2792,16 @@ function renderTimedSession(recs) {
     </div>
     <div id="today-chips-row" style="display:${chipsVisible ? 'flex' : 'none'};flex-wrap:wrap;gap:6px;margin-bottom:14px;">${chipDefs}</div>`;
 
-  // --- SESSION SUMMARY (just count) ---
-  document.getElementById('session-summary').innerHTML = `
-    <div style="font-family:'Space Grotesk',sans-serif;font-size:12px;color:${C.textDim};margin-bottom:14px;">${exercises.length} exercises across ${muscleKeys.length} muscle groups</div>`;
-
   // --- EXERCISE LIST ---
   const exContainer = document.getElementById('suggested-exercises');
 
-  // B2: Sort muscle groups by selected mode
+  // Sort muscle groups by anatomy order
   let groupKeys = Object.keys(grouped);
-  if (todaySortMode === 'anatomy') {
-    groupKeys.sort((a, b) => {
-      const ai = ANATOMY_ORDER.indexOf(a);
-      const bi = ANATOMY_ORDER.indexOf(b);
-      return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi);
-    });
-  } else {
-    const recScores = {};
-    recs.forEach(r => { recScores[r.key] = r.score; });
-    groupKeys.sort((a, b) => (recScores[b] || 0) - (recScores[a] || 0));
-  }
+  groupKeys.sort((a, b) => {
+    const ai = ANATOMY_ORDER.indexOf(a);
+    const bi = ANATOMY_ORDER.indexOf(b);
+    return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi);
+  });
 
   // B1: Build rec lookup for explainers
   const recMap = {};
@@ -3453,7 +3415,6 @@ function renderWeightChart() {
 
   // ALWAYS populate strength detail BEFORE any early returns
   populateStrengthDetail();
-  populateCardioDetail();
 
   if (WEIGHT_DATA.length === 0) return;
 
@@ -3656,6 +3617,15 @@ function renderWeightChart() {
       }
       showChartTooltip(canvas, closest);
     });
+  }
+
+  // Populate chart legend dynamically
+  const legendEl = document.getElementById('weight-chart-legend');
+  if (legendEl) {
+    legendEl.innerHTML =
+      `<span><span class="legend-dot" style="background:${C.accent}"></span>Weight</span>` +
+      `<span><span class="legend-dot" style="background:${C.strength}"></span>Strength Score</span>` +
+      `<span><span class="legend-dot" style="background:${C.cardio}"></span>Cardio Score</span>`;
   }
 }
 
@@ -3987,113 +3957,6 @@ function populateStrengthDetail() {
   container.innerHTML = html;
 }
 
-// ============================================================
-// CARDIO SCORE DETAIL (mirrors Strength Score detail)
-// ============================================================
-function populateCardioDetail() {
-  const container = document.getElementById('cardio-detail');
-  if (cardioScoreData.length === 0) {
-    container.innerHTML = '';
-    return;
-  }
-
-  const latest = cardioScoreData[cardioScoreData.length - 1];
-  const v = latest.score;
-  const sig = latest.signals;
-
-  // Tier mapping
-  let csLevel = 'Low', csColor = C.danger;
-  if (v >= 1.4)      { csLevel = 'Excellent'; csColor = C.accent; }
-  else if (v >= 1.0) { csLevel = 'Good'; csColor = C.blue; }
-  else if (v >= 0.6) { csLevel = 'Fair'; csColor = C.warn; }
-
-  // Tier thresholds for XP bar
-  const csTiers = [
-    { floor: 0,   ceil: 0.6, label: 'Low',       abbr: 'LOW', color: C.danger },
-    { floor: 0.6, ceil: 1.0, label: 'Fair',       abbr: 'FAIR', color: C.warn },
-    { floor: 1.0, ceil: 1.4, label: 'Good',       abbr: 'GOOD', color: C.blue },
-    { floor: 1.4, ceil: 2.0, label: 'Excellent',  abbr: 'EXCL', color: C.accent },
-  ];
-  const csTrackMax = 2.0;
-
-  // Build segmented bar
-  let segHtml = '';
-  for (let i = 0; i < csTiers.length; i++) {
-    const seg = csTiers[i];
-    const segWidthPct = ((seg.ceil - seg.floor) / csTrackMax) * 100;
-    const isCurrent = v >= seg.floor && (v < seg.ceil || (i === csTiers.length - 1 && v >= seg.floor));
-    const isPast = v >= seg.ceil;
-
-    let fillPct = 0;
-    if (isPast) fillPct = 100;
-    else if (isCurrent) fillPct = Math.max(0, Math.min(100, ((v - seg.floor) / (seg.ceil - seg.floor)) * 100));
-
-    const borderL = i === 0 ? 'border-radius:5px 0 0 5px;' : '';
-    const borderR = i === csTiers.length - 1 ? 'border-radius:0 5px 5px 0;' : '';
-    const gapR = i < csTiers.length - 1 ? 'margin-right:2px;' : '';
-    const fillColor = isPast || isCurrent ? C.cardio : 'transparent';
-    const fillOpacity = isPast ? '0.5' : isCurrent ? '0.8' : '0';
-
-    segHtml += '<div style="position:relative;flex:' + segWidthPct + ';height:10px;background:' + C.surface3 + ';' + borderL + borderR + gapR + 'overflow:hidden;">' +
-      '<div style="position:absolute;top:0;left:0;height:100%;width:' + fillPct.toFixed(1) + '%;background:' + fillColor + ';opacity:' + fillOpacity + ';' + borderL + borderR + 'transition:width 0.6s ease;"></div>' +
-      '</div>';
-  }
-
-  // Tier labels
-  let labelHtml = '';
-  for (let i = 0; i < csTiers.length; i++) {
-    const seg = csTiers[i];
-    const segWidthPct = ((seg.ceil - seg.floor) / csTrackMax) * 100;
-    const isCurrent = v >= seg.floor && (v < seg.ceil || (i === csTiers.length - 1 && v >= seg.floor));
-    const labelColor = isCurrent ? C.text : C.textDim;
-    const labelWeight = isCurrent ? '700' : '600';
-    labelHtml += '<div style="flex:' + segWidthPct + ';text-align:center;font-family:Space Grotesk,sans-serif;font-size:9px;font-weight:' + labelWeight + ';letter-spacing:0.5px;color:' + labelColor + ';">' + seg.abbr + '</div>';
-  }
-
-  // Signal breakdown
-  const signals = [
-    { key: 'activity', label: 'Activity', weight: '40%', val: sig.activity, detail: latest.weeklyMinutes + ' min/wk' },
-    { key: 'vo2', label: 'VO2 Max', weight: '30%', val: sig.vo2, detail: sig.vo2 !== null ? (sig.vo2 * 50).toFixed(0) + 'th %ile' : 'no data' },
-    { key: 'rhr', label: 'Resting HR', weight: '20%', val: sig.rhr, detail: sig.rhr !== null ? Math.round(60 / sig.rhr) + ' bpm' : 'no data' },
-    { key: 'recovery', label: 'Recovery', weight: '10%', val: sig.recovery, detail: sig.recovery !== null ? (sig.recovery * 20).toFixed(0) + ' bpm' : 'no data' },
-  ];
-
-  let sigRows = '';
-  for (const s of signals) {
-    const hasData = s.val !== null;
-    const barPct = hasData ? Math.min(100, Math.max(0, (s.val / 2.0) * 100)) : 0;
-    const barColor = !hasData ? C.textDim : s.val >= 1.0 ? C.accent : s.val >= 0.6 ? C.warn : C.danger;
-    const detailColor = hasData ? C.textMid : C.textDim;
-
-    sigRows += '<div style="display:flex;align-items:center;gap:8px;padding:4px 0;">' +
-      '<div style="width:60px;font-family:Space Grotesk,sans-serif;font-size:11px;color:' + C.textMid + ';flex-shrink:0;">' + s.label + '</div>' +
-      '<div style="flex:1;height:6px;background:' + C.surface3 + ';border-radius:3px;overflow:hidden;">' +
-        '<div style="height:100%;width:' + barPct.toFixed(1) + '%;background:' + barColor + ';border-radius:3px;transition:width 0.6s ease;"></div>' +
-      '</div>' +
-      '<div style="width:60px;font-family:Space Grotesk,sans-serif;font-size:10px;color:' + detailColor + ';text-align:right;flex-shrink:0;">' + s.detail + '</div>' +
-    '</div>';
-  }
-
-  container.innerHTML = '<div style="padding-bottom:10px;border-bottom:1px solid ' + C.border + ';">' +
-    '<div style="display:flex;align-items:baseline;justify-content:space-between;cursor:pointer;" onclick="toggleSectionExplainer(\'cs-explainer\',this)">' +
-      '<div style="display:flex;align-items:baseline;gap:6px;">' +
-        '<div style="font-family:Space Grotesk,sans-serif;font-size:32px;font-weight:700;color:' + C.cardio + ';">' + v.toFixed(2) + '</div>' +
-        '<span class="section-chevron" style="font-size:10px;color:' + C.textDim + ';transition:transform 0.3s ease;display:inline-block;">\\u25BE</span>' +
-      '</div>' +
-      '<div style="font-family:Space Grotesk,sans-serif;font-size:12px;display:inline-flex;align-items:center;padding:2px 8px;border-radius:5px;background:' + csColor + '18;">' + tierBadge(csLevel, csColor) + '</div>' +
-    '</div>' +
-    '<div id="cs-explainer" style="font-family:Space Grotesk,sans-serif;font-size:11px;color:' + C.textDim + ';margin-top:4px;max-height:0;overflow:hidden;opacity:0;transition:max-height 0.3s ease,opacity 0.25s ease;">Composite cardio fitness \\u00B7 Activity + VO2 + RHR + Recovery \\u00B7 1.0 = target</div>' +
-    '<div style="margin-top:12px;">' +
-      '<div style="display:flex;align-items:center;">' + segHtml + '</div>' +
-      '<div style="display:flex;align-items:center;margin-top:4px;">' + labelHtml + '</div>' +
-    '</div>' +
-    '<div style="margin-top:10px;">' + sigRows + '</div>' +
-  '</div>';
-}
-
-// ============================================================
-// WEIGHT INPUT
-// ============================================================
 // ============================================================
 // BODY MEASUREMENTS UI (v1.7 Phase 2)
 // ============================================================
