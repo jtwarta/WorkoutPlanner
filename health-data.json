@@ -1,5 +1,5 @@
 {"updated":"
-2026-02-21T09:53:32-08:00
+2026-02-21T11:28:46-08:00
 ","resting_heart_rate":
 59
 ,"cardio_fitness":
@@ -7,9 +7,9 @@
 ,"cardio_recovery":
 36.63855095766542
 ,"steps":
-11158.5
+11392.625
 ,"active_energy_kcal":
-576.296333333332
+511.986916666666
 ,"walking_heart_rate_avg":
 89
 ,"workouts":[{"type":"Stair Climbing
@@ -375,4 +375,9 @@
 ,"body_fat_pct": 12.98999977111816
 ,"lean_body_mass_lbs": 150.4
 ,"waist_circumference_in": 34.90000000000001
+
+,"rhr_12m":63,"rhr_6m":58,"rhr_3m":65
+,"vo2_12m":38.25,"vo2_6m":40.92,"vo2_3m":39.92
+,"rec_12m":30.09545454545454,"rec_6m":36.06035287014377,"rec_3m":29.53859668058604
+
 }
