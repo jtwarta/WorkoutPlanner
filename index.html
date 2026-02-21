@@ -1,12 +1,16 @@
 <!DOCTYPE html>
 
 <!--
-  LiftScript v1.13
-  Changes from v1.12:
-  11. Frame-adjusted muscle size targets (Casey Butt formulas, wrist-based)
-  12. Proportion analysis replaced with progress bars toward genetic potential
-  13. Error handler and fetch timeouts for reliability
-  14. Full ASCII encoding (immune to iOS Smart Punctuation corruption)
+  LiftScript v1.14
+  Changes from v1.13:
+  1.  Exercise rotation: recency + variety scoring replaces static pick order
+  2.  Compound anchor bonus keeps core barbell lifts in most sessions
+  3.  Cardio Score restructured: vitals-only (VO2 50%, RHR 30%, Recovery 20%)
+  4.  New Dedication Score: rolling 7d effort (lift sessions, coverage, cardio min)
+  5.  New Body Composition Index: body fat, frame targets, waist-to-height ratio
+  6.  Power Score now composites all 4 indices (no redundant calculations)
+  7.  Chart: 5 toggleable lines (Weight, SI, Cardio Fitness, Dedication, Body Comp)
+  8.  Tooltip updated: shows all index values at each data point
   Changes from v1.11:
   1.  Hevy CSV measurement import: tap "Import Hevy" on Body Measurements card
   2.  Added shoulder, hip, and thigh to MEASUREMENT_FIELDS
@@ -765,7 +769,7 @@ window.addEventListener('unhandledrejection', function(e) {
 </script>
 <script>
 // ============================================================
-// LIFTSCRIPT v1.13
+// LIFTSCRIPT v1.14
 // ============================================================
 // SCIENTIFIC FOUNDATION
 // PILLAR 1: Volume-Hypertrophy Targets
@@ -1243,6 +1247,74 @@ const MUSCLE_EXERCISE_PICKS = {
   forearms:   ['Wrist Curl (Barbell)', 'Reverse Curl (Barbell)', 'Farmer Carry (Dumbbell)'],
 };
 
+// Primary compound anchor per group -- always gets a priority boost
+// so the core barbell lifts stay in most sessions
+const COMPOUND_ANCHORS = {
+  chest: 'Bench Press (Barbell)',
+  back: 'Bent Over Row (Barbell)',
+  shoulders: 'Overhead Press (Barbell)',
+  quads: 'Squat (Barbell)',
+  hamstrings: 'Romanian Deadlift (Barbell)',
+  glutes: 'Hip Thrust (Barbell)',
+};
+
+// Rank exercises within a muscle group using history data
+// Returns the same exercise names but reordered by composite score
+function rankExercisesForMuscle(muscleKey) {
+  const pool = MUSCLE_EXERCISE_PICKS[muscleKey] || [];
+  if (pool.length <= 1) return pool;
+
+  const now = new Date();
+  const todayStr = localDateStr(now);
+  const scored = [];
+
+  for (const exName of pool) {
+    const hist = exerciseHistory[exName];
+    const db = EXERCISE_DB[exName];
+    let score = 1.0;
+
+    // 1. Recency: days since last performed (more days = higher score)
+    // Cap at 21 days to avoid infinite growth for never-done exercises
+    let daysSince = 14; // default if never done
+    if (hist && hist.lastDate) {
+      const last = new Date(hist.lastDate + 'T12:00:00');
+      daysSince = Math.max(0, Math.round((now - last) / (1000 * 60 * 60 * 24)));
+    }
+    const recencyScore = Math.min(daysSince / 14, 1.5);
+    score += recencyScore * 0.4;
+
+    // 2. Variety: fewer appearances in last 30d = higher score
+    let count30d = 0;
+    if (hist && hist.dates) {
+      const cutoff = new Date(now);
+      cutoff.setDate(cutoff.getDate() - 30);
+      const cutoffStr = localDateStr(cutoff);
+      for (const d of hist.dates) {
+        if (d >= cutoffStr) count30d++;
+      }
+    }
+    const varietyScore = Math.max(0, 1 - (count30d / 8));
+    score += varietyScore * 0.25;
+
+    // 3. Compound anchor bonus: primary compound gets permanent boost
+    if (COMPOUND_ANCHORS[muscleKey] === exName) {
+      score += 0.6;
+    }
+
+    // 4. Deficit bonus: if current weight is well below benchmark
+    if (db && db.benchmarkLbs > 0 && hist && hist.lastWeightLbs > 0) {
+      if (hist.lastWeightLbs / db.benchmarkLbs < 0.85) {
+        score += 0.2;
+      }
+    }
+
+    scored.push({ name: exName, score });
+  }
+
+  scored.sort((a, b) => b.score - a.score);
+  return scored.map(s => s.name);
+}
+
 // ============================================================
 // BODY WEIGHT DATA - Baseline from Strong CSV export
 // ============================================================
@@ -1463,6 +1535,8 @@ let exerciseHistory = {};
 let muscle1RMs = {};
 let strengthIndexData = [];
 let cardioScoreData = [];
+let dedicationData = [];
+let bodyCompData = [];
 let WEIGHT_DATA = [];
 let LAST_RECS = null;
 let healthData = null;
@@ -1861,13 +1935,12 @@ function preprocessWorkouts(workouts, bodyweightLbs, weightData) {
     }
   }
 
-  // ---- Cardio Score timeline (composite: activity + vitals) ----
-  // Signals (each normalized so 1.0 = meeting target / 50th pctile):
-  //   Activity 40%: rolling 7-day cardio min / 150 (AHA), capped at 2.0
-  //   VO2 Max  30%: percentile / 50
-  //   RHR      20%: inverted (60bpm = 1.0, lower better, capped 0.5-1.5)
-  //   Recovery 10%: recovery bpm / 20 (20bpm = 1.0, capped at 2.0)
+  // ---- Cardio Fitness timeline (vitals-only, no activity) ----
+  // Signals: VO2 Max 50%, RHR 30% (inverted), Recovery 20%
   const csTimeline = [];
+  // ---- Dedication timeline (effort + consistency, rolling 7d) ----
+  const dedTimeline = [];
+
   const cardioDates = Object.keys(heatmapDayCardio).sort();
   const allActivityDates = new Set([
     ...Object.keys(heatmapDayWorkouts),
@@ -1876,7 +1949,6 @@ function preprocessWorkouts(workouts, bodyweightLbs, weightData) {
   const allDatesArr = [...allActivityDates].sort();
 
   // Build vitals interpolation from quarterly snapshots (12m, 6m, 3m, current)
-  // Each returns a sorted array of {date, value} for linear interpolation
   function buildVitalTimeline(v12m, v6m, v3m, vNow) {
     const now = new Date();
     const points = [];
@@ -1924,61 +1996,83 @@ function preprocessWorkouts(workouts, bodyweightLbs, weightData) {
     healthData.cardio_recovery
   ) : [];
 
+  // Count total unique muscle groups in MUSCLE_GROUPS
+  const totalMuscleGroups = Object.keys(MUSCLE_GROUPS).length;
+
   for (const dateStr of allDatesArr) {
     const d = new Date(dateStr + 'T12:00:00');
-    // Activity signal: rolling 7-day cardio minutes
-    let weekMin = 0;
-    for (let i = 0; i < 7; i++) {
-      const lookback = new Date(d);
-      lookback.setDate(lookback.getDate() - i);
-      const lbStr = lookback.toISOString().substring(0, 10);
-      if (heatmapDayCardio[lbStr]) weekMin += heatmapDayCardio[lbStr].minutes;
-    }
-    const activitySignal = Math.min(weekMin / 150, 2.0);
 
-    // VO2 signal
+    // ==== CARDIO FITNESS (vitals only) ====
     const vo2Val = interpolateVital(vo2Timeline, dateStr);
     let vo2Signal = null;
     if (vo2Val && vo2Val > 0) {
       const pctile = estimateVO2Percentile(vo2Val, PROFILE.age);
       vo2Signal = Math.min(pctile / 50, 2.0);
     }
-
-    // RHR signal (inverted: lower is better)
     const rhrVal = interpolateVital(rhrTimeline, dateStr);
     let rhrSignal = null;
     if (rhrVal && rhrVal > 0) {
       rhrSignal = Math.max(0.5, Math.min(1.5, 60 / rhrVal));
     }
-
-    // Recovery signal
     const recVal = interpolateVital(recTimeline, dateStr);
     let recSignal = null;
     if (recVal && recVal > 0) {
       recSignal = Math.min(recVal / 20, 2.0);
     }
 
-    // Composite: reweight based on available signals
-    let totalWeight = 0, weightedSum = 0;
-    if (activitySignal > 0 || weekMin > 0) { weightedSum += activitySignal * 40; totalWeight += 40; }
-    if (vo2Signal !== null) { weightedSum += vo2Signal * 30; totalWeight += 30; }
-    if (rhrSignal !== null) { weightedSum += rhrSignal * 20; totalWeight += 20; }
-    if (recSignal !== null) { weightedSum += recSignal * 10; totalWeight += 10; }
-
-    if (totalWeight > 0) {
-      const score = Math.round((weightedSum / totalWeight) * 100) / 100;
+    // Vitals-only composite (reweight for available signals)
+    let csTotalW = 0, csWSum = 0;
+    if (vo2Signal !== null) { csWSum += vo2Signal * 50; csTotalW += 50; }
+    if (rhrSignal !== null) { csWSum += rhrSignal * 30; csTotalW += 30; }
+    if (recSignal !== null) { csWSum += recSignal * 20; csTotalW += 20; }
+    if (csTotalW > 0) {
       csTimeline.push({
         date: dateStr,
-        score,
-        weeklyMinutes: Math.round(weekMin),
+        score: Math.round((csWSum / csTotalW) * 100) / 100,
         signals: {
-          activity: Math.round(activitySignal * 100) / 100,
           vo2: vo2Signal !== null ? Math.round(vo2Signal * 100) / 100 : null,
           rhr: rhrSignal !== null ? Math.round(rhrSignal * 100) / 100 : null,
           recovery: recSignal !== null ? Math.round(recSignal * 100) / 100 : null,
         },
       });
     }
+
+    // ==== DEDICATION (effort, rolling 7d) ====
+    let weekLiftDays = 0;
+    let weekCardioMin = 0;
+    const weekMusclesHit = new Set();
+    for (let i = 0; i < 7; i++) {
+      const lb = new Date(d);
+      lb.setDate(lb.getDate() - i);
+      const lbStr = lb.toISOString().substring(0, 10);
+      if (heatmapDayWorkouts[lbStr]) {
+        weekLiftDays++;
+        const dayMuscles = heatmapDayMuscle[lbStr];
+        if (dayMuscles) {
+          for (const m of Object.keys(dayMuscles)) weekMusclesHit.add(m);
+        }
+      }
+      if (heatmapDayCardio[lbStr]) weekCardioMin += heatmapDayCardio[lbStr].minutes;
+    }
+
+    // Lifting sessions: 4/week target = 1.0, capped at 1.5
+    const liftScore = Math.min(weekLiftDays / 4, 1.5);
+    // Muscle coverage: all 12 groups in 7d = 1.0
+    const coverageScore = weekMusclesHit.size / totalMuscleGroups;
+    // Cardio: 150min/week target = 1.0, capped at 1.5
+    const cardioMinScore = Math.min(weekCardioMin / 150, 1.5);
+
+    // Weighted: lifting 40%, coverage 20%, cardio 30%, consistency bonus 10%
+    // Consistency bonus: 1.0 if both lifting and cardio targets met
+    const consistencyBonus = (weekLiftDays >= 3 && weekCardioMin >= 100) ? 1.0 : (weekLiftDays >= 2 || weekCardioMin >= 50) ? 0.5 : 0;
+    const dedScore = (liftScore * 0.40) + (coverageScore * 0.20) + (cardioMinScore * 0.30) + (consistencyBonus * 0.10);
+    dedTimeline.push({
+      date: dateStr,
+      score: Math.round(dedScore * 100) / 100,
+      liftDays: weekLiftDays,
+      cardioMin: Math.round(weekCardioMin),
+      musclesCovered: weekMusclesHit.size,
+    });
   }
 
   return {
@@ -1987,6 +2081,7 @@ function preprocessWorkouts(workouts, bodyweightLbs, weightData) {
     muscle1RMs: muscle1RMResults,
     strengthIndexTimeline: siTimeline,
     cardioScoreTimeline: csTimeline,
+    dedicationTimeline: dedTimeline,
     heatmapDayMuscle,
     heatmapDayWorkouts,
     heatmapDayCardio,
@@ -2627,7 +2722,7 @@ function buildTimedSession(recs, prefs) {
   // Build candidates
   const candidates = [];
   for (const key of topKeys) {
-    const picks = MUSCLE_EXERCISE_PICKS[key] || [];
+    const picks = rankExercisesForMuscle(key);
     const cappedPicks = picks.slice(0, muscleCaps[key]);
     const groupPriority = recScores[key] || 0;
 
@@ -3366,8 +3461,9 @@ document.addEventListener('click', function(e) {
 // ============================================================
 // WEIGHT CHART + SI (v1.1 Task 2: always-visible SI panel)
 // ============================================================
-let _chartPoints = []; // [{x, y, date, weight, si, cs}] for click interaction
+let _chartPoints = []; // [{x, y, date, weight, si, cs, ded}] for click interaction
 let _chartTooltipTimer = null;
+const _chartLineVisible = { weight: true, si: true, cardio: true, dedication: true, bodyComp: true };
 
 function showChartTooltip(canvas, pt) {
   const parent = canvas.parentElement;
@@ -3379,9 +3475,10 @@ function showChartTooltip(canvas, pt) {
   const dateObj = new Date(pt.date + 'T12:00:00');
   const dateStr = dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   let label = `${pt.weight.toFixed(1)} lbs`;
-  if (pt.si) label += `<br><span style="color:${C.strength};">${pt.si.toFixed(2)} SS</span>`;
-  if (pt.cs) label += `<br><span style="color:${C.cardio};">${pt.cs.toFixed(2)} CS</span>`;
-  if (pt.csMin) label += `<br><span style="color:${C.textDim};font-size:9px;">${pt.csMin} min/wk</span>`;
+  if (pt.si) label += `<br><span style="color:${C.strength};">SI ${pt.si.toFixed(2)}</span>`;
+  if (pt.cs) label += `<br><span style="color:${C.cardio};">CF ${pt.cs.toFixed(2)}</span>`;
+  if (pt.ded) label += `<br><span style="color:${C.teal};">Ded ${pt.ded.toFixed(2)}</span>`;
+  if (pt.bc) label += `<br><span style="color:${C.pink};">BC ${pt.bc.toFixed(2)}</span>`;
 
   const tip = document.createElement('div');
   tip.className = 'chart-tooltip';
@@ -3463,7 +3560,7 @@ function renderWeightChart() {
   const wMax = Math.max(...wValues) + 2;
   const wXStep = chartW / Math.max(recent.length - 1, 1);
 
-  // Weight line
+  // Weight line (always visible - base layer)
   _chartPoints = []; // reset
   ctx.beginPath();
   ctx.strokeStyle = C.accent;
@@ -3475,7 +3572,7 @@ function renderWeightChart() {
     const x = pad.left + i * wXStep;
     const y = pad.top + (1 - (d.value - wMin) / (wMax - wMin)) * chartH;
     if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
-    _chartPoints.push({ x, y, date: d.date, weight: d.value, si: null, cs: null, csMin: null });
+    _chartPoints.push({ x, y, date: d.date, weight: d.value, si: null, cs: null, csMin: null, ded: null, bc: null });
   });
   ctx.stroke();
 
@@ -3513,32 +3610,32 @@ function renderWeightChart() {
       const siMin = Math.min(...siValues) - 0.1;
       const siMax = Math.max(...siValues) + 0.1;
 
-      ctx.beginPath();
-      ctx.strokeStyle = C.strength;
-      ctx.lineWidth = 2;
-      ctx.setLineDash([4, 4]);
-
-      siFiltered.forEach((d, i) => {
-        const dayOffset = (new Date(d.date) - new Date(firstDate)) / (1000 * 60 * 60 * 24);
-        const x = pad.left + (totalDays > 0 ? (dayOffset / totalDays) : 0) * chartW;
-        const y = pad.top + (1 - (d.index - siMin) / (siMax - siMin)) * chartH;
-        if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
-      });
-      ctx.stroke();
-      ctx.setLineDash([]);
-
-      [0, siFiltered.length - 1].forEach(i => {
-        const d = siFiltered[i];
-        const dayOffset = (new Date(d.date) - new Date(firstDate)) / (1000 * 60 * 60 * 24);
-        const x = pad.left + (totalDays > 0 ? (dayOffset / totalDays) : 0) * chartW;
-        const y = pad.top + (1 - (d.index - siMin) / (siMax - siMin)) * chartH;
+      if (_chartLineVisible.si) {
         ctx.beginPath();
-        ctx.arc(x, y, 3.5, 0, Math.PI * 2);
-        ctx.fillStyle = C.strength;
-        ctx.fill();
-      });
+        ctx.strokeStyle = C.strength;
+        ctx.lineWidth = 2;
+        ctx.setLineDash([4, 4]);
+        siFiltered.forEach((d, i) => {
+          const dayOffset = (new Date(d.date) - new Date(firstDate)) / (1000 * 60 * 60 * 24);
+          const x = pad.left + (totalDays > 0 ? (dayOffset / totalDays) : 0) * chartW;
+          const y = pad.top + (1 - (d.index - siMin) / (siMax - siMin)) * chartH;
+          if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+        });
+        ctx.stroke();
+        ctx.setLineDash([]);
+        [0, siFiltered.length - 1].forEach(i => {
+          const d = siFiltered[i];
+          const dayOffset = (new Date(d.date) - new Date(firstDate)) / (1000 * 60 * 60 * 24);
+          const x = pad.left + (totalDays > 0 ? (dayOffset / totalDays) : 0) * chartW;
+          const y = pad.top + (1 - (d.index - siMin) / (siMax - siMin)) * chartH;
+          ctx.beginPath();
+          ctx.arc(x, y, 3.5, 0, Math.PI * 2);
+          ctx.fillStyle = C.strength;
+          ctx.fill();
+        });
+      }
 
-      // Attach SI values to nearest weight points
+      // Attach SI values to nearest weight points (always, for tooltip)
       for (const sid of siFiltered) {
         let closest = null, bestDist = Infinity;
         for (const pt of _chartPoints) {
@@ -3550,7 +3647,7 @@ function renderWeightChart() {
     }
   }
 
-  // Cardio Score line
+  // Cardio Fitness line (vitals-only)
   if (cardioScoreData.length >= 2) {
     const wDates = recent.map(d => d.date);
     const firstDate = wDates[0];
@@ -3563,32 +3660,32 @@ function renderWeightChart() {
       const csMin = Math.min(...csValues) - 0.1;
       const csMax = Math.max(...csValues) + 0.1;
 
-      ctx.beginPath();
-      ctx.strokeStyle = C.cardio;
-      ctx.lineWidth = 2;
-      ctx.setLineDash([6, 3]);
-
-      csFiltered.forEach((d, i) => {
-        const dayOffset = (new Date(d.date) - new Date(firstDate)) / (1000 * 60 * 60 * 24);
-        const x = pad.left + (totalDays > 0 ? (dayOffset / totalDays) : 0) * chartW;
-        const y = pad.top + (1 - (d.score - csMin) / (csMax - csMin)) * chartH;
-        if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
-      });
-      ctx.stroke();
-      ctx.setLineDash([]);
-
-      [0, csFiltered.length - 1].forEach(i => {
-        const d = csFiltered[i];
-        const dayOffset = (new Date(d.date) - new Date(firstDate)) / (1000 * 60 * 60 * 24);
-        const x = pad.left + (totalDays > 0 ? (dayOffset / totalDays) : 0) * chartW;
-        const y = pad.top + (1 - (d.score - csMin) / (csMax - csMin)) * chartH;
+      if (_chartLineVisible.cardio) {
         ctx.beginPath();
-        ctx.arc(x, y, 3.5, 0, Math.PI * 2);
-        ctx.fillStyle = C.cardio;
-        ctx.fill();
-      });
+        ctx.strokeStyle = C.cardio;
+        ctx.lineWidth = 2;
+        ctx.setLineDash([6, 3]);
+        csFiltered.forEach((d, i) => {
+          const dayOffset = (new Date(d.date) - new Date(firstDate)) / (1000 * 60 * 60 * 24);
+          const x = pad.left + (totalDays > 0 ? (dayOffset / totalDays) : 0) * chartW;
+          const y = pad.top + (1 - (d.score - csMin) / (csMax - csMin)) * chartH;
+          if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+        });
+        ctx.stroke();
+        ctx.setLineDash([]);
+        [0, csFiltered.length - 1].forEach(i => {
+          const d = csFiltered[i];
+          const dayOffset = (new Date(d.date) - new Date(firstDate)) / (1000 * 60 * 60 * 24);
+          const x = pad.left + (totalDays > 0 ? (dayOffset / totalDays) : 0) * chartW;
+          const y = pad.top + (1 - (d.score - csMin) / (csMax - csMin)) * chartH;
+          ctx.beginPath();
+          ctx.arc(x, y, 3.5, 0, Math.PI * 2);
+          ctx.fillStyle = C.cardio;
+          ctx.fill();
+        });
+      }
 
-      // Attach CS values to nearest weight points
+      // Attach CS values to nearest weight points (always, for tooltip)
       for (const csd of csFiltered) {
         let closest = null, bestDist = Infinity;
         for (const pt of _chartPoints) {
@@ -3597,7 +3694,90 @@ function renderWeightChart() {
         }
         if (closest && bestDist < 3 * 24 * 60 * 60 * 1000) {
           closest.cs = csd.score;
-          closest.csMin = csd.weeklyMinutes;
+        }
+      }
+    }
+  }
+
+  // Dedication line (effort + consistency, rolling 7d)
+  if (dedicationData.length >= 2) {
+    const wDates = recent.map(d => d.date);
+    const firstDate = wDates[0];
+    const lastDate = wDates[wDates.length - 1];
+    const totalDays = (new Date(lastDate) - new Date(firstDate)) / (1000 * 60 * 60 * 24);
+
+    const dedFiltered = dedicationData.filter(d => d.date >= firstDate && d.date <= lastDate);
+    if (dedFiltered.length >= 2) {
+      const dedValues = dedFiltered.map(d => d.score);
+      const dedMin = Math.min(...dedValues) - 0.05;
+      const dedMax = Math.max(...dedValues) + 0.05;
+
+      if (_chartLineVisible.dedication) {
+        ctx.beginPath();
+        ctx.strokeStyle = C.teal;
+        ctx.lineWidth = 1.5;
+        ctx.setLineDash([2, 3]);
+        dedFiltered.forEach((d, i) => {
+          const dayOffset = (new Date(d.date) - new Date(firstDate)) / (1000 * 60 * 60 * 24);
+          const x = pad.left + (totalDays > 0 ? (dayOffset / totalDays) : 0) * chartW;
+          const y = pad.top + (1 - (d.score - dedMin) / (dedMax - dedMin)) * chartH;
+          if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+        });
+        ctx.stroke();
+        ctx.setLineDash([]);
+      }
+
+      // Attach ded values to nearest weight points (always, for tooltip)
+      for (const dd of dedFiltered) {
+        let closest = null, bestDist = Infinity;
+        for (const pt of _chartPoints) {
+          const dist = Math.abs(new Date(pt.date) - new Date(dd.date));
+          if (dist < bestDist) { bestDist = dist; closest = pt; }
+        }
+        if (closest && bestDist < 3 * 24 * 60 * 60 * 1000) {
+          closest.ded = dd.score;
+        }
+      }
+    }
+  }
+
+  // Body Composition line
+  if (bodyCompData.length >= 2) {
+    const wDates = recent.map(d => d.date);
+    const firstDate = wDates[0];
+    const lastDate = wDates[wDates.length - 1];
+    const totalDays = (new Date(lastDate) - new Date(firstDate)) / (1000 * 60 * 60 * 24);
+
+    const bcFiltered = bodyCompData.filter(d => d.date >= firstDate && d.date <= lastDate);
+    if (bcFiltered.length >= 2) {
+      const bcValues = bcFiltered.map(d => d.score);
+      const bcMin = Math.min(...bcValues) - 0.05;
+      const bcMax = Math.max(...bcValues) + 0.05;
+
+      if (_chartLineVisible.bodyComp) {
+        ctx.beginPath();
+        ctx.strokeStyle = C.pink;
+        ctx.lineWidth = 2;
+        ctx.setLineDash([6, 3]);
+        bcFiltered.forEach((d, i) => {
+          const dayOffset = (new Date(d.date) - new Date(firstDate)) / (1000 * 60 * 60 * 24);
+          const x = pad.left + (totalDays > 0 ? (dayOffset / totalDays) : 0) * chartW;
+          const y = pad.top + (1 - (d.score - bcMin) / (bcMax - bcMin)) * chartH;
+          if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+        });
+        ctx.stroke();
+        ctx.setLineDash([]);
+      }
+
+      // Attach BC values to nearest weight points (for tooltip)
+      for (const bcd of bcFiltered) {
+        let closest = null, bestDist = Infinity;
+        for (const pt of _chartPoints) {
+          const dist = Math.abs(new Date(pt.date) - new Date(bcd.date));
+          if (dist < bestDist) { bestDist = dist; closest = pt; }
+        }
+        if (closest && bestDist < 3 * 24 * 60 * 60 * 1000) {
+          closest.bc = bcd.score;
         }
       }
     }
@@ -3628,14 +3808,29 @@ function renderWeightChart() {
     });
   }
 
-  // Populate chart legend dynamically
+  // Populate chart legend dynamically with tap-to-toggle
   const legendEl = document.getElementById('weight-chart-legend');
   if (legendEl) {
-    legendEl.innerHTML =
-      `<span><span class="legend-dot" style="background:${C.accent}"></span>Weight</span>` +
-      `<span><span class="legend-dot" style="background:${C.strength}"></span>Strength Score</span>` +
-      `<span><span class="legend-dot" style="background:${C.cardio}"></span>Cardio Score</span>`;
+    const items = [
+      { key: 'weight', color: C.accent, label: 'Weight', alwaysOn: true },
+      { key: 'si', color: C.strength, label: 'Strength' },
+      { key: 'cardio', color: C.cardio, label: 'Cardio' },
+      { key: 'dedication', color: C.teal, label: 'Dedication' },
+      { key: 'bodyComp', color: C.pink, label: 'Body Comp' },
+    ];
+    legendEl.innerHTML = items.map(it => {
+      const vis = it.alwaysOn || _chartLineVisible[it.key];
+      const opacity = vis ? '1' : '0.3';
+      const cursor = it.alwaysOn ? 'default' : 'pointer';
+      const onclick = it.alwaysOn ? '' : ` onclick="toggleChartLine('${it.key}')"`;
+      return `<span style="opacity:${opacity};cursor:${cursor};-webkit-tap-highlight-color:transparent;"${onclick}><span class="legend-dot" style="background:${it.color}"></span>${it.label}</span>`;
+    }).join('');
   }
+}
+
+function toggleChartLine(key) {
+  _chartLineVisible[key] = !_chartLineVisible[key];
+  renderWeightChart();
 }
 
 // ============================================================
@@ -4708,6 +4903,75 @@ function showError(msg) {
   tabs.insertAdjacentElement('afterend', errDiv);
 }
 
+// ============================================================
+// BODY COMPOSITION INDEX
+// Uses body fat, frame targets, and waist-to-height ratio
+// Called after proportionDeficits are available
+// ============================================================
+function computeBodyCompTimeline() {
+  bodyCompData = [];
+  const heightIn = PROFILE.heightIn;
+  if (!healthData) return;
+
+  // Get body fat (current snapshot only)
+  const bf = healthData.body_fat_pct || 0;
+  // Get waist (current snapshot only)
+  const waistIn = healthData.waist_circumference_in || 0;
+  // Get frame target achievement
+  const deficits = Object.values(proportionDeficits);
+  const hasFrame = deficits.length > 0;
+  const avgAchievement = hasFrame ? 1 - (deficits.reduce((a, b) => a + b, 0) / deficits.length) : 0;
+
+  // Build timeline from weight data dates (anchoring body comp to weigh-in dates)
+  const allWeightData = [...WEIGHT_DATA_BASELINE];
+  if (healthData.weight_history) {
+    for (const w of healthData.weight_history) {
+      if (w.date && w.value) allWeightData.push(w);
+    }
+  }
+  if (healthData.weight_entries) {
+    for (const w of healthData.weight_entries) {
+      if (w.date && w.lbs) allWeightData.push({ date: w.date, value: parseFloat(w.lbs) });
+    }
+  }
+  const weightByDate = {};
+  for (const w of allWeightData) { if (w.value > 0) weightByDate[w.date] = w.value; }
+  const dates = Object.keys(weightByDate).sort();
+
+  for (const dateStr of dates) {
+    let total = 0, sum = 0;
+
+    // Body fat score: 10%=2.0, 15%=1.6, 20%=1.2, 25%=0.8, 30%=0.4, 35%=0
+    if (bf > 0) {
+      const bfScore = Math.max(0, Math.min(2.0, (35 - bf) / 12.5));
+      sum += bfScore * 40;
+      total += 40;
+    }
+
+    // Frame target achievement
+    if (hasFrame) {
+      const frameScore = Math.max(0, Math.min(2.0, avgAchievement * 2));
+      sum += frameScore * 40;
+      total += 40;
+    }
+
+    // Waist-to-height ratio
+    if (waistIn > 0 && heightIn > 0) {
+      const whr = waistIn / heightIn;
+      const whrScore = Math.max(0, Math.min(2.0, (0.60 - whr) / 0.09));
+      sum += whrScore * 20;
+      total += 20;
+    }
+
+    if (total > 0) {
+      bodyCompData.push({
+        date: dateStr,
+        score: Math.round((sum / total) * 100) / 100,
+      });
+    }
+  }
+}
+
 // Render dashboard from workouts data (shared by cache + fresh load)
 // ============================================================
 // POWER SCORE (Composite fitness metric, 0-100)
@@ -4715,7 +4979,7 @@ function showError(msg) {
 function computePowerScore() {
   const components = [];
 
-  // 1. Strength (35%) - map SI to 0-100
+  // 1. Strength (30%) - from SI timeline
   if (strengthIndexData.length > 0) {
     const si = strengthIndexData[strengthIndexData.length - 1].index;
     // Piecewise: 0->0, 3.0->50, 4.5->70, 6.0->90, 8.0->100
@@ -4724,46 +4988,36 @@ function computePowerScore() {
     else if (si >= 4.5) sScore = 70 + ((si - 4.5) / 1.5) * 20;
     else if (si >= 3.0) sScore = 50 + ((si - 3.0) / 1.5) * 20;
     else sScore = (si / 3.0) * 50;
-    components.push({ key: 'strength', label: 'Strength', value: Math.min(100, Math.round(sScore)), weight: 35, detail: 'SI ' + si.toFixed(2) });
+    components.push({ key: 'strength', label: 'Strength', value: Math.min(100, Math.round(sScore)), weight: 30, detail: 'SI ' + si.toFixed(2) });
   }
 
-  // 2. Cardio (25%) - VO2max percentile
-  if (healthData && healthData.cardio_fitness && healthData.cardio_fitness > 0) {
-    const vo2Pctile = estimateVO2Percentile(healthData.cardio_fitness, PROFILE.age);
-    components.push({ key: 'cardio', label: 'Cardio', value: Math.round(vo2Pctile), weight: 25, detail: 'VO2 ' + healthData.cardio_fitness.toFixed(1) });
+  // 2. Cardio Fitness (25%) - from cardio score timeline (vitals-only)
+  if (cardioScoreData.length > 0) {
+    const latest = cardioScoreData[cardioScoreData.length - 1];
+    // Score is 0-2 scale, map to 0-100
+    const cfScore = Math.min(100, Math.round(latest.score * 50));
+    let detail = '';
+    if (healthData && healthData.cardio_fitness) detail = 'VO2 ' + healthData.cardio_fitness.toFixed(1);
+    components.push({ key: 'cardio', label: 'Cardio Fitness', value: cfScore, weight: 25, detail });
   }
 
-  // 3. Body Comp (20%) - body fat % (male scale)
-  if (healthData && healthData.body_fat_pct && healthData.body_fat_pct > 0) {
-    const bf = healthData.body_fat_pct;
-    // 10%->100, 15%->80, 20%->60, 25%->40, 30%->20, 35%->0
-    const bScore = Math.max(0, Math.min(100, Math.round(100 - ((bf - 10) / 25) * 100)));
-    const bfLabel = bf.toFixed(1) + '% BF';
-    components.push({ key: 'body', label: 'Body Comp', value: bScore, weight: 20, detail: bfLabel });
+  // 3. Body Comp (20%) - from body comp timeline
+  if (bodyCompData.length > 0) {
+    const latest = bodyCompData[bodyCompData.length - 1];
+    // Score is 0-2 scale, map to 0-100
+    const bcScore = Math.min(100, Math.round(latest.score * 50));
+    let detail = '';
+    if (healthData && healthData.body_fat_pct) detail = healthData.body_fat_pct.toFixed(1) + '% BF';
+    components.push({ key: 'body', label: 'Body Comp', value: bcScore, weight: 20, detail });
   }
 
-  // 4. Consistency (20%) - sessions last 7d + muscle coverage
-  if (muscleAnalysis) {
-    const totalMuscles = Object.keys(MUSCLE_GROUPS).length;
-    let sessionsThisWeek = 0;
-    let musclesHit = 0;
-    const now = new Date();
-    for (let i = 0; i < 7; i++) {
-      const d = new Date(now);
-      d.setDate(d.getDate() - i);
-      const key = localDateStr(d);
-      // Count from muscleAnalysis day data isn't directly available, use heatmap data
-    }
-    // Use muscle stats: count muscles trained in last 7 days
-    for (const [, stat] of Object.entries(muscleAnalysis)) {
-      if (stat.daysSincePrimary <= 7) musclesHit++;
-      if (stat.daysSincePrimary <= 1) sessionsThisWeek++;
-    }
-    // Normalize: 4 sessions = target = 100, coverage bonus
-    const sessionScore = Math.min(100, (sessionsThisWeek / 4) * 60);
-    const coverageScore = (musclesHit / totalMuscles) * 40;
-    const cScore = Math.min(100, Math.round(sessionScore + coverageScore));
-    components.push({ key: 'consistency', label: 'Consistency', value: cScore, weight: 20, detail: musclesHit + '/' + totalMuscles + ' muscles' });
+  // 4. Dedication (25%) - from dedication timeline (rolling 7d effort)
+  if (dedicationData.length > 0) {
+    const latest = dedicationData[dedicationData.length - 1];
+    // Score is 0-2 scale, map to 0-100
+    const dedScore = Math.min(100, Math.round(latest.score * 50));
+    const detail = latest.liftDays + ' lifts + ' + latest.cardioMin + 'min cardio/7d';
+    components.push({ key: 'dedication', label: 'Dedication', value: dedScore, weight: 25, detail });
   }
 
   if (components.length === 0) return { score: 0, components: [] };
@@ -4877,6 +5131,8 @@ function renderDashboard(workouts) {
   muscle1RMs = pp.muscle1RMs;
   strengthIndexData = pp.strengthIndexTimeline;
   cardioScoreData = pp.cardioScoreTimeline;
+  dedicationData = pp.dedicationTimeline || [];
+  computeBodyCompTimeline();
 
   const recs = generateRecommendations(pp.muscleStats);
   LAST_RECS = recs;
@@ -4890,7 +5146,7 @@ function renderDashboard(workouts) {
   const syncColor = (hevyStatus === 'ok' && healthStatus === 'ok') ? C.accent
     : (hevyStatus === 'error' || healthStatus === 'missing') ? C.textDim : C.warn;
   document.getElementById('last-updated').innerHTML =
-    `v1.13 \u00b7${now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })} <span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${syncColor};margin-left:5px;vertical-align:middle;position:relative;top:-1px;"></span>`;
+    `v1.14 \u00b7${now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })} <span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${syncColor};margin-left:5px;vertical-align:middle;position:relative;top:-1px;"></span>`;
 
   renderTimedSession(recs);
   renderCardioPlan(workouts);
