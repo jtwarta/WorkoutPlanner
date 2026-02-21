@@ -1,5 +1,5 @@
 {"updated":"
-2026-02-21T09:51:57-08:00
+2026-02-21T09:53:32-08:00
 ","resting_heart_rate":
 59
 ,"cardio_fitness":
@@ -372,9 +372,6 @@
 
 {"date":"2025-11-30","lbs":168}
 ]
-,"rhr_history":[]
-,"vo2_history":[]
-,"recovery_history":[
 ,"body_fat_pct": 12.98999977111816
 ,"lean_body_mass_lbs": 150.4
 ,"waist_circumference_in": 34.90000000000001
