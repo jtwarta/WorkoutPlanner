@@ -725,6 +725,7 @@ color: var(--text-dim);
     </div>
     <!-- v1.7: Compact strength detail (Option A) -->
     <div id="strength-detail" style="margin-bottom:14px;"></div>
+    <div id="cardio-detail" style="margin-bottom:14px;"></div>
     <div id="pr-board"></div>
     <div class="weight-chart">
       <canvas id="weight-canvas"></canvas>
@@ -732,6 +733,7 @@ color: var(--text-dim);
     <div class="chart-legend">
       <span><span class="legend-dot" style="background:#5eead4"></span>Weight</span>
       <span><span class="legend-dot" style="background:#8f9ae8"></span>Strength Score</span>
+      <span><span class="legend-dot" style="background:#e8a060"></span>Cardio Score</span>
     </div>
   </div>
 
@@ -871,6 +873,7 @@ const C = {
   fuchsia:   '#d090e8',
   cyan:      '#50b8c8',
   teal:      '#5ec4b0',
+  cardio:    '#e8a060',
 };
 
 // ============================================================
@@ -1490,6 +1493,7 @@ let muscleAnalysis = null;
 let exerciseHistory = {};
 let muscle1RMs = {};
 let strengthIndexData = [];
+let cardioScoreData = [];
 let WEIGHT_DATA = [];
 let LAST_RECS = null;
 let healthData = null;
@@ -1888,11 +1892,104 @@ function preprocessWorkouts(workouts, bodyweightLbs, weightData) {
     }
   }
 
+  // ---- Cardio Score timeline (composite: activity + vitals) ----
+  // Signals (each normalized so 1.0 = meeting target / 50th pctile):
+  //   Activity 40%: rolling 7-day cardio min / 150 (AHA), capped at 2.0
+  //   VO2 Max  30%: percentile / 50
+  //   RHR      20%: inverted (60bpm = 1.0, lower better, capped 0.5-1.5)
+  //   Recovery 10%: recovery bpm / 20 (20bpm = 1.0, capped at 2.0)
+  const csTimeline = [];
+  const cardioDates = Object.keys(heatmapDayCardio).sort();
+  const allActivityDates = new Set([
+    ...Object.keys(heatmapDayWorkouts),
+    ...cardioDates,
+  ]);
+  const allDatesArr = [...allActivityDates].sort();
+
+  // Build vitals lookup maps (historical arrays if present, else static)
+  const rhrHist = (healthData && Array.isArray(healthData.rhr_history))
+    ? healthData.rhr_history.sort((a, b) => a.date.localeCompare(b.date)) : null;
+  const vo2Hist = (healthData && Array.isArray(healthData.vo2_history))
+    ? healthData.vo2_history.sort((a, b) => a.date.localeCompare(b.date)) : null;
+  const recHist = (healthData && Array.isArray(healthData.recovery_history))
+    ? healthData.recovery_history.sort((a, b) => a.date.localeCompare(b.date)) : null;
+
+  function lookupVital(histArr, dateStr, fallback) {
+    if (!histArr || histArr.length === 0) return fallback;
+    let best = histArr[0].value;
+    for (const h of histArr) {
+      if (h.date <= dateStr) best = h.value;
+      else break;
+    }
+    return best;
+  }
+  const staticRHR = (healthData && healthData.resting_heart_rate > 0) ? healthData.resting_heart_rate : null;
+  const staticVO2 = (healthData && healthData.cardio_fitness > 0) ? healthData.cardio_fitness : null;
+  const staticRec = (healthData && healthData.cardio_recovery > 0) ? healthData.cardio_recovery : null;
+
+  for (const dateStr of allDatesArr) {
+    const d = new Date(dateStr + 'T12:00:00');
+    // Activity signal: rolling 7-day cardio minutes
+    let weekMin = 0;
+    for (let i = 0; i < 7; i++) {
+      const lookback = new Date(d);
+      lookback.setDate(lookback.getDate() - i);
+      const lbStr = lookback.toISOString().substring(0, 10);
+      if (heatmapDayCardio[lbStr]) weekMin += heatmapDayCardio[lbStr].minutes;
+    }
+    const activitySignal = Math.min(weekMin / 150, 2.0);
+
+    // VO2 signal
+    const vo2Val = lookupVital(vo2Hist, dateStr, staticVO2);
+    let vo2Signal = null;
+    if (vo2Val && vo2Val > 0) {
+      const pctile = estimateVO2Percentile(vo2Val, PROFILE.age);
+      vo2Signal = Math.min(pctile / 50, 2.0);
+    }
+
+    // RHR signal (inverted: lower is better)
+    const rhrVal = lookupVital(rhrHist, dateStr, staticRHR);
+    let rhrSignal = null;
+    if (rhrVal && rhrVal > 0) {
+      rhrSignal = Math.max(0.5, Math.min(1.5, 60 / rhrVal));
+    }
+
+    // Recovery signal
+    const recVal = lookupVital(recHist, dateStr, staticRec);
+    let recSignal = null;
+    if (recVal && recVal > 0) {
+      recSignal = Math.min(recVal / 20, 2.0);
+    }
+
+    // Composite: reweight based on available signals
+    let totalWeight = 0, weightedSum = 0;
+    if (activitySignal > 0 || weekMin > 0) { weightedSum += activitySignal * 40; totalWeight += 40; }
+    if (vo2Signal !== null) { weightedSum += vo2Signal * 30; totalWeight += 30; }
+    if (rhrSignal !== null) { weightedSum += rhrSignal * 20; totalWeight += 20; }
+    if (recSignal !== null) { weightedSum += recSignal * 10; totalWeight += 10; }
+
+    if (totalWeight > 0) {
+      const score = Math.round((weightedSum / totalWeight) * 100) / 100;
+      csTimeline.push({
+        date: dateStr,
+        score,
+        weeklyMinutes: Math.round(weekMin),
+        signals: {
+          activity: Math.round(activitySignal * 100) / 100,
+          vo2: vo2Signal !== null ? Math.round(vo2Signal * 100) / 100 : null,
+          rhr: rhrSignal !== null ? Math.round(rhrSignal * 100) / 100 : null,
+          recovery: recSignal !== null ? Math.round(recSignal * 100) / 100 : null,
+        },
+      });
+    }
+  }
+
   return {
     exerciseHistory: exHistory,
     muscleStats,
     muscle1RMs: muscle1RMResults,
     strengthIndexTimeline: siTimeline,
+    cardioScoreTimeline: csTimeline,
     heatmapDayMuscle,
     heatmapDayWorkouts,
     heatmapDayCardio,
@@ -3299,7 +3396,7 @@ document.addEventListener('click', function(e) {
 // ============================================================
 // WEIGHT CHART + SI (v1.1 Task 2: always-visible SI panel)
 // ============================================================
-let _chartPoints = []; // [{x, y, date, weight, si}] for click interaction
+let _chartPoints = []; // [{x, y, date, weight, si, cs}] for click interaction
 let _chartTooltipTimer = null;
 
 function showChartTooltip(canvas, pt) {
@@ -3312,7 +3409,9 @@ function showChartTooltip(canvas, pt) {
   const dateObj = new Date(pt.date + 'T12:00:00');
   const dateStr = dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   let label = `${pt.weight.toFixed(1)} lbs`;
-  if (pt.si) label += `<br><span style="color:${C.strength};">${pt.si.toFixed(2)} SI</span>`;
+  if (pt.si) label += `<br><span style="color:${C.strength};">${pt.si.toFixed(2)} SS</span>`;
+  if (pt.cs) label += `<br><span style="color:${C.cardio};">${pt.cs.toFixed(2)} CS</span>`;
+  if (pt.csMin) label += `<br><span style="color:${C.textDim};font-size:9px;">${pt.csMin} min/wk</span>`;
 
   const tip = document.createElement('div');
   tip.className = 'chart-tooltip';
@@ -3355,6 +3454,7 @@ function renderWeightChart() {
 
   // ALWAYS populate strength detail BEFORE any early returns
   populateStrengthDetail();
+  populateCardioDetail();
 
   if (WEIGHT_DATA.length === 0) return;
 
@@ -3406,7 +3506,7 @@ function renderWeightChart() {
     const x = pad.left + i * wXStep;
     const y = pad.top + (1 - (d.value - wMin) / (wMax - wMin)) * chartH;
     if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
-    _chartPoints.push({ x, y, date: d.date, weight: d.value, si: null });
+    _chartPoints.push({ x, y, date: d.date, weight: d.value, si: null, cs: null, csMin: null });
   });
   ctx.stroke();
 
@@ -3477,6 +3577,59 @@ function renderWeightChart() {
           if (dist < bestDist) { bestDist = dist; closest = pt; }
         }
         if (closest && bestDist < 3 * 24 * 60 * 60 * 1000) closest.si = sid.index;
+      }
+    }
+  }
+
+  // Cardio Score line
+  if (cardioScoreData.length >= 2) {
+    const wDates = recent.map(d => d.date);
+    const firstDate = wDates[0];
+    const lastDate = wDates[wDates.length - 1];
+    const totalDays = (new Date(lastDate) - new Date(firstDate)) / (1000 * 60 * 60 * 24);
+
+    const csFiltered = cardioScoreData.filter(d => d.date >= firstDate && d.date <= lastDate);
+    if (csFiltered.length >= 2) {
+      const csValues = csFiltered.map(d => d.score);
+      const csMin = Math.min(...csValues) - 0.1;
+      const csMax = Math.max(...csValues) + 0.1;
+
+      ctx.beginPath();
+      ctx.strokeStyle = C.cardio;
+      ctx.lineWidth = 2;
+      ctx.setLineDash([6, 3]);
+
+      csFiltered.forEach((d, i) => {
+        const dayOffset = (new Date(d.date) - new Date(firstDate)) / (1000 * 60 * 60 * 24);
+        const x = pad.left + (totalDays > 0 ? (dayOffset / totalDays) : 0) * chartW;
+        const y = pad.top + (1 - (d.score - csMin) / (csMax - csMin)) * chartH;
+        if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+      });
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      [0, csFiltered.length - 1].forEach(i => {
+        const d = csFiltered[i];
+        const dayOffset = (new Date(d.date) - new Date(firstDate)) / (1000 * 60 * 60 * 24);
+        const x = pad.left + (totalDays > 0 ? (dayOffset / totalDays) : 0) * chartW;
+        const y = pad.top + (1 - (d.score - csMin) / (csMax - csMin)) * chartH;
+        ctx.beginPath();
+        ctx.arc(x, y, 3.5, 0, Math.PI * 2);
+        ctx.fillStyle = C.cardio;
+        ctx.fill();
+      });
+
+      // Attach CS values to nearest weight points
+      for (const csd of csFiltered) {
+        let closest = null, bestDist = Infinity;
+        for (const pt of _chartPoints) {
+          const dist = Math.abs(new Date(pt.date) - new Date(csd.date));
+          if (dist < bestDist) { bestDist = dist; closest = pt; }
+        }
+        if (closest && bestDist < 3 * 24 * 60 * 60 * 1000) {
+          closest.cs = csd.score;
+          closest.csMin = csd.weeklyMinutes;
+        }
       }
     }
   }
@@ -3833,6 +3986,110 @@ function populateStrengthDetail() {
   }
 
   container.innerHTML = html;
+}
+
+// ============================================================
+// CARDIO SCORE DETAIL (mirrors Strength Score detail)
+// ============================================================
+function populateCardioDetail() {
+  const container = document.getElementById('cardio-detail');
+  if (cardioScoreData.length === 0) {
+    container.innerHTML = '';
+    return;
+  }
+
+  const latest = cardioScoreData[cardioScoreData.length - 1];
+  const v = latest.score;
+  const sig = latest.signals;
+
+  // Tier mapping
+  let csLevel = 'Low', csColor = C.danger;
+  if (v >= 1.4)      { csLevel = 'Excellent'; csColor = C.accent; }
+  else if (v >= 1.0) { csLevel = 'Good'; csColor = C.blue; }
+  else if (v >= 0.6) { csLevel = 'Fair'; csColor = C.warn; }
+
+  // Tier thresholds for XP bar
+  const csTiers = [
+    { floor: 0,   ceil: 0.6, label: 'Low',       abbr: 'LOW', color: C.danger },
+    { floor: 0.6, ceil: 1.0, label: 'Fair',       abbr: 'FAIR', color: C.warn },
+    { floor: 1.0, ceil: 1.4, label: 'Good',       abbr: 'GOOD', color: C.blue },
+    { floor: 1.4, ceil: 2.0, label: 'Excellent',  abbr: 'EXCL', color: C.accent },
+  ];
+  const csTrackMax = 2.0;
+
+  // Build segmented bar
+  let segHtml = '';
+  for (let i = 0; i < csTiers.length; i++) {
+    const seg = csTiers[i];
+    const segWidthPct = ((seg.ceil - seg.floor) / csTrackMax) * 100;
+    const isCurrent = v >= seg.floor && (v < seg.ceil || (i === csTiers.length - 1 && v >= seg.floor));
+    const isPast = v >= seg.ceil;
+
+    let fillPct = 0;
+    if (isPast) fillPct = 100;
+    else if (isCurrent) fillPct = Math.max(0, Math.min(100, ((v - seg.floor) / (seg.ceil - seg.floor)) * 100));
+
+    const borderL = i === 0 ? 'border-radius:5px 0 0 5px;' : '';
+    const borderR = i === csTiers.length - 1 ? 'border-radius:0 5px 5px 0;' : '';
+    const gapR = i < csTiers.length - 1 ? 'margin-right:2px;' : '';
+    const fillColor = isPast || isCurrent ? C.cardio : 'transparent';
+    const fillOpacity = isPast ? '0.5' : isCurrent ? '0.8' : '0';
+
+    segHtml += '<div style="position:relative;flex:' + segWidthPct + ';height:10px;background:' + C.surface3 + ';' + borderL + borderR + gapR + 'overflow:hidden;">' +
+      '<div style="position:absolute;top:0;left:0;height:100%;width:' + fillPct.toFixed(1) + '%;background:' + fillColor + ';opacity:' + fillOpacity + ';' + borderL + borderR + 'transition:width 0.6s ease;"></div>' +
+      '</div>';
+  }
+
+  // Tier labels
+  let labelHtml = '';
+  for (let i = 0; i < csTiers.length; i++) {
+    const seg = csTiers[i];
+    const segWidthPct = ((seg.ceil - seg.floor) / csTrackMax) * 100;
+    const isCurrent = v >= seg.floor && (v < seg.ceil || (i === csTiers.length - 1 && v >= seg.floor));
+    const labelColor = isCurrent ? C.text : C.textDim;
+    const labelWeight = isCurrent ? '700' : '600';
+    labelHtml += '<div style="flex:' + segWidthPct + ';text-align:center;font-family:Space Grotesk,sans-serif;font-size:9px;font-weight:' + labelWeight + ';letter-spacing:0.5px;color:' + labelColor + ';">' + seg.abbr + '</div>';
+  }
+
+  // Signal breakdown
+  const signals = [
+    { key: 'activity', label: 'Activity', weight: '40%', val: sig.activity, detail: latest.weeklyMinutes + ' min/wk' },
+    { key: 'vo2', label: 'VO2 Max', weight: '30%', val: sig.vo2, detail: sig.vo2 !== null ? (sig.vo2 * 50).toFixed(0) + 'th %ile' : 'no data' },
+    { key: 'rhr', label: 'Resting HR', weight: '20%', val: sig.rhr, detail: sig.rhr !== null ? Math.round(60 / sig.rhr) + ' bpm' : 'no data' },
+    { key: 'recovery', label: 'Recovery', weight: '10%', val: sig.recovery, detail: sig.recovery !== null ? (sig.recovery * 20).toFixed(0) + ' bpm' : 'no data' },
+  ];
+
+  let sigRows = '';
+  for (const s of signals) {
+    const hasData = s.val !== null;
+    const barPct = hasData ? Math.min(100, Math.max(0, (s.val / 2.0) * 100)) : 0;
+    const barColor = !hasData ? C.textDim : s.val >= 1.0 ? C.accent : s.val >= 0.6 ? C.warn : C.danger;
+    const detailColor = hasData ? C.textMid : C.textDim;
+
+    sigRows += '<div style="display:flex;align-items:center;gap:8px;padding:4px 0;">' +
+      '<div style="width:60px;font-family:Space Grotesk,sans-serif;font-size:11px;color:' + C.textMid + ';flex-shrink:0;">' + s.label + '</div>' +
+      '<div style="flex:1;height:6px;background:' + C.surface3 + ';border-radius:3px;overflow:hidden;">' +
+        '<div style="height:100%;width:' + barPct.toFixed(1) + '%;background:' + barColor + ';border-radius:3px;transition:width 0.6s ease;"></div>' +
+      '</div>' +
+      '<div style="width:60px;font-family:Space Grotesk,sans-serif;font-size:10px;color:' + detailColor + ';text-align:right;flex-shrink:0;">' + s.detail + '</div>' +
+    '</div>';
+  }
+
+  container.innerHTML = '<div style="padding-bottom:10px;border-bottom:1px solid ' + C.border + ';">' +
+    '<div style="display:flex;align-items:baseline;justify-content:space-between;cursor:pointer;" onclick="toggleSectionExplainer(\'cs-explainer\',this)">' +
+      '<div style="display:flex;align-items:baseline;gap:6px;">' +
+        '<div style="font-family:Space Grotesk,sans-serif;font-size:32px;font-weight:700;color:' + C.cardio + ';">' + v.toFixed(2) + '</div>' +
+        '<span class="section-chevron" style="font-size:10px;color:' + C.textDim + ';transition:transform 0.3s ease;display:inline-block;">\\u25BE</span>' +
+      '</div>' +
+      '<div style="font-family:Space Grotesk,sans-serif;font-size:12px;display:inline-flex;align-items:center;padding:2px 8px;border-radius:5px;background:' + csColor + '18;">' + tierBadge(csLevel, csColor) + '</div>' +
+    '</div>' +
+    '<div id="cs-explainer" style="font-family:Space Grotesk,sans-serif;font-size:11px;color:' + C.textDim + ';margin-top:4px;max-height:0;overflow:hidden;opacity:0;transition:max-height 0.3s ease,opacity 0.25s ease;">Composite cardio fitness \\u00B7 Activity + VO2 + RHR + Recovery \\u00B7 1.0 = target</div>' +
+    '<div style="margin-top:12px;">' +
+      '<div style="display:flex;align-items:center;">' + segHtml + '</div>' +
+      '<div style="display:flex;align-items:center;margin-top:4px;">' + labelHtml + '</div>' +
+    '</div>' +
+    '<div style="margin-top:10px;">' + sigRows + '</div>' +
+  '</div>';
 }
 
 // ============================================================
@@ -4748,6 +5005,7 @@ function renderDashboard(workouts) {
   muscleAnalysis = pp.muscleStats;
   muscle1RMs = pp.muscle1RMs;
   strengthIndexData = pp.strengthIndexTimeline;
+  cardioScoreData = pp.cardioScoreTimeline;
 
   const recs = generateRecommendations(pp.muscleStats);
   LAST_RECS = recs;
