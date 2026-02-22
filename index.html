@@ -3646,7 +3646,7 @@ function renderWeightChart() {
     }
   }
 
-  // Dedication line (effort + consistency, rolling 7d)
+  // Dedication line (effort + consistency, rolling 7d, smoothed)
   if (dedicationData.length >= 2) {
     const wDates = recent.map(d => d.date);
     const firstDate = wDates[0];
@@ -3655,7 +3655,18 @@ function renderWeightChart() {
 
     const dedFiltered = dedicationData.filter(d => d.date >= firstDate && d.date <= lastDate);
     if (dedFiltered.length >= 2) {
-      const dedValues = dedFiltered.map(d => d.score);
+      // 5-point moving average to tame daily spikes
+      const SMOOTH_W = Math.min(5, dedFiltered.length);
+      const smoothed = dedFiltered.map((d, i) => {
+        let sum = 0, count = 0;
+        for (let j = Math.max(0, i - Math.floor(SMOOTH_W / 2)); j <= Math.min(dedFiltered.length - 1, i + Math.floor(SMOOTH_W / 2)); j++) {
+          sum += dedFiltered[j].score;
+          count++;
+        }
+        return { date: d.date, score: sum / count };
+      });
+
+      const dedValues = smoothed.map(d => d.score);
       const dedMin = Math.min(...dedValues) - 0.05;
       const dedMax = Math.max(...dedValues) + 0.05;
 
@@ -3664,7 +3675,7 @@ function renderWeightChart() {
         ctx.strokeStyle = C.teal;
         ctx.lineWidth = 1.5;
         ctx.setLineDash([2, 3]);
-        dedFiltered.forEach((d, i) => {
+        smoothed.forEach((d, i) => {
           const dayOffset = (new Date(d.date) - new Date(firstDate)) / (1000 * 60 * 60 * 24);
           const x = pad.left + (totalDays > 0 ? (dayOffset / totalDays) : 0) * chartW;
           const y = pad.top + (1 - (d.score - dedMin) / (dedMax - dedMin)) * chartH;
@@ -3674,7 +3685,7 @@ function renderWeightChart() {
         ctx.setLineDash([]);
       }
 
-      // Attach ded values to nearest weight points (always, for tooltip)
+      // Attach ded values to nearest weight points (raw values for tooltip)
       for (const dd of dedFiltered) {
         let closest = null, bestDist = Infinity;
         for (const pt of _chartPoints) {
