@@ -1596,7 +1596,7 @@ function cycleChip(key) {
     const row = document.getElementById('today-chips-row');
     if (row) row.style.display = 'flex';
   }
-  if (workoutCache) renderCardioPlan(workoutCache);
+  if (workoutCache) renderCardioPlan(heatmapDayCardio);
 }
 
 // ============================================================
@@ -2257,8 +2257,8 @@ function resolveAppleCardioModality(type) {
   return null; // not a recognized cardio type
 }
 
-function analyzeCardioHistory() {
-  // Single source of truth: heatmapDayCardio (already deduped in preprocessWorkouts)
+function analyzeCardioHistory(dayCardioMap) {
+  // Single source of truth: dayCardioMap (already deduped in preprocessWorkouts)
   const now = new Date();
   let cardioSessions7d = 0;
   let estimatedMinutes7d = 0;
@@ -2273,7 +2273,7 @@ function analyzeCardioHistory() {
     const d = new Date(now);
     d.setDate(d.getDate() - i);
     const key = localDateStr(d);
-    const cd = heatmapDayCardio[key];
+    const cd = dayCardioMap[key];
     if (!cd || !cd.sessions) continue;
 
     // Use cd.minutes for total (same as weekStats in History tab)
@@ -2317,10 +2317,10 @@ function analyzeCardioHistory() {
 }
 
 // Generate cardio recommendations for today
-function generateCardioRecommendations(workouts) {
+function generateCardioRecommendations(dayCardioMap) {
   const rhr = healthData ? healthData.resting_heart_rate : null;
   const zones = calculateHRZones(PROFILE.age, rhr);
-  const history = analyzeCardioHistory();
+  const history = analyzeCardioHistory(dayCardioMap);
 
   const targetMin = CARDIO_WEEKLY_TARGETS.totalMinModerate;
   const remainingMin = Math.max(0, targetMin - history.estimatedMinutes7d);
@@ -2411,8 +2411,8 @@ function buildCardioBreakdownHTML(history) {
   return html;
 }
 
-function renderCardioPlan(workouts) {
-  const result = generateCardioRecommendations(workouts);
+function renderCardioPlan(dayCardioMap) {
+  const result = generateCardioRecommendations(dayCardioMap);
   const sectionEl = document.getElementById('cardio-section');
   if (!sectionEl) return;
 
@@ -5080,7 +5080,7 @@ function renderDashboard(workouts) {
 
   renderTimedSession(recs);
   heatmapDayCardio = pp.heatmapDayCardio || {};
-  renderCardioPlan(workouts);
+  renderCardioPlan(pp.heatmapDayCardio);
   renderMuscleGrid(pp.muscleStats, recs);
   renderWeeklySummary(pp.heatmapDayWorkouts, pp.heatmapDayMuscle, pp.heatmapDayCardio, workouts);
   renderHeatmap(pp.heatmapDayMuscle, pp.heatmapDayWorkouts, pp.heatmapDayCardio);
@@ -5180,16 +5180,15 @@ function runDevTests() {
   const curly2 = normalizeExerciseName('Farmer\u2018s Carry');
   results.push({ test: 'A2: Left curly -> ASCII', pass: curly2 === "farmer's carry", got: curly2 });
 
-  // Test A3: analyzeCardioHistory reads from heatmapDayCardio (unified source)
+  // Test A3: analyzeCardioHistory reads from passed cardio map
+  const _testCardioMap = {};
   const _testDate = localDateStr(new Date());
-  const _savedCd = heatmapDayCardio[_testDate];
-  heatmapDayCardio[_testDate] = { minutes: 35, sessions: [
+  _testCardioMap[_testDate] = { minutes: 35, sessions: [
     { name: 'Treadmill', minutes: 20, source: 'hevy', timestamp: Date.now() },
     { name: 'Elliptical', minutes: 15, source: 'hevy', timestamp: Date.now() },
   ]};
-  const cardioResult = analyzeCardioHistory();
-  if (_savedCd) heatmapDayCardio[_testDate] = _savedCd; else delete heatmapDayCardio[_testDate];
-  results.push({ test: 'A3: cardio reads from heatmapDayCardio', pass: cardioResult.estimatedMinutes7d >= 35, got: cardioResult.estimatedMinutes7d });
+  const cardioResult = analyzeCardioHistory(_testCardioMap);
+  results.push({ test: 'A3: cardio reads from passed map', pass: cardioResult.estimatedMinutes7d >= 35, got: cardioResult.estimatedMinutes7d });
 
   // Test A4: CSS custom properties load correctly (catches en-dash encoding bug)
   const rootStyle = getComputedStyle(document.documentElement);
