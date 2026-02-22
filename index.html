@@ -3895,89 +3895,11 @@ function tierBadge(label, color) {
 }
 
 // ============================================================
-// PERSONAL RECORDS BOARD
+// PERSONAL RECORDS BOARD (merged into Strength Index rows)
 // ============================================================
 function renderPRBoard() {
   const container = document.getElementById('pr-board');
-  if (!container) return;
-  if (strengthIndexData.length === 0) {
-    container.innerHTML = '';
-    return;
-  }
-
-  const liftKeys = {
-    bench:    { label: 'Bench' },
-    squat:    { label: 'Squat' },
-    deadlift: { label: 'Deadlift' },
-    ohp:      { label: 'OHP' },
-    row:      { label: 'Row' },
-  };
-
-  // Scan all SI timeline entries for best RM per lift
-  const prs = {};
-  for (const entry of strengthIndexData) {
-    for (const [key, lift] of Object.entries(entry.lifts)) {
-      if (lift.rm > 0) {
-        if (!prs[key] || lift.rm > prs[key].rm) {
-          prs[key] = { rm: lift.rm, date: entry.date };
-        }
-      }
-    }
-  }
-
-  // Get latest values for comparison
-  const latest = strengthIndexData[strengthIndexData.length - 1];
-
-  let hasAnyPR = Object.keys(prs).length > 0;
-  if (!hasAnyPR) { container.innerHTML = ''; return; }
-
-  let html = `<div style="margin-top:14px;padding-top:12px;border-top:1px solid ${C.border};">
-    <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:1.2px;color:${C.textDim};margin-bottom:10px;font-family:'Space Grotesk',sans-serif;">Personal Records</div>`;
-
-  for (const [key, info] of Object.entries(liftKeys)) {
-    const pr = prs[key];
-    if (!pr) continue;
-
-    const currentRM = latest.lifts[key] ? latest.lifts[key].rm : 0;
-    const isAtPR = currentRM >= pr.rm;
-    const pctOfPR = pr.rm > 0 ? Math.round((currentRM / pr.rm) * 100) : 0;
-
-    // Format PR date
-    const prDate = new Date(pr.date + 'T12:00:00');
-    const dateStr = prDate.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
-
-    // Status indicator
-    let statusHtml;
-    if (isAtPR) {
-      statusHtml = `<span style="font-size:10px;font-weight:600;color:${C.accent};padding:2px 6px;border-radius:4px;background:${C.accentDim};">AT PR</span>`;
-    } else {
-      const diff = pr.rm - currentRM;
-      statusHtml = `<span style="font-size:10px;font-weight:600;color:${C.textDim};padding:2px 6px;border-radius:4px;background:${C.surface3};">${pctOfPR}%</span>`;
-    }
-
-    // Bar showing current vs PR
-    const barPct = Math.min(100, pctOfPR);
-    const barColor = isAtPR ? C.accent : pctOfPR >= 90 ? C.warn : C.textDim;
-
-    html += `<div style="margin-bottom:10px;">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:3px;">
-        <div style="display:flex;align-items:baseline;gap:8px;">
-          <span style="font-size:13px;font-weight:600;color:${C.text};font-family:'Space Grotesk',sans-serif;width:58px;">${info.label}</span>
-          <span style="font-size:15px;font-weight:700;color:${isAtPR ? C.accent : C.strength};font-family:'Space Grotesk',sans-serif;">${pr.rm}<span style="font-size:11px;font-weight:400;color:${C.textDim};"> lbs</span></span>
-        </div>
-        <div style="display:flex;align-items:center;gap:6px;">
-          <span style="font-size:10px;color:${C.textDim};font-family:'Space Grotesk',sans-serif;">${dateStr}</span>
-          ${statusHtml}
-        </div>
-      </div>
-      ${!isAtPR ? `<div style="height:3px;border-radius:2px;background:${C.surface3};overflow:hidden;">
-        <div style="height:100%;width:${barPct}%;border-radius:2px;background:${barColor};transition:width 0.4s ease;"></div>
-      </div>` : ''}
-    </div>`;
-  }
-
-  html += '</div>';
-  container.innerHTML = html;
+  if (container) container.innerHTML = '';
 }
 
 // v1.1: Populate SI detail content (always called, even if weight data is empty)
@@ -4143,30 +4065,59 @@ function populateStrengthDetail() {
     </div>` : ''}
   </div>`;
 
-  // Column labels (no %ile column)
+  // Scan SI timeline for all-time PR per lift
+  const _prs = {};
+  for (const entry of strengthIndexData) {
+    for (const [k, l] of Object.entries(entry.lifts)) {
+      if (l.rm > 0 && (!_prs[k] || l.rm > _prs[k].rm)) {
+        _prs[k] = { rm: l.rm, date: entry.date };
+      }
+    }
+  }
+
+  // Column labels
   html += `<div style="display:flex;align-items:center;gap:10px;padding:0 0 6px 0;">
     <div style="width:58px;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:${C.textDim};font-family:'Space Grotesk',sans-serif;flex-shrink:0;">Lift</div>
     <div style="flex:1;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:${C.textDim};font-family:'Space Grotesk',sans-serif;text-align:center;">Percentile</div>
-    <div style="width:56px;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:${C.textDim};font-family:'Space Grotesk',sans-serif;text-align:right;flex-shrink:0;">Est 1RM</div>
+    <div style="width:72px;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:${C.textDim};font-family:'Space Grotesk',sans-serif;text-align:right;flex-shrink:0;">Est 1RM</div>
   </div>`;
 
-  // Lift rows
+  // Lift rows (unified with PR data)
   for (const [key, info] of Object.entries(liftBenchmarks)) {
     const lift = latestSI ? latestSI.lifts[key] : null;
     const hasData = lift && lift.rm > 0;
     let pctile = 0;
     let pctColor = C.textDim;
     let markerColor = C.textDim;
-    let weightStr = '--';
 
     if (hasData) {
       pctile = estimatePercentile(info.std, lift.mult);
       pctColor = pctile >= 50 ? C.accent : pctile >= 25 ? C.warn : C.danger;
       markerColor = pctColor;
-      weightStr = `${lift.rm}`;
     }
 
     const markerLeft = hasData ? Math.max(2, Math.min(98, pctile)) : 0;
+    const currentRM = hasData ? lift.rm : 0;
+    const pr = _prs[key];
+    const isAtPR = pr && currentRM >= pr.rm;
+
+    // Right column: current 1RM + PR context
+    let rightHtml;
+    if (!hasData) {
+      rightHtml = `<span style="font-family:'Space Grotesk',sans-serif;font-size:13px;color:${C.textDim};">--</span>`;
+    } else if (isAtPR) {
+      rightHtml = `<span style="font-family:'Space Grotesk',sans-serif;font-size:15px;font-weight:700;color:${C.accent};">${currentRM}</span>`
+        + `<span style="font-size:10px;color:${C.textDark};font-family:'Space Grotesk',sans-serif;"> lbs</span>`
+        + `<div style="margin-top:1px;"><span style="font-size:9px;font-weight:600;color:${C.accent};padding:1px 5px;border-radius:3px;background:${C.accentDim};font-family:'Space Grotesk',sans-serif;letter-spacing:0.5px;">PR</span></div>`;
+    } else if (pr) {
+      const pctOfPR = Math.round((currentRM / pr.rm) * 100);
+      rightHtml = `<span style="font-family:'Space Grotesk',sans-serif;font-size:15px;font-weight:700;color:${C.text};">${currentRM}</span>`
+        + `<span style="font-size:10px;color:${C.textDark};font-family:'Space Grotesk',sans-serif;"> lbs</span>`
+        + `<div style="margin-top:1px;font-family:'Space Grotesk',sans-serif;font-size:9px;color:${C.textDim};">${pr.rm} PR \u00b7 ${pctOfPR}%</div>`;
+    } else {
+      rightHtml = `<span style="font-family:'Space Grotesk',sans-serif;font-size:15px;font-weight:700;color:${C.text};">${currentRM}</span>`
+        + `<span style="font-size:10px;color:${C.textDark};font-family:'Space Grotesk',sans-serif;"> lbs</span>`;
+    }
 
     html += `<div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid ${C.surface2};">
       <div style="width:58px;font-size:16px;font-weight:600;color:${C.text};flex-shrink:0;">${info.label}</div>
@@ -4175,7 +4126,7 @@ function populateStrengthDetail() {
         ${hasData ? `<div style="position:absolute;top:50%;left:${markerLeft}%;width:10px;height:10px;border-radius:50%;background:${markerColor};transform:translate(-50%,-50%);border:1.5px solid ${C.surface};pointer-events:none;"></div>` : ''}
         ${hasData ? `<div data-pctile-tip style="position:absolute;top:50%;left:${markerLeft}%;background:${pctColor};color:${C.bg};font-family:'Space Grotesk',sans-serif;font-size:11px;font-weight:700;padding:2px 6px;border-radius:4px;pointer-events:none;white-space:nowrap;opacity:0;transform:translate(-50%,-50%) scale(0.7);transition:opacity 0.2s ease,transform 0.2s ease;z-index:5;">${pctile}th</div>` : ''}
       </div>
-      <div style="width:56px;font-family:'Space Grotesk',sans-serif;font-size:12px;color:${C.textDim};text-align:right;flex-shrink:0;">${weightStr}<span style="font-size:10px;color:${C.textDark};"> lbs</span></div>
+      <div style="width:72px;text-align:right;flex-shrink:0;">${rightHtml}</div>
     </div>`;
   }
 
@@ -5209,7 +5160,6 @@ function renderDashboard(workouts) {
   renderHealthVitals();
   renderMeasurementsCard();
   renderPowerScore();
-  renderPRBoard();
 }
 
 async function refreshData() {
