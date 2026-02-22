@@ -2027,10 +2027,12 @@ function preprocessWorkouts(workouts, bodyweightLbs, weightData) {
       });
     }
 
-    // ==== DEDICATION (effort, rolling 7d) ====
+    // ==== DEDICATION (effort + recovery, rolling 7d) ====
     let weekLiftDays = 0;
     let weekCardioMin = 0;
     const weekMusclesHit = new Set();
+    // Track consecutive lift days ending on this date for fatigue penalty
+    let consecLift = 0;
     for (let i = 0; i < 7; i++) {
       const lb = new Date(d);
       lb.setDate(lb.getDate() - i);
@@ -2041,21 +2043,32 @@ function preprocessWorkouts(workouts, bodyweightLbs, weightData) {
         if (dayMuscles) {
           for (const m of Object.keys(dayMuscles)) weekMusclesHit.add(m);
         }
+        // Count consecutive days from most recent date backward
+        if (i === consecLift) consecLift++;
       }
       if (heatmapDayCardio[lbStr]) weekCardioMin += heatmapDayCardio[lbStr].minutes;
     }
 
-    // Lifting sessions: 4/week target = 1.0, capped at 1.5
-    const liftScore = Math.min(weekLiftDays / 4, 1.5);
+    // Lifting: peaks at 4-5 days (1.0), declines at 6+ (overtraining)
+    // 0->0, 1->0.25, 2->0.5, 3->0.75, 4->1.0, 5->1.0, 6->0.85, 7->0.7
+    let liftScore;
+    if (weekLiftDays <= 5) liftScore = Math.min(weekLiftDays / 4, 1.0);
+    else liftScore = 1.0 - ((weekLiftDays - 5) * 0.15);
+
+    // Consecutive day fatigue penalty: 5+ straight days hurts recovery
+    // 5 consecutive -> -0.08, 6 -> -0.15, 7 -> -0.22
+    const fatiguePenalty = consecLift >= 5 ? (consecLift - 4) * 0.07 : 0;
+
     // Muscle coverage: all 12 groups in 7d = 1.0
     const coverageScore = weekMusclesHit.size / totalMuscleGroups;
-    // Cardio: 150min/week target = 1.0, capped at 1.5
-    const cardioMinScore = Math.min(weekCardioMin / 150, 1.5);
+    // Cardio: 150min/week target = 1.0, diminishing returns cap at 1.3
+    const cardioMinScore = Math.min(weekCardioMin / 150, 1.3);
 
     // Weighted: lifting 40%, coverage 20%, cardio 30%, consistency bonus 10%
-    // Consistency bonus: 1.0 if both lifting and cardio targets met
+    // Consistency bonus: rewards balanced weeks (both lifting and cardio on target)
     const consistencyBonus = (weekLiftDays >= 3 && weekCardioMin >= 100) ? 1.0 : (weekLiftDays >= 2 || weekCardioMin >= 50) ? 0.5 : 0;
-    const dedScore = (liftScore * 0.40) + (coverageScore * 0.20) + (cardioMinScore * 0.30) + (consistencyBonus * 0.10);
+    const dedRaw = (liftScore * 0.40) + (coverageScore * 0.20) + (cardioMinScore * 0.30) + (consistencyBonus * 0.10);
+    const dedScore = Math.max(0, dedRaw - fatiguePenalty);
     dedTimeline.push({
       date: dateStr,
       score: Math.round(dedScore * 100) / 100,
