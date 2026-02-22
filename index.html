@@ -724,7 +724,7 @@ color: var(--text-dim);
         <div class="cardio-score-bar" id="cardio-score-bar"></div>
       </div>
       <div class="cardio-score-scale">
-        <span>Low</span><span>Fair</span><span>Good</span><span>High</span><span>Elite</span>
+        <span>Low</span><span>Fair</span><span>Good</span><span>Great</span><span>Elite</span>
       </div>
     </div>
     <!-- Vitals Grid -->
@@ -3800,7 +3800,7 @@ function tierEmblem(label, color) {
     'Low': 1, 'Developing': 1, 'Elevated': 1, 'Above Avg': 1, 'Poor': 1,
     'Normal': 2, 'Fair': 2, 'Moderate': 2,
     'Good': 3, 'Average': 3, 'Intermediate': 3, 'Fit': 3,
-    'Athletic': 4, 'Active': 4, 'High': 4, 'Advanced': 4,
+    'Athletic': 4, 'Active': 4, 'High': 4, 'Advanced': 4, 'Great': 4,
     'Elite': 5, 'Excellent': 5,
   };
   const tier = tierMap[label] || 2;
@@ -4652,32 +4652,37 @@ function estimateVO2Percentile(vo2, age) {
   return 50;
 }
 
+// Unified 5-tier rating: same labels + colors across ALL vitals
+// Elite (top) > Great > Good > Fair > Low
 function getVO2Category(percentile) {
-  if (percentile >= 80) return { label: 'Excellent', color: C.accent };
-  if (percentile >= 60) return { label: 'Good', color: C.blue };
-  if (percentile >= 40) return { label: 'Fair', color: C.warn };
-  if (percentile >= 20) return { label: 'Below Avg', color: C.danger };
+  if (percentile >= 80) return { label: 'Elite', color: C.gold };
+  if (percentile >= 60) return { label: 'Great', color: C.accent };
+  if (percentile >= 40) return { label: 'Good', color: C.blue };
+  if (percentile >= 20) return { label: 'Fair', color: C.warn };
   return { label: 'Low', color: C.danger };
 }
 
 function getRHRCategory(rhr) {
-  if (rhr < 60) return { label: 'Athletic', color: C.accent };
+  if (rhr < 50) return { label: 'Elite', color: C.gold };
+  if (rhr < 60) return { label: 'Great', color: C.accent };
   if (rhr <= 70) return { label: 'Good', color: C.blue };
-  if (rhr <= 80) return { label: 'Normal', color: C.textMid };
-  return { label: 'Elevated', color: C.danger };
+  if (rhr <= 80) return { label: 'Fair', color: C.warn };
+  return { label: 'Low', color: C.danger };
 }
 
 function getRecoveryCategory(recovery) {
-  if (recovery >= 30) return { label: 'Excellent', color: C.accent };
-  if (recovery >= 20) return { label: 'Good', color: C.blue };
-  if (recovery >= 12) return { label: 'Normal', color: C.textMid };
+  if (recovery >= 35) return { label: 'Elite', color: C.gold };
+  if (recovery >= 25) return { label: 'Great', color: C.accent };
+  if (recovery >= 18) return { label: 'Good', color: C.blue };
+  if (recovery >= 12) return { label: 'Fair', color: C.warn };
   return { label: 'Low', color: C.danger };
 }
 
 function getActiveCalCategory(cal) {
-  if (cal >= 600) return { label: 'Very Active', color: C.accent };
-  if (cal >= 400) return { label: 'Active', color: C.blue };
-  if (cal >= 250) return { label: 'Moderate', color: C.textMid };
+  if (cal >= 700) return { label: 'Elite', color: C.gold };
+  if (cal >= 500) return { label: 'Great', color: C.accent };
+  if (cal >= 350) return { label: 'Good', color: C.blue };
+  if (cal >= 200) return { label: 'Fair', color: C.warn };
   return { label: 'Low', color: C.danger };
 }
 
@@ -4751,11 +4756,15 @@ function renderHealthVitals() {
   const steps = healthData.steps;
   if (steps && steps > 0) {
     const stepsK = steps >= 1000 ? (steps / 1000).toFixed(1) + 'k' : Math.round(steps);
-    const stepsColor = steps >= 10000 ? C.accent : steps >= 7000 ? C.blue : C.textMid;
+    const stepsCat = steps >= 12000 ? { label: 'Elite', color: C.gold }
+      : steps >= 10000 ? { label: 'Great', color: C.accent }
+      : steps >= 7000 ? { label: 'Good', color: C.blue }
+      : steps >= 4000 ? { label: 'Fair', color: C.warn }
+      : { label: 'Low', color: C.danger };
     html += `<div class="vital-cell">
       <div class="vital-label">Steps/Day</div>
       <div class="vital-value">${stepsK}</div>
-      <div class="vital-context" style="color:${stepsColor};display:flex;align-items:center;">${tierBadge(steps >= 10000 ? 'Active' : steps >= 7000 ? 'Moderate' : 'Low', stepsColor)}</div>
+      <div class="vital-context" style="color:${stepsCat.color};display:flex;align-items:center;">${tierBadge(stepsCat.label, stepsCat.color)}</div>
     </div>`;
   }
 
@@ -4773,23 +4782,30 @@ function renderHealthVitals() {
   // Walking HR
   const whr = healthData.walking_heart_rate_avg;
   if (whr && whr > 0) {
-    const whrColor = whr < 100 ? C.accent : whr <= 110 ? C.textMid : C.warn;
+    const whrCat = whr < 85 ? { label: 'Elite', color: C.gold }
+      : whr < 95 ? { label: 'Great', color: C.accent }
+      : whr < 105 ? { label: 'Good', color: C.blue }
+      : whr <= 115 ? { label: 'Fair', color: C.warn }
+      : { label: 'Low', color: C.danger };
     html += `<div class="vital-cell">
       <div class="vital-label">Walking HR</div>
       <div class="vital-value">${Math.round(whr)}<span class="vital-unit">bpm</span></div>
-      <div class="vital-context" style="color:${whrColor};display:flex;align-items:center;">${tierBadge(whr < 100 ? 'Good' : whr <= 110 ? 'Normal' : 'Elevated', whrColor)}</div>
+      <div class="vital-context" style="color:${whrCat.color};display:flex;align-items:center;">${tierBadge(whrCat.label, whrCat.color)}</div>
     </div>`;
   }
 
   // Body Fat % (from Hevy -> Apple Health)
   const bf = healthData.body_fat_pct;
   if (bf && bf > 0) {
-    const bfColor = bf <= 15 ? C.accent : bf <= 20 ? C.blue : bf <= 25 ? C.warn : C.danger;
-    const bfLabel = bf <= 15 ? 'Athletic' : bf <= 20 ? 'Fit' : bf <= 25 ? 'Average' : 'Above Avg';
+    const bfCat = bf <= 10 ? { label: 'Elite', color: C.gold }
+      : bf <= 15 ? { label: 'Great', color: C.accent }
+      : bf <= 20 ? { label: 'Good', color: C.blue }
+      : bf <= 25 ? { label: 'Fair', color: C.warn }
+      : { label: 'Low', color: C.danger };
     html += `<div class="vital-cell">
       <div class="vital-label">Body Fat</div>
       <div class="vital-value">${bf.toFixed(1)}<span class="vital-unit">%</span></div>
-      <div class="vital-context" style="color:${bfColor};display:flex;align-items:center;">${tierBadge(bfLabel, bfColor)}</div>
+      <div class="vital-context" style="color:${bfCat.color};display:flex;align-items:center;">${tierBadge(bfCat.label, bfCat.color)}</div>
     </div>`;
   }
 
