@@ -1320,6 +1320,8 @@ function rankExercisesForMuscle(muscleKey) {
 // BODY WEIGHT DATA - Baseline from Strong CSV export
 // ============================================================
 const WEIGHT_DATA_BASELINE = [
+  { date: '2026-02-16', value: 166.0 },
+  { date: '2026-02-12', value: 167.0 },
   { date: '2026-01-18', value: 166.0 },
   { date: '2026-01-17', value: 164.4 },
   { date: '2025-11-30', value: 168.0 },
@@ -1332,6 +1334,7 @@ const WEIGHT_DATA_BASELINE = [
   { date: '2025-05-23', value: 174.2 },
   { date: '2025-05-15', value: 172.0 },
   { date: '2025-04-30', value: 173.0 },
+  { date: '2020-06-10', value: 160.0 },
 ];
 
 // ============================================================
@@ -1407,7 +1410,8 @@ const MEASUREMENTS_KEY = 'bodyMeasurements_v1';
 // ---- Embedded measurement baseline (survives localStorage clears) ----
 // To update: import Hevy CSV, tap "Export Data" in footer, paste array here
 const MEASUREMENTS_BASELINE = [
-  { date: '2026-02-15', neck_in: 14.5625, shoulder_in: 43.125, chest_in: 40.125, bicep_in: 13.28, forearm_in: 10.9375, waist_in: 34.875, thigh_in: 21.25, calf_in: 14.0 },
+  { date: '2020-06-10', neck_in: 14.0, chest_in: 38.0, waist_in: 33.0, hip_in: 39.0 },
+  { date: '2026-02-18', neck_in: 14.6, shoulder_in: 43.1, chest_in: 40.1, bicep_in: 13.28, forearm_in: 10.94, waist_in: 34.9, thigh_in: 21.5, calf_in: 14.0 },
 ];
 
 // All supported measurement fields
