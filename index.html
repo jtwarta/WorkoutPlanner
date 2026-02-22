@@ -1655,9 +1655,14 @@ async function fetchWorkouts(pageSize = 20, maxPages = 50) {
   while (page <= totalPages && page <= maxPages && allWorkouts.length < HARD_CAP) {
     updateLoading(`Loading workouts (${allWorkouts.length})...`);
     const resp = await fetchWithTimeout(`${API_BASE}/workouts?page=${page}&pageSize=${pageSize}`, {
-      headers: { 'api-key': apiKey }
+      headers: { 'api-key': apiKey },
+      mode: 'cors'
     });
-    if (!resp.ok) throw new Error(`API error ${resp.status}: ${resp.statusText}`);
+    if (!resp.ok) {
+      let body = '';
+      try { body = await resp.text(); } catch (_) {}
+      throw new Error(`API error ${resp.status}: ${body || resp.statusText}`);
+    }
     const data = await resp.json();
     totalPages = data.page_count || 1;
     if (data.workouts) allWorkouts.push(...data.workouts);
@@ -5179,7 +5184,7 @@ async function refreshData() {
     console.error(err);
     hevyStatus = 'error';
     showScreen('dashboard');
-    showError(`Refresh failed: ${err.message}`);
+    showError(`Refresh failed: ${err.message.slice(0, 200)}`);
   }
 }
 
@@ -5226,7 +5231,7 @@ async function loadDashboard() {
     console.error(err);
     hevyStatus = 'error';
     showScreen('dashboard');
-    showError(`Failed to load: ${err.message}`);
+    showError(`Failed to load: ${err.message.slice(0, 200)}${err.message.length > 200 ? '...' : ''}<br><span style="font-size:11px;color:${C.textDim};margin-top:4px;display:block;">If using home screen app, try opening in Safari first to populate cache.</span>`);
   }
 }
 
