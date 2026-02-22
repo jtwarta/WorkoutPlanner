@@ -1,7 +1,13 @@
 <!DOCTYPE html>
 
 <!--
-  LiftScript v1.14
+  LiftScript v1.15
+  Changes from v1.14:
+  1.  Fix UTC/local date math: all day keys now use localDateStr() consistently
+  2.  Measurements persistence: localStorage stores only deltas, baseline stays in HTML
+  3.  Hevy fetch cap increased: up to 1000 workouts (20/page x 50 pages)
+  4.  Inverted target display: waist shows clear "+X.X in over target" instead of ambiguous %
+  5.  HIIT gating: readiness checks (RHR, recovery, cardio base, consecutive days) before prescribing
   Changes from v1.13:
   1.  Exercise rotation: recency + variety scoring replaces static pick order
   2.  Compound anchor bonus keeps core barbell lifts in most sessions
@@ -616,7 +622,7 @@ color: var(--text-dim);
     <div class="header">
       <div style="display:flex;align-items:center;gap:10px;">
         <h1>LiftScript</h1>
-        <div class="subtitle" id="last-updated">v1.14-slate</div>
+        <div class="subtitle" id="last-updated">v1.15-slate</div>
         <div id="power-score-wrap" style="margin-left:auto;display:flex;align-items:center;gap:6px;cursor:pointer;-webkit-tap-highlight-color:transparent;" onclick="togglePowerScoreDetail()">
           <div id="power-score-ring"></div>
         </div>
@@ -764,7 +770,7 @@ window.addEventListener('unhandledrejection', function(e) {
 </script>
 <script>
 // ============================================================
-// LIFTSCRIPT v1.14
+// LIFTSCRIPT v1.15
 // ============================================================
 // SCIENTIFIC FOUNDATION
 // PILLAR 1: Volume-Hypertrophy Targets
@@ -1455,17 +1461,19 @@ function getStoredMeasurements() {
 
 function saveMeasurementEntry(entry) {
   if (!entry.date) entry.date = localDateStr(new Date());
-  const entries = getStoredMeasurements();
-  const idx = entries.findIndex(e => e.date === entry.date);
+  // Read/write ONLY the localStorage delta list -- never copy baseline into storage.
+  // Baseline lives in MEASUREMENTS_BASELINE and is merged at read/render time.
+  const deltas = Storage.get(MEASUREMENTS_KEY, []);
+  const idx = deltas.findIndex(e => e.date === entry.date);
   if (idx !== -1) {
     // Merge: new fields overwrite, keep old fields not in new entry
-    entries[idx] = Object.assign({}, entries[idx], entry);
+    deltas[idx] = Object.assign({}, deltas[idx], entry);
   } else {
-    entries.push(entry);
+    deltas.push(entry);
   }
-  entries.sort((a, b) => (a.date || '').localeCompare(b.date || ''));
-  if (entries.length > 400) entries.splice(0, entries.length - 400);
-  Storage.set(MEASUREMENTS_KEY, entries);
+  deltas.sort((a, b) => (a.date || '').localeCompare(b.date || ''));
+  if (deltas.length > 400) deltas.splice(0, deltas.length - 400);
+  Storage.set(MEASUREMENTS_KEY, deltas);
 }
 
 function getLatestMeasurements() {
@@ -1634,12 +1642,13 @@ function isCacheStale(cached) {
   return !cached || (Date.now() - cached.ts) > CACHE_STALE_MS;
 }
 
-async function fetchWorkouts(pageSize = 10, maxPages = 10) {
+async function fetchWorkouts(pageSize = 20, maxPages = 50) {
   const allWorkouts = [];
   let page = 1;
   let totalPages = 1;
+  const HARD_CAP = 1000; // safety cap to avoid runaway fetch
 
-  while (page <= totalPages && page <= maxPages) {
+  while (page <= totalPages && page <= maxPages && allWorkouts.length < HARD_CAP) {
     updateLoading(`Loading workouts (${allWorkouts.length})...`);
     const resp = await fetchWithTimeout(`${API_BASE}/workouts?page=${page}&pageSize=${pageSize}`, {
       headers: { 'api-key': apiKey }
@@ -1950,7 +1959,7 @@ function preprocessWorkouts(workouts, bodyweightLbs, weightData) {
       if (val && val > 0) {
         const d = new Date(now);
         d.setMonth(d.getMonth() - monthsAgo);
-        points.push({ date: d.toISOString().substring(0, 10), value: val });
+        points.push({ date: localDateStr(d), value: val });
       }
     };
     addPoint(12, v12m);
@@ -2040,7 +2049,7 @@ function preprocessWorkouts(workouts, bodyweightLbs, weightData) {
     for (let i = 0; i < 7; i++) {
       const lb = new Date(d);
       lb.setDate(lb.getDate() - i);
-      const lbStr = lb.toISOString().substring(0, 10);
+      const lbStr = localDateStr(lb);
       if (heatmapDayWorkouts[lbStr]) {
         weekLiftDays++;
         const dayMuscles = heatmapDayMuscle[lbStr];
@@ -2351,13 +2360,67 @@ function generateCardioRecommendations(dayCardioMap) {
 
   const prescriptions = [];
 
-  // Decide session split: if 3+ sessions remain, prescribe 1 HIIT + 1 Zone 2
-  // If 2 remain: 1 Zone 2 + 1 HIIT. If 1 remains: Zone 2 (safer default)
-  // If sessions met but minutes remain, prescribe 1 Zone 2 to fill the gap
+  // ---- HIIT readiness gate (v1.15) ----
+  // Only prescribe HIIT when readiness is acceptable AND cardio base is not extremely low.
+  // Otherwise, default to Zone 2 (safer, builds aerobic base).
+  let hiitAllowed = true;
+  let hiitBlockReason = '';
+
+  // Gate 1: RHR elevation vs baseline -- elevated RHR signals poor recovery
+  if (rhr && rhr > 0) {
+    // Use 3-month RHR as baseline if available, else 12-month, else conservative default
+    const rhrBaseline = (healthData && (healthData.rhr_3m || healthData.rhr_6m || healthData.rhr_12m)) || 0;
+    if (rhrBaseline > 0 && rhr > rhrBaseline * 1.10) {
+      // RHR elevated >10% above baseline
+      hiitAllowed = false;
+      hiitBlockReason = 'RHR elevated vs baseline';
+    }
+  } else {
+    // No RHR data at all -- be conservative, still allow if other signals are OK
+  }
+
+  // Gate 2: Recovery score -- if available and poor, block HIIT
+  if (hiitAllowed && healthData) {
+    const recovery = healthData.cardio_recovery || 0;
+    if (recovery > 0 && recovery < 15) {
+      // Poor recovery (<15 bpm drop in 1 min) -- skip HIIT
+      hiitAllowed = false;
+      hiitBlockReason = 'Poor recovery score';
+    }
+  }
+
+  // Gate 3: Very low cardio base -- 0-1 sessions in last 14 days means ramp with Zone 2 first
+  if (hiitAllowed) {
+    // Count cardio sessions in last 14 days
+    const now = new Date();
+    let sessions14d = 0;
+    for (let i = 0; i < 14; i++) {
+      const d = new Date(now);
+      d.setDate(d.getDate() - i);
+      const key = localDateStr(d);
+      const cd = dayCardioMap[key];
+      if (cd && cd.sessions && cd.sessions.length > 0) sessions14d++;
+    }
+    if (sessions14d <= 1) {
+      hiitAllowed = false;
+      hiitBlockReason = 'Low cardio base (ramp with Zone 2 first)';
+    }
+  }
+
+  // Gate 4: Multiple consecutive hard training days -- use _consecutiveTrainDays if available
+  if (hiitAllowed) {
+    const consecDays = (typeof _consecutiveTrainDays !== 'undefined') ? _consecutiveTrainDays : 0;
+    if (consecDays >= 4) {
+      hiitAllowed = false;
+      hiitBlockReason = 'Multiple consecutive training days';
+    }
+  }
+
+  // Decide session split
   const effectiveSessions = remainingSessions > 0 ? remainingSessions : (remainingMin > 0 ? 1 : 0);
-  const needHIIT = effectiveSessions >= 2 && history.cardioSessions7d < 1;
-  const zone2Count = needHIIT ? 1 : Math.min(effectiveSessions, 2);
-  const hiitCount = needHIIT ? 1 : (effectiveSessions >= 2 ? 1 : 0);
+  const needHIIT = hiitAllowed && effectiveSessions >= 2 && history.cardioSessions7d < 1;
+  const hiitCount = hiitAllowed ? (needHIIT ? 1 : (effectiveSessions >= 2 ? 1 : 0)) : 0;
+  const zone2Count = hiitCount > 0 ? Math.max(1, effectiveSessions - hiitCount) : Math.min(effectiveSessions, 2);
 
   // Pick zone 2 protocols (avoid recently used modalities for variety)
   const z2Pool = CARDIO_PROTOCOLS.zone2.filter(p => !history.recentModalities.includes(p.modality));
@@ -4241,7 +4304,9 @@ function importHevyCSV(fileInput) {
 
 // ---- Export all body data as embeddable JSON (for pasting into HTML source) ----
 function exportEmbeddableData() {
-  const measurements = Storage.get(MEASUREMENTS_KEY, []);
+  // Export the FULL effective history (baseline + localStorage deltas merged)
+  // so the user can paste this as the new MEASUREMENTS_BASELINE in the HTML source.
+  const measurements = getStoredMeasurements();
   const weights = getStoredWeightEntries();
   const output = {
     MEASUREMENTS_BASELINE: measurements,
@@ -4554,11 +4619,23 @@ function renderProportionsDisplay() {
     const pct = bar.pct;
     const barColor = pct >= 95 ? C.accent : pct >= 85 ? C.warn : C.danger;
     const fillW = Math.min(pct, 100);
-    const pctLabel = bar.inverted ? (pct >= 100 ? 'On target' : pct + '%') : pct + '%';
+    let detailLabel;
+    if (bar.inverted) {
+      // Inverted metric: lower is better (e.g. waist)
+      if (bar.current <= bar.target) {
+        detailLabel = bar.current.toFixed(1) + ' / ' + bar.target.toFixed(1) + ' in <span style="color:' + C.accent + ';font-weight:600;">On target \u2713</span>';
+      } else {
+        const over = bar.current - bar.target;
+        const overPct = Math.round((over / bar.target) * 100);
+        detailLabel = bar.current.toFixed(1) + ' / ' + bar.target.toFixed(1) + ' in <span style="color:' + C.danger + ';font-weight:600;">+' + over.toFixed(1) + ' in over (' + overPct + '%) \u2193</span>';
+      }
+    } else {
+      detailLabel = bar.current.toFixed(1) + ' / ' + bar.target.toFixed(1) + ' in <span style="color:' + barColor + ';font-weight:600;">(' + pct + '%)</span>';
+    }
     html += '<div style="margin-bottom:8px;">' +
       '<div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:3px;font-family:Space Grotesk,sans-serif;">' +
       '<span style="font-size:12px;font-weight:600;color:' + C.textMid + ';">' + bar.label + '</span>' +
-      '<span style="font-size:11px;color:' + C.textDim + ';">' + bar.current.toFixed(1) + ' / ' + bar.target.toFixed(1) + ' in <span style="color:' + barColor + ';font-weight:600;">(' + pctLabel + ')</span></span>' +
+      '<span style="font-size:11px;color:' + C.textDim + ';">' + detailLabel + '</span>' +
       '</div>' +
       '<div style="height:6px;background:' + C.surface3 + ';border-radius:3px;overflow:hidden;">' +
       '<div style="height:100%;width:' + fillW + '%;background:' + barColor + ';border-radius:3px;transition:width 0.4s ease;"></div>' +
@@ -5120,7 +5197,7 @@ function renderDashboard(workouts) {
   const syncColor = (hevyStatus === 'ok' && healthStatus === 'ok') ? C.accent
     : (hevyStatus === 'error' || healthStatus === 'missing') ? C.textDim : C.warn;
   document.getElementById('last-updated').innerHTML =
-    `v1.14 \u00b7${now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })} <span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${syncColor};margin-left:5px;vertical-align:middle;position:relative;top:-1px;"></span>`;
+    `v1.15 \u00b7${now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })} <span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${syncColor};margin-left:5px;vertical-align:middle;position:relative;top:-1px;"></span>`;
 
   renderTimedSession(recs);
   heatmapDayCardio = pp.heatmapDayCardio || {};
@@ -5139,7 +5216,7 @@ async function refreshData() {
   showScreen('loading-screen');
   try {
     updateLoading('Refreshing...');
-    const [workouts] = await Promise.all([fetchWorkouts(10, 10), fetchHealthData()]);
+    const [workouts] = await Promise.all([fetchWorkouts(), fetchHealthData()]);
     workoutCache = workouts;
     setCachedWorkouts(workouts);
     hevyStatus = 'ok';
@@ -5170,7 +5247,7 @@ async function loadDashboard() {
 
       // If stale, refresh in background
       if (isCacheStale(cached)) {
-        fetchWorkouts(10, 10).then(fresh => {
+        fetchWorkouts().then(fresh => {
           workoutCache = fresh;
           setCachedWorkouts(fresh);
           hevyStatus = 'ok';
@@ -5185,7 +5262,7 @@ async function loadDashboard() {
 
     // No cache - fresh load
     updateLoading('Loading workouts...');
-    const workouts = await fetchWorkouts(10, 10);
+    const workouts = await fetchWorkouts();
     workoutCache = workouts;
     setCachedWorkouts(workouts);
     hevyStatus = 'ok';
