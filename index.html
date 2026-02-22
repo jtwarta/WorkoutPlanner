@@ -31,41 +31,41 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="theme-color" content="#1c2b35">
+<meta name="theme-color" content="#141e27">
 <title>LiftScript</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 :root {
-  --bg: #1c2b35;
-  --surface: #263a47;
-  --surface2: #2e4553;
-  --surface3: #374857;
-  --border: rgba(180,197,219,0.10);
-  --border-light: rgba(180,197,219,0.16);
-  --text: #e6eef5;
-  --text-mid: #b4c5db;
-  --text-dim: #728495;
+  --bg: #141e27;
+  --surface: #1c2e3a;
+  --surface2: #243a4a;
+  --surface3: #2e4858;
+  --border: rgba(180,197,219,0.16);
+  --border-light: rgba(180,197,219,0.24);
+  --text: #eaf1f7;
+  --text-mid: #b8ccdf;
+  --text-dim: #8299ad;
   --accent: #5eead4;
-  --accent-dim: rgba(94, 234, 212, 0.12);
+  --accent-dim: rgba(94, 234, 212, 0.16);
   --warn: #fbbf24;
-  --warn-dim: rgba(251, 191, 36, 0.12);
+  --warn-dim: rgba(251, 191, 36, 0.14);
   --danger: #f87171;
-  --danger-dim: rgba(248, 113, 113, 0.10);
+  --danger-dim: rgba(248, 113, 113, 0.12);
   --blue: #7eb8e8;
-  --blue-dim: rgba(126, 184, 232, 0.12);
+  --blue-dim: rgba(126, 184, 232, 0.14);
   --purple: #b8a0e8;
-  --purple-dim: rgba(184, 160, 232, 0.12);
+  --purple-dim: rgba(184, 160, 232, 0.14);
   --strength: #8f9ae8;
-  --strength-dim: rgba(143, 154, 232, 0.12);
+  --strength-dim: rgba(143, 154, 232, 0.14);
   color-scheme: dark;
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
 html, body {
-background: #1c2b35;
-background-color: #1c2b35;
+background: #141e27;
+background-color: #141e27;
 color-scheme: dark;
 overscroll-behavior-y: none;
 }
@@ -84,7 +84,7 @@ max-width: 480px;
 margin: 0 auto;
 padding: 20px 18px;
 padding-bottom: 120px;
-background: #1c2b35;
+background: #141e27;
 }
 
 /* Header */
@@ -94,10 +94,11 @@ margin-bottom: 12px;
 border-bottom: 1px solid var(--border);
 }
 .header h1 {
-font-size: 28px;
+font-size: 30px;
 font-weight: 700;
 letter-spacing: -0.5px;
 color: var(--text);
+text-shadow: 0 0 20px rgba(94, 234, 212, 0.15);
 }
 .header .subtitle {
 font-size: 13px;
@@ -112,13 +113,14 @@ border: 1px solid var(--border);
 border-radius: 20px;
 padding: 20px;
 margin-bottom: 14px;
+box-shadow: 0 2px 8px rgba(0,0,0,0.18);
 }
 .card-title {
 font-size: 14px;
 font-weight: 600;
 text-transform: uppercase;
 letter-spacing: 1.2px;
-color: var(--text-dim);
+color: #8299ad;
 margin-bottom: 14px;
 }
 
@@ -148,8 +150,9 @@ font-family: 'Figtree', sans-serif;
 -webkit-tap-highlight-color: transparent;
 }
 .tab.active {
-background: var(--surface3);
-color: var(--text);
+background: rgba(94, 234, 212, 0.10);
+color: #5eead4;
+box-shadow: 0 0 0 1px rgba(94, 234, 212, 0.20);
 }
 
 /* Expandable explainer */
@@ -184,6 +187,7 @@ border-radius: 10px;
 padding: 0;
 overflow: hidden;
 border: 1px solid var(--border);
+border-left: 3px solid var(--accent);
 }
 .ex-group:last-child { margin-bottom: 0; }
 .ex-group-title {
@@ -298,7 +302,7 @@ position: relative;
 .weight-chart canvas { width: 100%; height: 100%; }
 .weight-current {
 font-family: 'Space Grotesk', sans-serif;
-font-size: 32px;
+font-size: 34px;
 font-weight: 700;
 letter-spacing: -1px;
 color: var(--text);
@@ -338,7 +342,7 @@ transform: scale(0.96);
 }
 .constraint-chip.active {
 color: var(--accent);
-border-color: rgba(94, 234, 212, 0.3);
+border-color: rgba(94, 234, 212, 0.4);
 background: var(--accent-dim);
 }
 .chart-legend {
@@ -365,7 +369,7 @@ font-size: 13px;
 font-weight: 600;
 background: var(--accent-dim);
 color: var(--accent);
-border: 1px solid rgba(94, 234, 212, 0.25);
+border: 1px solid rgba(94, 234, 212, 0.35);
 border-radius: 7px;
 cursor: pointer;
 font-family: 'Figtree', sans-serif;
@@ -618,7 +622,7 @@ color: var(--text-dim);
         </div>
         <button id="header-refresh-btn" onclick="refreshData()" title="Refresh data" style="background:none;border:none;cursor:pointer;padding:2px 4px;position:relative;top:1px;line-height:1;-webkit-tap-highlight-color:transparent;">
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style="display:block;">
-            <path d="M13.65 2.35A7.96 7.96 0 008 0C3.58 0 .01 3.58.01 8S3.58 16 8 16c3.73 0 6.84-2.55 7.73-6h-2.08A5.99 5.99 0 018 14 6 6 0 012 8a6 6 0 016-6c1.66 0 3.14.69 4.22 1.78L9 7h7V0l-2.35 2.35z" fill="#728495"/>
+            <path d="M13.65 2.35A7.96 7.96 0 008 0C3.58 0 .01 3.58.01 8S3.58 16 8 16c3.73 0 6.84-2.55 7.73-6h-2.08A5.99 5.99 0 018 14 6 6 0 012 8a6 6 0 016-6c1.66 0 3.14.69 4.22 1.78L9 7h7V0l-2.35 2.35z" fill="#8299ad"/>
           </svg>
         </button>
       </div>
@@ -635,7 +639,7 @@ color: var(--text-dim);
 <!-- Today Tab -->
 
 <div id="tab-today">
-  <div class="card" style="border:1px solid rgba(180,197,219,0.10);">
+  <div class="card" style="border:1px solid rgba(180,197,219,0.16);">
     <div id="today-hero"></div>
     <div id="today-chips-wrapper"></div>
     <div id="suggested-exercises"></div>
@@ -733,8 +737,8 @@ color: var(--text-dim);
     <div class="card-title" style="display:flex;align-items:center;justify-content:space-between;">
       <span>Body Measurements</span>
       <div style="display:flex;gap:6px;">
-        <button class="btn-log-weight" onclick="exportEmbeddableData()" style="background:rgba(142,142,152,0.12);color:#728495;font-size:11px;padding:4px 8px;">Export</button>
-        <button class="btn-log-weight" onclick="document.getElementById('hevy-csv-input').click()" style="background:rgba(126,184,232,0.12);color:#7eb8e8;">Import Hevy</button>
+        <button class="btn-log-weight" onclick="exportEmbeddableData()" style="background:rgba(142,142,152,0.12);color:#8299ad;font-size:11px;padding:4px 8px;">Export</button>
+        <button class="btn-log-weight" onclick="document.getElementById('hevy-csv-input').click()" style="background:rgba(126,184,232,0.16);color:#7eb8e8;border-color:rgba(126,184,232,0.30);">Import Hevy</button>
       </div>
     </div>
     <input type="file" id="hevy-csv-input" accept=".csv" style="display:none;" onchange="importHevyCSV(this)">
@@ -807,28 +811,28 @@ function localDateStr(d) {
 // Hex values here match the CSS custom properties in <style>.
 // ============================================================
 const C = {
-  bg:        '#1c2b35',
-  surface:   '#263a47',
-  surface2:  '#2e4553',
-  surface3:  '#374857',
-  border:    'rgba(180,197,219,0.10)',
-  text:      '#e6eef5',
-  textMid:   '#b4c5db',
-  textDim:   '#728495',
-  textDark:  '#5a6f80',
-  textDark2: '#8a9bac',
+  bg:        '#141e27',
+  surface:   '#1c2e3a',
+  surface2:  '#243a4a',
+  surface3:  '#2e4858',
+  border:    'rgba(180,197,219,0.16)',
+  text:      '#eaf1f7',
+  textMid:   '#b8ccdf',
+  textDim:   '#8299ad',
+  textDark:  '#5e7a90',
+  textDark2: '#90a8bc',
   accent:    '#5eead4',
   accentMid: '#2dd4bf',
-  accentDim: 'rgba(94,234,212,0.12)',
-  accentBorder: 'rgba(94,234,212,0.3)',
+  accentDim: 'rgba(94,234,212,0.16)',
+  accentBorder: 'rgba(94,234,212,0.35)',
   warn:      '#fbbf24',
-  warnDim:   'rgba(251,191,36,0.12)',
+  warnDim:   'rgba(251,191,36,0.14)',
   amber:     '#f59e0b',
   amberLt:   '#fbbf24',
   danger:    '#f87171',
-  dangerDim: 'rgba(248,113,113,0.10)',
+  dangerDim: 'rgba(248,113,113,0.12)',
   blue:      '#7eb8e8',
-  blueDim:   'rgba(126,184,232,0.12)',
+  blueDim:   'rgba(126,184,232,0.14)',
   strength:  '#8f9ae8',
   purple:    '#b8a0e8',
   purpleLt:  '#a898e0',
@@ -3525,7 +3529,7 @@ function renderWeightChart() {
   ctx.lineTo(pad.left, h - pad.bottom);
   ctx.closePath();
   const gradient = ctx.createLinearGradient(0, 0, 0, h);
-  gradient.addColorStop(0, 'rgba(94, 234, 212, 0.10)'); // accent RGB gradient
+  gradient.addColorStop(0, 'rgba(94, 234, 212, 0.15)'); // accent RGB gradient
   gradient.addColorStop(1, 'rgba(94, 234, 212, 0)');
   ctx.fillStyle = gradient;
   ctx.fill();
