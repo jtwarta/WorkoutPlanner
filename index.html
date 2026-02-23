@@ -4759,6 +4759,19 @@ function getActiveCalCategory(cal) {
 // ============================================================
 // RENDER HEALTH VITALS
 // ============================================================
+function toggleVitalTrend(cellEl) {
+  const trend = cellEl.querySelector('[data-vital-trend]');
+  if (!trend) return;
+  const isOpen = trend.style.maxHeight && trend.style.maxHeight !== '0px';
+  if (isOpen) {
+    trend.style.maxHeight = '0';
+    trend.style.opacity = '0';
+  } else {
+    trend.style.maxHeight = '130px';
+    trend.style.opacity = '1';
+  }
+}
+
 function renderHealthVitals() {
   const card = document.getElementById('health-vitals-card');
   if (!healthData || healthStatus === 'missing') {
@@ -4800,26 +4813,122 @@ function renderHealthVitals() {
   const grid = document.getElementById('vitals-grid');
   let html = '';
 
+  // Helper: build mini SVG sparkline from points array [{label, value}]
+  // lowerBetter: true for RHR/walking HR (lower = good), false for recovery/VO2 (higher = good)
+  function vitalSparkline(points, color, lowerBetter) {
+    const valid = points.filter(p => p.value > 0);
+    if (valid.length < 2) return '';
+    const vals = valid.map(p => p.value);
+    const vMin = Math.min(...vals);
+    const vMax = Math.max(...vals);
+    const range = vMax - vMin || 1;
+    const w = 200, h = 48, padX = 8, padY = 8;
+    const chartW = w - padX * 2, chartH = h - padY * 2;
+
+    // Points
+    const pts = valid.map((p, i) => {
+      const x = padX + (valid.length > 1 ? (i / (valid.length - 1)) * chartW : chartW / 2);
+      const y = padY + (1 - (p.value - vMin) / range) * chartH;
+      return { x, y, label: p.label, value: p.value };
+    });
+
+    // Delta
+    const first = valid[0].value, last = valid[valid.length - 1].value;
+    const delta = last - first;
+    const improved = lowerBetter ? delta < 0 : delta > 0;
+    const deltaColor = Math.abs(delta) < 0.5 ? C.textDim : improved ? C.accent : C.danger;
+    const deltaSign = delta > 0 ? '+' : '';
+    const deltaStr = Number.isInteger(delta) ? delta.toString() : delta.toFixed(1);
+
+    let svg = `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" style="display:block;margin:8px auto 0;">`;
+    // Line
+    svg += `<polyline fill="none" stroke="${color}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" points="${pts.map(p => p.x + ',' + p.y).join(' ')}"/>`;
+    // Dots + value labels
+    for (const p of pts) {
+      svg += `<circle cx="${p.x}" cy="${p.y}" r="3" fill="${color}"/>`;
+      const valY = p.y < padY + 14 ? p.y + 14 : p.y - 8;
+      svg += `<text x="${p.x}" y="${valY}" text-anchor="middle" fill="${C.text}" font-family="Space Grotesk,sans-serif" font-size="9" font-weight="600">${Number.isInteger(p.value) ? p.value : p.value.toFixed(1)}</text>`;
+    }
+    svg += `</svg>`;
+
+    // Time labels + delta
+    let labelsHtml = `<div style="display:flex;justify-content:space-between;padding:0 ${padX}px;margin-top:2px;">`;
+    for (const p of pts) {
+      labelsHtml += `<span style="font-size:9px;color:${C.textDim};font-family:'Space Grotesk',sans-serif;">${p.label}</span>`;
+    }
+    labelsHtml += `</div>`;
+    labelsHtml += `<div style="text-align:center;margin-top:4px;font-family:'Space Grotesk',sans-serif;font-size:10px;font-weight:600;color:${deltaColor};">${deltaSign}${deltaStr} over 12mo</div>`;
+
+    return svg + labelsHtml;
+  }
+
+  // Helper: wrap cell content with tappable trend expand
+  function vitalCell(label, valueHtml, contextHtml, trendHtml) {
+    if (trendHtml) {
+      return `<div class="vital-cell" style="cursor:pointer;-webkit-tap-highlight-color:transparent;" onclick="toggleVitalTrend(this)">
+        <div class="vital-label">${label}</div>
+        <div class="vital-value">${valueHtml}</div>
+        <div class="vital-context">${contextHtml}</div>
+        <div data-vital-trend style="max-height:0;overflow:hidden;opacity:0;transition:max-height 0.3s ease,opacity 0.25s ease;">${trendHtml}</div>
+      </div>`;
+    }
+    return `<div class="vital-cell">
+      <div class="vital-label">${label}</div>
+      <div class="vital-value">${valueHtml}</div>
+      <div class="vital-context">${contextHtml}</div>
+    </div>`;
+  }
+
   // RHR
   const rhr = healthData.resting_heart_rate;
   if (rhr && rhr > 0) {
     const rhrCat = getRHRCategory(rhr);
-    html += `<div class="vital-cell">
-      <div class="vital-label">Resting HR</div>
-      <div class="vital-value">${Math.round(rhr)}<span class="vital-unit">bpm</span></div>
-      <div class="vital-context" style="color:${rhrCat.color};display:flex;align-items:center;">${tierBadge(rhrCat.label, rhrCat.color)}</div>
-    </div>`;
+    const rhrPts = [
+      { label: '12mo', value: healthData.rhr_12m || 0 },
+      { label: '6mo', value: healthData.rhr_6m || 0 },
+      { label: '3mo', value: healthData.rhr_3m || 0 },
+      { label: 'Now', value: rhr },
+    ].filter(p => p.value > 0);
+    const trend = rhrPts.length >= 2 ? vitalSparkline(rhrPts, C.danger, true) : '';
+    html += vitalCell('Resting HR',
+      `${Math.round(rhr)}<span class="vital-unit">bpm</span>`,
+      `<span style="color:${rhrCat.color};display:flex;align-items:center;">${tierBadge(rhrCat.label, rhrCat.color)}</span>`,
+      trend);
   }
 
   // Cardio Recovery
   const recovery = healthData.cardio_recovery;
   if (recovery && recovery > 0) {
     const recCat = getRecoveryCategory(recovery);
-    html += `<div class="vital-cell">
-      <div class="vital-label">HR Recovery</div>
-      <div class="vital-value">${Math.round(recovery)}<span class="vital-unit">bpm</span></div>
-      <div class="vital-context" style="color:${recCat.color};display:flex;align-items:center;">${tierBadge(recCat.label, recCat.color)}</div>
-    </div>`;
+    const recPts = [
+      { label: '12mo', value: healthData.rec_12m || 0 },
+      { label: '6mo', value: healthData.rec_6m || 0 },
+      { label: '3mo', value: healthData.rec_3m || 0 },
+      { label: 'Now', value: recovery },
+    ].filter(p => p.value > 0);
+    const trend = recPts.length >= 2 ? vitalSparkline(recPts, C.accent, false) : '';
+    html += vitalCell('HR Recovery',
+      `${Math.round(recovery)}<span class="vital-unit">bpm</span>`,
+      `<span style="color:${recCat.color};display:flex;align-items:center;">${tierBadge(recCat.label, recCat.color)}</span>`,
+      trend);
+  }
+
+  // VO2 Max (in grid as well for trend access)
+  const vo2g = healthData.cardio_fitness;
+  if (vo2g && vo2g > 0) {
+    const vo2Pctile = estimateVO2Percentile(vo2g, PROFILE.age);
+    const vo2Cat = getVO2Category(vo2Pctile);
+    const vo2Pts = [
+      { label: '12mo', value: healthData.vo2_12m || 0 },
+      { label: '6mo', value: healthData.vo2_6m || 0 },
+      { label: '3mo', value: healthData.vo2_3m || 0 },
+      { label: 'Now', value: vo2g },
+    ].filter(p => p.value > 0);
+    const trend = vo2Pts.length >= 2 ? vitalSparkline(vo2Pts, C.blue, false) : '';
+    html += vitalCell('VO2 Max',
+      `${vo2g.toFixed(1)}<span class="vital-unit">ml/kg</span>`,
+      `<span style="color:${vo2Cat.color};display:flex;align-items:center;">${vo2Pctile}th %ile \u00b7 ${tierBadge(vo2Cat.label, vo2Cat.color)}</span>`,
+      trend);
   }
 
   // Steps (7-day avg)
@@ -4831,22 +4940,17 @@ function renderHealthVitals() {
       : steps >= 7000 ? { label: 'Good', color: C.blue }
       : steps >= 4000 ? { label: 'Fair', color: C.warn }
       : { label: 'Low', color: C.danger };
-    html += `<div class="vital-cell">
-      <div class="vital-label">Steps/Day</div>
-      <div class="vital-value">${stepsK}</div>
-      <div class="vital-context" style="color:${stepsCat.color};display:flex;align-items:center;">${tierBadge(stepsCat.label, stepsCat.color)}</div>
-    </div>`;
+    html += vitalCell('Steps/Day', stepsK,
+      `<span style="color:${stepsCat.color};display:flex;align-items:center;">${tierBadge(stepsCat.label, stepsCat.color)}</span>`, '');
   }
 
   // Active Calories
   const cal = healthData.active_energy_kcal;
   if (cal && cal > 0) {
     const calCat = getActiveCalCategory(cal);
-    html += `<div class="vital-cell">
-      <div class="vital-label">Active Cal</div>
-      <div class="vital-value">${Math.round(cal)}<span class="vital-unit">kcal</span></div>
-      <div class="vital-context" style="color:${calCat.color};display:flex;align-items:center;">${tierBadge(calCat.label, calCat.color)}</div>
-    </div>`;
+    html += vitalCell('Active Cal',
+      `${Math.round(cal)}<span class="vital-unit">kcal</span>`,
+      `<span style="color:${calCat.color};display:flex;align-items:center;">${tierBadge(calCat.label, calCat.color)}</span>`, '');
   }
 
   // Walking HR
@@ -4857,11 +4961,9 @@ function renderHealthVitals() {
       : whr < 105 ? { label: 'Good', color: C.blue }
       : whr <= 115 ? { label: 'Fair', color: C.warn }
       : { label: 'Low', color: C.danger };
-    html += `<div class="vital-cell">
-      <div class="vital-label">Walking HR</div>
-      <div class="vital-value">${Math.round(whr)}<span class="vital-unit">bpm</span></div>
-      <div class="vital-context" style="color:${whrCat.color};display:flex;align-items:center;">${tierBadge(whrCat.label, whrCat.color)}</div>
-    </div>`;
+    html += vitalCell('Walking HR',
+      `${Math.round(whr)}<span class="vital-unit">bpm</span>`,
+      `<span style="color:${whrCat.color};display:flex;align-items:center;">${tierBadge(whrCat.label, whrCat.color)}</span>`, '');
   }
 
   // Body Fat % (from Hevy -> Apple Health)
