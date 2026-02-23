@@ -1703,6 +1703,7 @@ function preprocessWorkouts(workouts, bodyweightLbs, weightData) {
   const muscleStats = {};
   const muscle1RMInputs = {}; // { muscleKey: { best1RM, exercise } }
   const siRolling1RMs = { bench: 0, squat: 0, deadlift: 0, ohp: 0, row: 0 };
+  const siRollingSrc = { bench: null, squat: null, deadlift: null, ohp: null, row: null };
   const siTimeline = [];
   const heatmapDayMuscle = {};
   const heatmapDayWorkouts = {};
@@ -1864,6 +1865,7 @@ function preprocessWorkouts(workouts, bodyweightLbs, weightData) {
           const est = estimate1RM(wLbs, reps);
           if (est > siRolling1RMs[liftKey]) {
             siRolling1RMs[liftKey] = est;
+            siRollingSrc[liftKey] = { ex: name, wt: Math.round(wLbs), reps: reps, date: dateStr };
             siUpdated = true;
           }
         }
@@ -1898,7 +1900,7 @@ function preprocessWorkouts(workouts, bodyweightLbs, weightData) {
         if (siRolling1RMs[liftKey] > 0) {
           index += normalized * adjustedWeight;
         }
-        lifts[liftKey] = { rm: Math.round(siRolling1RMs[liftKey]), mult: Math.round(mult * 100) / 100 };
+        lifts[liftKey] = { rm: Math.round(siRolling1RMs[liftKey]), mult: Math.round(mult * 100) / 100, src: siRollingSrc[liftKey] };
       }
       siTimeline.push({ date: dateStr, index: Math.round(index * 100) / 100, lifts: { ...lifts } });
     }
@@ -3975,6 +3977,19 @@ document.addEventListener('click', function(e) {
   }
 });
 
+function toggleSISrc(rowEl) {
+  const src = rowEl.querySelector('[data-si-src]');
+  if (!src) return;
+  const isOpen = src.style.maxHeight && src.style.maxHeight !== '0px';
+  if (isOpen) {
+    src.style.maxHeight = '0';
+    src.style.opacity = '0';
+  } else {
+    src.style.maxHeight = '40px';
+    src.style.opacity = '1';
+  }
+}
+
 function populateStrengthDetail() {
   const container = document.getElementById('strength-detail');
 
@@ -4128,14 +4143,28 @@ function populateStrengthDetail() {
         + `<span style="font-size:10px;color:${C.textDark};font-family:'Space Grotesk',sans-serif;"> lbs</span>`;
     }
 
-    html += `<div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid ${C.surface2};">
-      <div style="width:58px;font-size:16px;font-weight:600;color:${C.text};flex-shrink:0;">${info.label}</div>
-      <div data-str-bar style="flex:1;height:14px;border-radius:3px;background:${C.surface3};position:relative;overflow:visible;cursor:pointer;-webkit-tap-highlight-color:transparent;" onclick="showStrengthPctile(this)">
-        <div style="position:absolute;top:4px;left:0;right:0;height:6px;border-radius:3px;background:linear-gradient(90deg,${C.danger} 0%,${C.warn} 40%,${C.accent} 100%);opacity:0.3;"></div>
-        ${hasData ? `<div style="position:absolute;top:50%;left:${markerLeft}%;width:10px;height:10px;border-radius:50%;background:${markerColor};transform:translate(-50%,-50%);border:1.5px solid ${C.surface};pointer-events:none;"></div>` : ''}
-        ${hasData ? `<div data-pctile-tip style="position:absolute;top:50%;left:${markerLeft}%;background:${pctColor};color:${C.bg};font-family:'Space Grotesk',sans-serif;font-size:11px;font-weight:700;padding:2px 6px;border-radius:4px;pointer-events:none;white-space:nowrap;opacity:0;transform:translate(-50%,-50%) scale(0.7);transition:opacity 0.2s ease,transform 0.2s ease;z-index:5;">${pctile}th</div>` : ''}
+    // Source exercise detail (hidden by default, toggled on tap)
+    let srcHtml = '';
+    if (hasData && lift.src) {
+      const s = lift.src;
+      const srcDate = new Date(s.date + 'T12:00:00');
+      const srcDateStr = srcDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+      srcHtml = `<div data-si-src style="max-height:0;overflow:hidden;opacity:0;transition:max-height 0.25s ease,opacity 0.2s ease;padding-left:58px;">
+        <div style="padding:4px 0 2px;font-family:'Space Grotesk',sans-serif;font-size:11px;color:${C.textDim};">via ${s.ex} \u00b7 ${s.reps}@${s.wt}lbs \u00b7 ${srcDateStr}</div>
+      </div>`;
+    }
+
+    html += `<div style="border-bottom:1px solid ${C.surface2};cursor:pointer;-webkit-tap-highlight-color:transparent;" onclick="toggleSISrc(this)">
+      <div style="display:flex;align-items:center;gap:10px;padding:9px 0;">
+        <div style="width:58px;font-size:16px;font-weight:600;color:${C.text};flex-shrink:0;">${info.label}</div>
+        <div data-str-bar style="flex:1;height:14px;border-radius:3px;background:${C.surface3};position:relative;overflow:visible;" onclick="event.stopPropagation();showStrengthPctile(this)">
+          <div style="position:absolute;top:4px;left:0;right:0;height:6px;border-radius:3px;background:linear-gradient(90deg,${C.danger} 0%,${C.warn} 40%,${C.accent} 100%);opacity:0.3;"></div>
+          ${hasData ? `<div style="position:absolute;top:50%;left:${markerLeft}%;width:10px;height:10px;border-radius:50%;background:${markerColor};transform:translate(-50%,-50%);border:1.5px solid ${C.surface};pointer-events:none;"></div>` : ''}
+          ${hasData ? `<div data-pctile-tip style="position:absolute;top:50%;left:${markerLeft}%;background:${pctColor};color:${C.bg};font-family:'Space Grotesk',sans-serif;font-size:11px;font-weight:700;padding:2px 6px;border-radius:4px;pointer-events:none;white-space:nowrap;opacity:0;transform:translate(-50%,-50%) scale(0.7);transition:opacity 0.2s ease,transform 0.2s ease;z-index:5;">${pctile}th</div>` : ''}
+        </div>
+        <div style="width:72px;text-align:right;flex-shrink:0;">${rightHtml}</div>
       </div>
-      <div style="width:72px;text-align:right;flex-shrink:0;">${rightHtml}</div>
+      ${srcHtml}
     </div>`;
   }
 
