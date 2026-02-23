@@ -5,7 +5,7 @@
   Changes from v1.14:
   1.  Fix UTC/local date math: all day keys now use localDateStr() consistently
   2.  Measurements persistence: localStorage stores only deltas, baseline stays in HTML
-  3.  Hevy fetch cap increased: up to 1000 workouts (20/page x 50 pages)
+  3.  Hevy fetch cap: ~155 workouts (6 months at 6 days/week)
   4.  Inverted target display: waist shows clear "+X.X in over target" instead of ambiguous %
   5.  HIIT gating: readiness checks (RHR, recovery, cardio base, consecutive days) before prescribing
   Changes from v1.13:
@@ -1646,11 +1646,11 @@ function isCacheStale(cached) {
   return !cached || (Date.now() - cached.ts) > CACHE_STALE_MS;
 }
 
-async function fetchWorkouts(pageSize = 10, maxPages = 100) {
+async function fetchWorkouts(pageSize = 10, maxPages = 16) {
   const allWorkouts = [];
   let page = 1;
   let totalPages = 1;
-  const HARD_CAP = 1000; // safety cap to avoid runaway fetch
+  const HARD_CAP = 155; // ~6 months at 6 days/week
 
   while (page <= totalPages && page <= maxPages && allWorkouts.length < HARD_CAP) {
     updateLoading(`Loading workouts (${allWorkouts.length})...`);
@@ -1692,6 +1692,7 @@ const STRENGTH_INDEX_LIFTS = {
 function preprocessWorkouts(workouts, bodyweightLbs, weightData) {
   const now = new Date();
   const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+  const sixMonthsAgo = new Date(now.getTime() - 183 * 24 * 60 * 60 * 1000);
 
   // Sort oldest -> newest for history building
   const sorted = [...workouts].sort((a, b) =>
@@ -1737,6 +1738,7 @@ function preprocessWorkouts(workouts, bodyweightLbs, weightData) {
     const wDate = new Date(w.start_time || w.created_at);
     const dateStr = localDateStr(wDate);
     const isRecent = wDate >= thirtyDaysAgo;
+    const isWithin6m = wDate >= sixMonthsAgo;
     const musclesThisWorkout = new Set();
     let siUpdated = false;
 
@@ -1854,19 +1856,21 @@ function preprocessWorkouts(workouts, bodyweightLbs, weightData) {
         }
       }
 
-      // --- Strength index timeline ---
-      for (const [liftKey, liftDef] of Object.entries(STRENGTH_INDEX_LIFTS)) {
-        const matched = liftDef.patterns.some(p => p.test(name));
-        if (!matched) continue;
-        for (const s of workingSets) {
-          const wLbs = (s.weight_kg || 0) * 2.20462;
-          const reps = s.reps || 0;
-          if (wLbs <= 0 || reps <= 0) continue;
-          const est = estimate1RM(wLbs, reps);
-          if (est > siRolling1RMs[liftKey]) {
-            siRolling1RMs[liftKey] = est;
-            siRollingSrc[liftKey] = { ex: name, wt: Math.round(wLbs), reps: reps, date: dateStr };
-            siUpdated = true;
+      // --- Strength index timeline (6-month rolling window) ---
+      if (isWithin6m) {
+        for (const [liftKey, liftDef] of Object.entries(STRENGTH_INDEX_LIFTS)) {
+          const matched = liftDef.patterns.some(p => p.test(name));
+          if (!matched) continue;
+          for (const s of workingSets) {
+            const wLbs = (s.weight_kg || 0) * 2.20462;
+            const reps = s.reps || 0;
+            if (wLbs <= 0 || reps <= 0) continue;
+            const est = estimate1RM(wLbs, reps);
+            if (est > siRolling1RMs[liftKey]) {
+              siRolling1RMs[liftKey] = est;
+              siRollingSrc[liftKey] = { ex: name, wt: Math.round(wLbs), reps: reps, date: dateStr };
+              siUpdated = true;
+            }
           }
         }
       }
