@@ -520,6 +520,8 @@ padding: 12px;
 border-radius: 10px;
 border: 1px solid var(--border);
 background: var(--surface2);
+min-width: 0;
+overflow: hidden;
 }
 .vital-label {
 font-size: 11px;
@@ -4840,7 +4842,7 @@ function renderHealthVitals() {
     const deltaSign = delta > 0 ? '+' : '';
     const deltaStr = Number.isInteger(delta) ? delta.toString() : delta.toFixed(1);
 
-    let svg = `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" style="display:block;margin:8px auto 0;">`;
+    let svg = `<svg width="100%" viewBox="0 0 ${w} ${h}" preserveAspectRatio="xMidYMid meet" style="display:block;margin:8px auto 0;">`;
     // Line
     svg += `<polyline fill="none" stroke="${color}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" points="${pts.map(p => p.x + ',' + p.y).join(' ')}"/>`;
     // Dots + value labels
