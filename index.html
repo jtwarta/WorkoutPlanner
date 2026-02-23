@@ -1646,7 +1646,7 @@ function isCacheStale(cached) {
   return !cached || (Date.now() - cached.ts) > CACHE_STALE_MS;
 }
 
-async function fetchWorkouts(pageSize = 20, maxPages = 50) {
+async function fetchWorkouts(pageSize = 10, maxPages = 100) {
   const allWorkouts = [];
   let page = 1;
   let totalPages = 1;
