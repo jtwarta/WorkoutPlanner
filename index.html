@@ -4669,6 +4669,9 @@ async function fetchHealthData() {
     // Strip unit suffixes from calories: "32 kcal" -> "32", "1,220 kcal" -> "1220"
     cleanText = cleanText.replace(/(\d),(\d)/g, '$1$2'); // remove thousands commas
     cleanText = cleanText.replace(/([\d.]+)\s*kcal/g, '$1');
+    // Fix empty values from removed Shortcut actions: "key": , -> "key": null,
+    cleanText = cleanText.replace(/:\s*,/g, ': null,');
+    cleanText = cleanText.replace(/:\s*}/g, ': null}');
     const data = JSON.parse(cleanText);
     healthData = data;
 
