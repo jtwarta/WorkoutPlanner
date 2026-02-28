@@ -3125,7 +3125,7 @@ function renderTimedSession(recs) {
     const chipText = isHigh
       ? `${_consecutiveTrainDays} days straight \u2014 rest day recommended`
       : `${_consecutiveTrainDays} days in a row \u2014 consider resting`;
-    restChip = `<div style="display:inline-flex;align-items:center;gap:5px;padding:5px 10px;border-radius:6px;background:${chipBg};border:1px solid ${chipColor}30;font-size:12px;font-family:'Space Grotesk',sans-serif;color:${chipColor};font-weight:500;margin-top:10px;">${chipText}</div>`;
+    restChip = `<div style="display:inline-flex;align-items:center;gap:5px;padding:5px 10px;border-radius:6px;background:${chipBg};border:1px solid ${chipColor}30;font-size:12px;font-family:'Space Grotesk',sans-serif;color:${chipColor};font-weight:500;white-space:nowrap;">${chipText}</div>`;
   }
 
   document.getElementById('today-hero').innerHTML = `
@@ -3135,10 +3135,10 @@ function renderTimedSession(recs) {
         <div style="font-family:'Space Grotesk',sans-serif;font-size:20px;font-weight:700;color:${C.accent};">~${totalMin}<span style="font-size:13px;font-weight:500;color:${C.textDim};margin-left:2px;">min</span></div>
       </div>
       <div style="display:flex;flex-wrap:wrap;align-items:center;gap:4px 0;line-height:1.8;">${muscleDots}</div>
-      ${restChip}
-      <div style="margin-top:12px;">
-        <button id="send-to-hevy-btn" onclick="sendSessionToHevy()" style="display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:8px;background:${C.surface2};border:1px solid ${C.border};color:${C.textMid};font-size:13px;font-weight:600;font-family:'Space Grotesk',sans-serif;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:all 0.2s ease;">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+      <div style="display:flex;align-items:center;gap:8px;margin-top:10px;">
+        ${restChip}
+        <button id="send-to-hevy-btn" onclick="sendSessionToHevy()" style="display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border-radius:6px;background:${C.surface2};border:1px solid ${C.border};color:${C.textMid};font-size:12px;font-weight:600;font-family:'Space Grotesk',sans-serif;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:all 0.2s ease;margin-left:auto;white-space:nowrap;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
           Send to Hevy
         </button>
       </div>
