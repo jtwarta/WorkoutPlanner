@@ -1264,7 +1264,14 @@ const COMPOUND_ANCHORS = {
 // Rank exercises within a muscle group using history data
 // Returns the same exercise names but reordered by composite score
 function rankExercisesForMuscle(muscleKey) {
-  const pool = MUSCLE_EXERCISE_PICKS[muscleKey] || [];
+  let pool = MUSCLE_EXERCISE_PICKS[muscleKey] || [];
+  if (pool.length === 0) return pool;
+
+  // Filter to only exercises that exist in Hevy (once templates are loaded)
+  if (_hevyTemplatesLoaded) {
+    pool = pool.filter(function(exName) { return !!_templateIdMap[exName]; });
+  }
+
   if (pool.length <= 1) return pool;
 
   const now = new Date();
@@ -1550,6 +1557,7 @@ let WEIGHT_DATA = [];
 let LAST_RECS = null;
 let _lastBuiltSession = null; // Last session from buildTimedSession for Hevy push
 let _templateIdMap = {};      // exercise name -> exercise_template_id from Hevy
+let _hevyTemplatesLoaded = false; // true once all Hevy templates have been fetched
 let healthData = null;
 let healthStatus = 'pending'; // 'ok' | 'stale' | 'missing' | 'pending'
 let hevyStatus = 'pending'; // 'ok' | 'error'
@@ -2893,6 +2901,40 @@ function showToast(msg, isError) {
 }
 
 // Fetch exercise templates from Hevy to resolve missing template IDs
+async function fetchAllHevyTemplateIds() {
+  try {
+    var page = 1;
+    var maxPages = 50; // up to ~500 templates
+    while (page <= maxPages) {
+      var resp = await fetchWithTimeout(API_BASE + '/exercise_templates?page=' + page + '&pageSize=10', {
+        headers: { 'api-key': apiKey },
+        mode: 'cors'
+      });
+      if (!resp.ok) break;
+      var data = await resp.json();
+      var templates = data.exercise_templates || [];
+      if (templates.length === 0) break;
+
+      for (var i = 0; i < templates.length; i++) {
+        var t = templates[i];
+        var tName = t.title || '';
+        if (tName && !_templateIdMap[tName]) {
+          _templateIdMap[tName] = t.id;
+        }
+      }
+
+      var totalPages = data.page_count || 1;
+      if (page >= totalPages) break;
+      page++;
+    }
+    _hevyTemplatesLoaded = true;
+    console.log('Hevy templates loaded: ' + Object.keys(_templateIdMap).length + ' exercises mapped');
+  } catch (e) {
+    console.error('fetchAllHevyTemplateIds error:', e);
+    // Don't set flag -- filter stays inactive so all exercises remain available
+  }
+}
+
 async function resolveTemplateIds(names) {
   var missing = names.filter(function(n) { return !_templateIdMap[n]; });
   if (missing.length === 0) return true;
@@ -5547,6 +5589,15 @@ function renderDashboard(workouts) {
     `v1.15 \u00b7${now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })} <span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${syncColor};margin-left:5px;vertical-align:middle;position:relative;top:-1px;"></span>`;
 
   renderTimedSession(recs);
+
+  // Background: fetch all Hevy exercise templates so future sessions
+  // only propose exercises that exist in Hevy
+  if (!_hevyTemplatesLoaded) {
+    fetchAllHevyTemplateIds().then(function() {
+      if (_hevyTemplatesLoaded && LAST_RECS) renderTimedSession(LAST_RECS);
+    });
+  }
+
   heatmapDayCardio = pp.heatmapDayCardio || {};
   renderCardioPlan(pp.heatmapDayCardio);
   renderMuscleGrid(pp.muscleStats, recs);
