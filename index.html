@@ -1288,20 +1288,27 @@ function buildDynamicExercisePool() {
 }
 
 // Add exercises from Hevy templates into the dynamic pool
+// Only adds exercises we can actually prescribe (in EXERCISE_DB or workout history)
 function addHevyTemplatesToPool() {
+  var added = 0;
   for (const name in _templateIdMap) {
-    // Skip if already in pool from EXERCISE_DB or history
+    // Skip if already in pool
     var alreadyInPool = false;
     for (var key in _dynamicExercisePool) {
       if (_dynamicExercisePool[key].has(name)) { alreadyInPool = true; break; }
     }
     if (alreadyInPool) continue;
 
+    // Only add if we have prescription data (EXERCISE_DB or workout history)
+    if (!EXERCISE_DB[name] && !exerciseHistory[name]) continue;
+
     var cls = classifyExercise(name);
     if (cls.primary !== 'cardio' && cls.primary !== 'other' && _dynamicExercisePool[cls.primary]) {
       _dynamicExercisePool[cls.primary].add(name);
+      added++;
     }
   }
+  if (added > 0) console.log('Added ' + added + ' exercises from Hevy templates to dynamic pool');
 }
 
 // Rank exercises within a muscle group using history data
@@ -2823,6 +2830,31 @@ function isLikelyCompound(name) {
   return COMPOUND_PATTERNS.some(function(p) { return p.test(name); });
 }
 
+// Evidence-based rest periods (Schoenfeld 2016, de Salles 2009):
+// Heavy barbell compounds (phosphocreatine recovery): 180s
+// Moderate compounds: 120s
+// Isolation: 60s
+const HEAVY_COMPOUND_PATTERNS = [
+  /squat.*barbell/i, /barbell.*squat/i,
+  /^squat$/i,
+  /deadlift.*barbell/i, /barbell.*deadlift/i, /^deadlift$/i,
+  /bench press.*barbell/i, /barbell.*bench press/i, /^bench press$/i,
+  /rack pull/i, /pendlay row/i,
+];
+
+function getRestSeconds(name) {
+  var db = EXERCISE_DB[name];
+  // Check for heavy barbell compounds first (big 3 + variants)
+  for (var i = 0; i < HEAVY_COMPOUND_PATTERNS.length; i++) {
+    if (HEAVY_COMPOUND_PATTERNS[i].test(name)) return 180;
+  }
+  // Moderate compounds
+  var compound = db ? db.type === 'compound' : isLikelyCompound(name);
+  if (compound) return 120;
+  // Isolation
+  return 60;
+}
+
 function buildTimedSession(recs, prefs) {
   prefs = prefs || sessionPrefs;
   const topKeys = recs.slice(0, 3).map(r => r.key);
@@ -2963,13 +2995,16 @@ function showToast(msg, isError) {
 
 // Fetch exercise templates from Hevy to resolve missing template IDs
 async function fetchAllHevyTemplateIds() {
-  // Try localStorage cache first
+  // Try localStorage cache first (7-day TTL)
   try {
     var cached = Storage.get('hevy_template_map');
-    if (cached && typeof cached === 'object' && Object.keys(cached).length > 20) {
+    var cachedTs = Storage.get('hevy_template_map_ts');
+    var cacheAge = cachedTs ? (Date.now() - cachedTs) : Infinity;
+    var CACHE_TTL = 7 * 24 * 60 * 60 * 1000; // 7 days
+    if (cached && typeof cached === 'object' && Object.keys(cached).length > 20 && cacheAge < CACHE_TTL) {
       Object.assign(_templateIdMap, cached);
       _hevyTemplatesLoaded = true;
-      console.log('Hevy templates loaded from cache: ' + Object.keys(_templateIdMap).length + ' exercises');
+      console.log('Hevy templates loaded from cache: ' + Object.keys(_templateIdMap).length + ' exercises (age: ' + Math.round(cacheAge / 3600000) + 'h)');
       addHevyTemplatesToPool();
       warnUnmatchedExercises();
       return;
@@ -3026,6 +3061,7 @@ async function fetchAllHevyTemplateIds() {
 
     // Cache to localStorage for fast future loads
     Storage.set('hevy_template_map', _templateIdMap);
+    Storage.set('hevy_template_map_ts', Date.now());
 
     // Expand dynamic pool with newly discovered Hevy exercises
     addHevyTemplatesToPool();
@@ -3152,7 +3188,7 @@ async function sendSessionToHevy() {
       var exObj = {
         exercise_template_id: templateId,
         superset_id: null,
-        rest_seconds: 90,
+        rest_seconds: getRestSeconds(ex.name),
         notes: '',
         sets: sets
       };
