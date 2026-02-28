@@ -2938,8 +2938,10 @@ async function sendSessionToHevy() {
     // Resolve any missing template IDs
     var allResolved = await resolveTemplateIds(exNames);
     var unresolvedNames = exNames.filter(function(n) { return !_templateIdMap[n]; });
-    if (unresolvedNames.length > 0) {
-      showToast('Could not find Hevy IDs for: ' + unresolvedNames.join(', '), true);
+    var resolvedExercises = _lastBuiltSession.exercises.filter(function(ex) { return !!_templateIdMap[ex.name]; });
+
+    if (resolvedExercises.length === 0) {
+      showToast('Could not find any Hevy IDs for these exercises', true);
       btn.innerHTML = origHTML;
       btn.style.opacity = '1';
       btn.disabled = false;
@@ -2952,8 +2954,8 @@ async function sendSessionToHevy() {
     var routineTitle = 'LiftScript ' + months[now.getMonth()] + ' ' + now.getDate();
 
     var exercises = [];
-    for (var i = 0; i < _lastBuiltSession.exercises.length; i++) {
-      var ex = _lastBuiltSession.exercises[i];
+    for (var i = 0; i < resolvedExercises.length; i++) {
+      var ex = resolvedExercises[i];
       var p = ex.prescription;
       var templateId = _templateIdMap[ex.name];
 
@@ -3017,7 +3019,10 @@ async function sendSessionToHevy() {
 
     if (resp.ok) {
       var result = await resp.json();
-      showToast('\u2714 Routine \"' + routineTitle + '\" created in Hevy!', false);
+      var skipMsg = unresolvedNames.length > 0
+        ? ' (skipped ' + unresolvedNames.length + ': ' + unresolvedNames.join(', ') + ')'
+        : '';
+      showToast('\u2714 \"' + routineTitle + '\" created in Hevy!' + skipMsg, false);
       btn.innerHTML = '<span style="display:inline-flex;align-items:center;gap:6px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="' + C.accent + '" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> <span style="color:' + C.accent + ';">Sent!</span></span>';
       btn.style.opacity = '1';
       btn.disabled = true;
