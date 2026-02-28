@@ -2959,11 +2959,8 @@ async function sendSessionToHevy() {
       return;
     }
 
-    // Build routine payload
-    var now = new Date();
-    var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-    var routineTitle = 'LiftScript ' + months[now.getMonth()] + ' ' + now.getDate();
-
+    // Build exercises array
+    var routineTitle = 'LiftScript Daily';
     var exercises = [];
     for (var i = 0; i < resolvedExercises.length; i++) {
       var ex = resolvedExercises[i];
@@ -2987,8 +2984,6 @@ async function sendSessionToHevy() {
         if (repLow === repHigh) {
           setObj.reps = repLow;
         } else {
-          // Hevy routine sets don't support repRange directly in all API versions
-          // Use the midpoint as target reps
           setObj.reps = Math.round((repLow + repHigh) / 2);
         }
         sets.push(setObj);
@@ -3002,7 +2997,6 @@ async function sendSessionToHevy() {
         sets: sets
       };
 
-      // Add note about per-hand/per-side exercises
       if (p.note === 'per hand' || p.note === 'per side') {
         exObj.notes = p.note;
       }
@@ -3010,34 +3004,65 @@ async function sendSessionToHevy() {
       exercises.push(exObj);
     }
 
-    var payload = {
-      routine: {
-        title: routineTitle,
-        folder_id: null,
-        exercises: exercises
-      }
+    var routinePayload = {
+      title: routineTitle,
+      folder_id: null,
+      exercises: exercises
     };
 
-    var resp = await fetchWithTimeout(API_BASE + '/routines', {
-      method: 'POST',
-      headers: {
-        'api-key': apiKey,
-        'Content-Type': 'application/json'
-      },
-      mode: 'cors',
-      body: JSON.stringify(payload)
-    });
+    // Check for existing routine ID in localStorage
+    var existingId = Storage.get('hevy_routine_id');
+    var resp;
+    var isUpdate = false;
+
+    if (existingId) {
+      // Try to update existing routine via PUT
+      resp = await fetchWithTimeout(API_BASE + '/routines/' + existingId, {
+        method: 'PUT',
+        headers: {
+          'api-key': apiKey,
+          'Content-Type': 'application/json'
+        },
+        mode: 'cors',
+        body: JSON.stringify({ routine: routinePayload })
+      });
+      // If 404 (routine was manually deleted), fall through to create
+      if (resp.status === 404) {
+        Storage.remove('hevy_routine_id');
+        existingId = null;
+      } else {
+        isUpdate = true;
+      }
+    }
+
+    if (!existingId) {
+      // Create new routine via POST
+      resp = await fetchWithTimeout(API_BASE + '/routines', {
+        method: 'POST',
+        headers: {
+          'api-key': apiKey,
+          'Content-Type': 'application/json'
+        },
+        mode: 'cors',
+        body: JSON.stringify({ routine: routinePayload })
+      });
+      isUpdate = false;
+    }
 
     if (resp.ok) {
       var result = await resp.json();
+      // Save routine ID for future updates
+      if (!isUpdate && result && result.routine && result.routine.id) {
+        Storage.set('hevy_routine_id', result.routine.id);
+      }
       var skipMsg = unresolvedNames.length > 0
         ? ' (skipped ' + unresolvedNames.length + ': ' + unresolvedNames.join(', ') + ')'
         : '';
-      showToast('\u2714 \"' + routineTitle + '\" created in Hevy!' + skipMsg, false);
+      var verb = isUpdate ? 'updated' : 'created';
+      showToast('\u2714 \"' + routineTitle + '\" ' + verb + ' in Hevy!' + skipMsg, false);
       btn.innerHTML = '<span style="display:inline-flex;align-items:center;gap:6px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="' + C.accent + '" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> <span style="color:' + C.accent + ';">Sent!</span></span>';
       btn.style.opacity = '1';
       btn.disabled = true;
-      // Re-enable after 10s
       setTimeout(function() {
         btn.innerHTML = origHTML;
         btn.disabled = false;
@@ -3045,7 +3070,7 @@ async function sendSessionToHevy() {
     } else {
       var errBody = '';
       try { errBody = await resp.text(); } catch(_) {}
-      console.error('Hevy routine create failed:', resp.status, errBody);
+      console.error('Hevy routine send failed:', resp.status, errBody);
       showToast('Hevy API error ' + resp.status + ': ' + (errBody || resp.statusText), true);
       btn.innerHTML = origHTML;
       btn.style.opacity = '1';
