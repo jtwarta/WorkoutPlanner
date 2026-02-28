@@ -1288,7 +1288,7 @@ function buildDynamicExercisePool() {
 }
 
 // Add exercises from Hevy templates into the dynamic pool
-// Only adds exercises we can actually prescribe (in EXERCISE_DB or workout history)
+// Only adds exercises we can classify to a known muscle group
 function addHevyTemplatesToPool() {
   var added = 0;
   for (const name in _templateIdMap) {
@@ -1298,9 +1298,6 @@ function addHevyTemplatesToPool() {
       if (_dynamicExercisePool[key].has(name)) { alreadyInPool = true; break; }
     }
     if (alreadyInPool) continue;
-
-    // Only add if we have prescription data (EXERCISE_DB or workout history)
-    if (!EXERCISE_DB[name] && !exerciseHistory[name]) continue;
 
     var cls = classifyExercise(name);
     if (cls.primary !== 'cardio' && cls.primary !== 'other' && _dynamicExercisePool[cls.primary]) {
@@ -2636,6 +2633,57 @@ function renderCardioPlan(dayCardioMap) {
 // ============================================================
 // SMART WEIGHT PRESCRIPTION (Pillar 4)
 // ============================================================
+
+// Estimate starting weight for an exercise with no history and no EXERCISE_DB entry
+// Uses the user's demonstrated strength in the same muscle group to infer a reasonable starting weight
+function estimateWeightFromPeers(name) {
+  var cls = classifyExercise(name);
+  if (cls.primary === 'cardio' || cls.primary === 'other') return 0;
+  var muscleKey = cls.primary;
+  var compound = isLikelyCompound(name);
+
+  // Collect strength ratios from exercises in this muscle group that have both DB benchmarks and history
+  var ratios = [];
+  var sameTypeWeights = [];
+  for (var exName in EXERCISE_DB) {
+    var exDb = EXERCISE_DB[exName];
+    if (exDb.muscle !== muscleKey) continue;
+    if (!exDb.benchmarkLbs || exDb.benchmarkLbs <= 0) continue;
+    var exHist = exerciseHistory[exName];
+    if (!exHist || !exHist.lastWeightLbs || exHist.lastWeightLbs <= 0) continue;
+
+    var ratio = exHist.lastWeightLbs / exDb.benchmarkLbs;
+    ratios.push(ratio);
+
+    // Track weights from same type (compound vs isolation)
+    var exIsCompound = exDb.type === 'compound';
+    if (exIsCompound === compound) {
+      sameTypeWeights.push(exHist.lastWeightLbs);
+    }
+  }
+
+  if (ratios.length === 0) return 0;
+
+  // User's average strength factor for this muscle group
+  var avgRatio = ratios.reduce(function(a, b) { return a + b; }, 0) / ratios.length;
+
+  // If the exercise IS in EXERCISE_DB (has benchmark but no history), scale the benchmark
+  var db = EXERCISE_DB[name];
+  if (db && db.benchmarkLbs > 0) {
+    return Math.round(db.benchmarkLbs * avgRatio / 5) * 5;
+  }
+
+  // Exercise not in EXERCISE_DB: use median weight of same-type exercises, scaled conservatively
+  // Start at 80% of median same-type weight (safety margin for unfamiliar movement)
+  if (sameTypeWeights.length > 0) {
+    sameTypeWeights.sort(function(a, b) { return a - b; });
+    var median = sameTypeWeights[Math.floor(sameTypeWeights.length / 2)];
+    return Math.round(median * 0.8 / 5) * 5;
+  }
+
+  return 0;
+}
+
 function prescribeExercise(name) {
   const db = EXERCISE_DB[name];
   const hist = exerciseHistory[name];
@@ -2667,7 +2715,12 @@ function prescribeExercise(name) {
     }
     if (hist.lastSets >= 2 && hist.lastSets <= 6) sets = hist.lastSets;
   } else if (!db) {
-    return { sets: 3, reps: '8-10', weightLbs: 0, note: 'no data' };
+    // No EXERCISE_DB entry and no history: estimate from peer exercises
+    weightLbs = estimateWeightFromPeers(name);
+  } else {
+    // Has EXERCISE_DB entry but no history: scale benchmark by user's strength in this muscle group
+    var estimated = estimateWeightFromPeers(name);
+    if (estimated > 0) weightLbs = estimated;
   }
 
   if (note === 'bodyweight' || note === 'hold') weightLbs = 0;
