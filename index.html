@@ -2974,7 +2974,7 @@ async function sendSessionToHevy() {
       var repHigh = repParts.length > 1 ? (parseInt(repParts[1], 10) || repLow) : repLow;
 
       // Convert lbs to kg
-      var weightKg = p.weightLbs > 0 ? Math.round(p.weightLbs * 0.453592 * 10) / 10 : null;
+      var weightKg = p.weightLbs > 0 ? p.weightLbs * 0.453592 : null;
 
       // Build sets array
       var sets = [];
