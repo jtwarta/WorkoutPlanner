@@ -1143,96 +1143,132 @@ const MUSCLE_GROUPS = {
 // ~80% of previous competition-derived targets
 // ============================================================
 const EXERCISE_DB = {
-  'Bench Press (Barbell)': { muscle: 'chest', type: 'compound', benchmarkLbs: 155, sets: 4, reps: '6-8' },
-  'Incline Bench Press (Dumbbell)': { muscle: 'chest', type: 'compound', benchmarkLbs: 50, sets: 3, reps: '8-10', note: 'per hand' },
-  'Incline Bench Press (Barbell)': { muscle: 'chest', type: 'compound', benchmarkLbs: 125, sets: 4, reps: '6-8' },
-  'Chest Fly (Machine)': { muscle: 'chest', type: 'isolation', benchmarkLbs: 115, sets: 3, reps: '10-12' },
-  'Chest Fly (Dumbbell)': { muscle: 'chest', type: 'isolation', benchmarkLbs: 30, sets: 3, reps: '10-12', note: 'per hand' },
-  'Chest Dip': { muscle: 'chest', type: 'compound', benchmarkLbs: 0, sets: 3, reps: '8-12', note: 'bodyweight' },
-  'Cable Fly Crossovers': { muscle: 'chest', type: 'isolation', benchmarkLbs: 25, sets: 3, reps: '12-15', note: 'per side' },
-  'Chest Press (Machine)': { muscle: 'chest', type: 'compound', benchmarkLbs: 130, sets: 3, reps: '8-10' },
-  'Decline Bench Press (Barbell)': { muscle: 'chest', type: 'compound', benchmarkLbs: 160, sets: 3, reps: '6-8' },
+  // ---- Chest ----
+  // Heavy barbell presses: high absolute load, CNS taxing -> 180s (Schoenfeld 2016, de Salles 2009)
+  'Bench Press (Barbell)': { muscle: 'chest', type: 'compound', benchmarkLbs: 155, sets: 4, reps: '6-8', rest: 180 },
+  'Incline Bench Press (Barbell)': { muscle: 'chest', type: 'compound', benchmarkLbs: 125, sets: 4, reps: '6-8', rest: 180 },
+  'Decline Bench Press (Barbell)': { muscle: 'chest', type: 'compound', benchmarkLbs: 160, sets: 3, reps: '6-8', rest: 180 },
+  // Moderate compounds: dumbbell/machine/bodyweight -> 120s
+  'Incline Bench Press (Dumbbell)': { muscle: 'chest', type: 'compound', benchmarkLbs: 50, sets: 3, reps: '8-10', note: 'per hand', rest: 120 },
+  'Chest Dip': { muscle: 'chest', type: 'compound', benchmarkLbs: 0, sets: 3, reps: '8-12', note: 'bodyweight', rest: 120 },
+  'Chest Press (Machine)': { muscle: 'chest', type: 'compound', benchmarkLbs: 130, sets: 3, reps: '8-10', rest: 120 },
+  // Isolation flyes -> 60s
+  'Chest Fly (Machine)': { muscle: 'chest', type: 'isolation', benchmarkLbs: 115, sets: 3, reps: '10-12', rest: 60 },
+  'Chest Fly (Dumbbell)': { muscle: 'chest', type: 'isolation', benchmarkLbs: 30, sets: 3, reps: '10-12', note: 'per hand', rest: 60 },
+  'Cable Fly Crossovers': { muscle: 'chest', type: 'isolation', benchmarkLbs: 25, sets: 3, reps: '12-15', note: 'per side', rest: 60 },
 
-  'Bent Over Row (Barbell)': { muscle: 'back', type: 'compound', benchmarkLbs: 135, sets: 4, reps: '6-8' },
-  'Pull Up': { muscle: 'back', type: 'compound', benchmarkLbs: 0, sets: 3, reps: '5-8', note: 'bodyweight' },
-  'Chin Up': { muscle: 'back', type: 'compound', benchmarkLbs: 0, sets: 3, reps: '5-8', note: 'bodyweight' },
-  'Lat Pulldown (Cable)': { muscle: 'back', type: 'compound', benchmarkLbs: 115, sets: 3, reps: '8-10' },
-  'Lat Pulldown (Machine)': { muscle: 'back', type: 'compound', benchmarkLbs: 115, sets: 3, reps: '8-10' },
-  'Seated Row (Machine)': { muscle: 'back', type: 'compound', benchmarkLbs: 115, sets: 3, reps: '8-10' },
-  'Dumbbell Row': { muscle: 'back', type: 'compound', benchmarkLbs: 50, sets: 3, reps: '8-10', note: 'per hand' },
-  'Deadlift (Barbell)': { muscle: 'back', type: 'compound', benchmarkLbs: 225, sets: 3, reps: '5-6' },
-  'Pendlay Row (Barbell)': { muscle: 'back', type: 'compound', benchmarkLbs: 125, sets: 4, reps: '5-8' },
+  // ---- Back ----
+  // Heavy barbell pulls: maximal spinal loading -> 180s
+  'Deadlift (Barbell)': { muscle: 'back', type: 'compound', benchmarkLbs: 225, sets: 3, reps: '5-6', rest: 180 },
+  'Bent Over Row (Barbell)': { muscle: 'back', type: 'compound', benchmarkLbs: 135, sets: 4, reps: '6-8', rest: 180 },
+  'Pendlay Row (Barbell)': { muscle: 'back', type: 'compound', benchmarkLbs: 125, sets: 4, reps: '5-8', rest: 180 },
+  // Bodyweight compounds: high relative load, multi-joint -> 120s
+  'Pull Up': { muscle: 'back', type: 'compound', benchmarkLbs: 0, sets: 3, reps: '5-8', note: 'bodyweight', rest: 120 },
+  'Chin Up': { muscle: 'back', type: 'compound', benchmarkLbs: 0, sets: 3, reps: '5-8', note: 'bodyweight', rest: 120 },
+  'Dumbbell Row': { muscle: 'back', type: 'compound', benchmarkLbs: 50, sets: 3, reps: '8-10', note: 'per hand', rest: 120 },
+  // Machine multi-joint pulls: lower systemic demand than free weight -> 90s
+  'Lat Pulldown (Cable)': { muscle: 'back', type: 'compound', benchmarkLbs: 115, sets: 3, reps: '8-10', rest: 90 },
+  'Lat Pulldown (Machine)': { muscle: 'back', type: 'compound', benchmarkLbs: 115, sets: 3, reps: '8-10', rest: 90 },
+  'Seated Row (Machine)': { muscle: 'back', type: 'compound', benchmarkLbs: 115, sets: 3, reps: '8-10', rest: 90 },
 
-  'Overhead Press (Barbell)': { muscle: 'shoulders', type: 'compound', benchmarkLbs: 95, sets: 4, reps: '6-8' },
-  'Overhead Press (Dumbbell)': { muscle: 'shoulders', type: 'compound', benchmarkLbs: 35, sets: 3, reps: '8-10', note: 'per hand' },
-  'Lateral Raise (Dumbbell)': { muscle: 'shoulders', type: 'isolation', benchmarkLbs: 15, sets: 4, reps: '12-15', note: 'per hand' },
-  'Lateral Raise (Machine)': { muscle: 'shoulders', type: 'isolation', benchmarkLbs: 65, sets: 3, reps: '12-15' },
-  'Arnold Press (Dumbbell)': { muscle: 'shoulders', type: 'compound', benchmarkLbs: 30, sets: 3, reps: '8-10', note: 'per hand' },
-  'Seated Shoulder Press (Machine)': { muscle: 'shoulders', type: 'compound', benchmarkLbs: 95, sets: 3, reps: '8-10' },
-  'Shoulder Press (Dumbbell)': { muscle: 'shoulders', type: 'compound', benchmarkLbs: 35, sets: 3, reps: '8-10', note: 'per hand' },
-  'Standing Military Press (Barbell)': { muscle: 'shoulders', type: 'compound', benchmarkLbs: 95, sets: 4, reps: '6-8' },
+  // ---- Shoulders ----
+  // Heavy barbell overhead: high stabilization demand -> 180s
+  'Overhead Press (Barbell)': { muscle: 'shoulders', type: 'compound', benchmarkLbs: 95, sets: 4, reps: '6-8', rest: 180 },
+  'Standing Military Press (Barbell)': { muscle: 'shoulders', type: 'compound', benchmarkLbs: 95, sets: 4, reps: '6-8', rest: 180 },
+  // Moderate dumbbell/machine presses -> 120s
+  'Overhead Press (Dumbbell)': { muscle: 'shoulders', type: 'compound', benchmarkLbs: 35, sets: 3, reps: '8-10', note: 'per hand', rest: 120 },
+  'Arnold Press (Dumbbell)': { muscle: 'shoulders', type: 'compound', benchmarkLbs: 30, sets: 3, reps: '8-10', note: 'per hand', rest: 120 },
+  'Seated Shoulder Press (Machine)': { muscle: 'shoulders', type: 'compound', benchmarkLbs: 95, sets: 3, reps: '8-10', rest: 120 },
+  'Shoulder Press (Dumbbell)': { muscle: 'shoulders', type: 'compound', benchmarkLbs: 35, sets: 3, reps: '8-10', note: 'per hand', rest: 120 },
+  // Isolation raises: small muscle, light load -> 60s
+  'Lateral Raise (Dumbbell)': { muscle: 'shoulders', type: 'isolation', benchmarkLbs: 15, sets: 4, reps: '12-15', note: 'per hand', rest: 60 },
+  'Lateral Raise (Machine)': { muscle: 'shoulders', type: 'isolation', benchmarkLbs: 65, sets: 3, reps: '12-15', rest: 60 },
 
-  'Bicep Curl (Barbell)': { muscle: 'biceps', type: 'isolation', benchmarkLbs: 60, sets: 3, reps: '8-10' },
-  'Bicep Curl (Dumbbell)': { muscle: 'biceps', type: 'isolation', benchmarkLbs: 25, sets: 3, reps: '10-12', note: 'per hand' },
-  'Hammer Curl (Dumbbell)': { muscle: 'biceps', type: 'isolation', benchmarkLbs: 30, sets: 3, reps: '10-12', note: 'per hand' },
-  'Hammer Curl (Cable)': { muscle: 'biceps', type: 'isolation', benchmarkLbs: 30, sets: 3, reps: '10-12', note: 'per side' },
-  'Concentration Curl': { muscle: 'biceps', type: 'isolation', benchmarkLbs: 20, sets: 3, reps: '10-12', note: 'per hand' },
+  // ---- Biceps ----
+  // Barbell curl: heavier bilateral isolation -> 90s
+  'Bicep Curl (Barbell)': { muscle: 'biceps', type: 'isolation', benchmarkLbs: 60, sets: 3, reps: '8-10', rest: 90 },
+  // Single-arm / light isolation -> 60s
+  'Bicep Curl (Dumbbell)': { muscle: 'biceps', type: 'isolation', benchmarkLbs: 25, sets: 3, reps: '10-12', note: 'per hand', rest: 60 },
+  'Hammer Curl (Dumbbell)': { muscle: 'biceps', type: 'isolation', benchmarkLbs: 30, sets: 3, reps: '10-12', note: 'per hand', rest: 60 },
+  'Hammer Curl (Cable)': { muscle: 'biceps', type: 'isolation', benchmarkLbs: 30, sets: 3, reps: '10-12', note: 'per side', rest: 60 },
+  'Concentration Curl': { muscle: 'biceps', type: 'isolation', benchmarkLbs: 20, sets: 3, reps: '10-12', note: 'per hand', rest: 60 },
 
-  'Triceps Pushdown': { muscle: 'triceps', type: 'isolation', benchmarkLbs: 50, sets: 3, reps: '10-12' },
-  'Triceps Rope Pushdown': { muscle: 'triceps', type: 'isolation', benchmarkLbs: 45, sets: 3, reps: '10-12' },
-  'Triceps Extension (Cable)': { muscle: 'triceps', type: 'isolation', benchmarkLbs: 40, sets: 3, reps: '10-12' },
-  'Triceps Extension (Dumbbell)': { muscle: 'triceps', type: 'isolation', benchmarkLbs: 25, sets: 3, reps: '10-12' },
-  'Skullcrusher (Dumbbell)': { muscle: 'triceps', type: 'isolation', benchmarkLbs: 20, sets: 3, reps: '10-12', note: 'per hand' },
-  'Triceps Dip': { muscle: 'triceps', type: 'compound', benchmarkLbs: 0, sets: 3, reps: '8-12', note: 'bodyweight' },
+  // ---- Triceps ----
+  // Dip: compound bodyweight -> 120s
+  'Triceps Dip': { muscle: 'triceps', type: 'compound', benchmarkLbs: 0, sets: 3, reps: '8-12', note: 'bodyweight', rest: 120 },
+  // Skullcrusher: moderate isolation, elbow stress -> 90s
+  'Skullcrusher (Dumbbell)': { muscle: 'triceps', type: 'isolation', benchmarkLbs: 20, sets: 3, reps: '10-12', note: 'per hand', rest: 90 },
+  // Cable/dumbbell isolation -> 60s
+  'Triceps Pushdown': { muscle: 'triceps', type: 'isolation', benchmarkLbs: 50, sets: 3, reps: '10-12', rest: 60 },
+  'Triceps Rope Pushdown': { muscle: 'triceps', type: 'isolation', benchmarkLbs: 45, sets: 3, reps: '10-12', rest: 60 },
+  'Triceps Extension (Cable)': { muscle: 'triceps', type: 'isolation', benchmarkLbs: 40, sets: 3, reps: '10-12', rest: 60 },
+  'Triceps Extension (Dumbbell)': { muscle: 'triceps', type: 'isolation', benchmarkLbs: 25, sets: 3, reps: '10-12', rest: 60 },
 
-  'Squat (Barbell)': { muscle: 'quads', type: 'compound', benchmarkLbs: 185, sets: 4, reps: '5-8' },
-  'Squat (Bodyweight)': { muscle: 'quads', type: 'compound', benchmarkLbs: 0, sets: 3, reps: '15-20', note: 'bodyweight' },
-  'Leg Press (Machine)': { muscle: 'quads', type: 'compound', benchmarkLbs: 290, sets: 4, reps: '8-10' },
-  'Front Squat': { muscle: 'quads', type: 'compound', benchmarkLbs: 140, sets: 3, reps: '6-8' },
-  'Goblet Squat': { muscle: 'quads', type: 'compound', benchmarkLbs: 50, sets: 3, reps: '10-12' },
-  'Lunge (Dumbbell)': { muscle: 'quads', type: 'compound', benchmarkLbs: 30, sets: 3, reps: '10-12', note: 'per hand' },
-  'Lunge': { muscle: 'quads', type: 'compound', benchmarkLbs: 0, sets: 3, reps: '12-15', note: 'bodyweight' },
+  // ---- Quads ----
+  // Heavy barbell squats: highest systemic demand -> 180s
+  'Squat (Barbell)': { muscle: 'quads', type: 'compound', benchmarkLbs: 185, sets: 4, reps: '5-8', rest: 180 },
+  'Front Squat': { muscle: 'quads', type: 'compound', benchmarkLbs: 140, sets: 3, reps: '6-8', rest: 180 },
+  // Leg press: very heavy loading even on machine -> 180s
+  'Leg Press (Machine)': { muscle: 'quads', type: 'compound', benchmarkLbs: 290, sets: 4, reps: '8-10', rest: 180 },
+  // Moderate loaded compounds -> 90s
+  'Goblet Squat': { muscle: 'quads', type: 'compound', benchmarkLbs: 50, sets: 3, reps: '10-12', rest: 90 },
+  'Lunge (Dumbbell)': { muscle: 'quads', type: 'compound', benchmarkLbs: 30, sets: 3, reps: '10-12', note: 'per hand', rest: 90 },
+  // Bodyweight -> 60s
+  'Squat (Bodyweight)': { muscle: 'quads', type: 'compound', benchmarkLbs: 0, sets: 3, reps: '15-20', note: 'bodyweight', rest: 60 },
+  'Lunge': { muscle: 'quads', type: 'compound', benchmarkLbs: 0, sets: 3, reps: '12-15', note: 'bodyweight', rest: 60 },
 
-  'Romanian Deadlift (Barbell)': { muscle: 'hamstrings', type: 'compound', benchmarkLbs: 165, sets: 4, reps: '8-10' },
-  'Romanian Deadlift (Dumbbell)': { muscle: 'hamstrings', type: 'compound', benchmarkLbs: 45, sets: 3, reps: '8-10', note: 'per hand' },
-  'Seated Leg Curl (Machine)': { muscle: 'hamstrings', type: 'isolation', benchmarkLbs: 90, sets: 3, reps: '10-12' },
+  // ---- Hamstrings ----
+  // RDL barbell: heavy posterior chain loading -> 120s (accessory, not maximal like conventional DL)
+  'Romanian Deadlift (Barbell)': { muscle: 'hamstrings', type: 'compound', benchmarkLbs: 165, sets: 4, reps: '8-10', rest: 120 },
+  'Romanian Deadlift (Dumbbell)': { muscle: 'hamstrings', type: 'compound', benchmarkLbs: 45, sets: 3, reps: '8-10', note: 'per hand', rest: 90 },
+  // Machine isolation -> 60s
+  'Seated Leg Curl (Machine)': { muscle: 'hamstrings', type: 'isolation', benchmarkLbs: 90, sets: 3, reps: '10-12', rest: 60 },
 
-  'Hip Thrust (Barbell)': { muscle: 'glutes', type: 'compound', benchmarkLbs: 185, sets: 4, reps: '8-10' },
-  'Hip Thrust (Machine)': { muscle: 'glutes', type: 'compound', benchmarkLbs: 185, sets: 3, reps: '8-10' },
-  'Hip Thrust': { muscle: 'glutes', type: 'compound', benchmarkLbs: 0, sets: 3, reps: '12-15', note: 'bodyweight' },
-  'Glute Kickback (Machine)': { muscle: 'glutes', type: 'isolation', benchmarkLbs: 65, sets: 3, reps: '12-15' },
-  'Hip Abduction (Machine)': { muscle: 'glutes', type: 'isolation', benchmarkLbs: 100, sets: 3, reps: '12-15' },
-  'Hip Adduction (Machine)': { muscle: 'glutes', type: 'isolation', benchmarkLbs: 100, sets: 3, reps: '12-15' },
+  // ---- Glutes ----
+  // Barbell hip thrust: very heavy loading -> 120s
+  'Hip Thrust (Barbell)': { muscle: 'glutes', type: 'compound', benchmarkLbs: 185, sets: 4, reps: '8-10', rest: 120 },
+  'Hip Thrust (Machine)': { muscle: 'glutes', type: 'compound', benchmarkLbs: 185, sets: 3, reps: '8-10', rest: 120 },
+  // Bodyweight/isolation -> 60s
+  'Hip Thrust': { muscle: 'glutes', type: 'compound', benchmarkLbs: 0, sets: 3, reps: '12-15', note: 'bodyweight', rest: 60 },
+  'Glute Kickback (Machine)': { muscle: 'glutes', type: 'isolation', benchmarkLbs: 65, sets: 3, reps: '12-15', rest: 60 },
+  'Hip Abduction (Machine)': { muscle: 'glutes', type: 'isolation', benchmarkLbs: 100, sets: 3, reps: '12-15', rest: 60 },
+  'Hip Adduction (Machine)': { muscle: 'glutes', type: 'isolation', benchmarkLbs: 100, sets: 3, reps: '12-15', rest: 60 },
 
-  'Standing Calf Raise': { muscle: 'calves', type: 'isolation', benchmarkLbs: 145, sets: 4, reps: '12-15' },
-  'Seated Calf Raise': { muscle: 'calves', type: 'isolation', benchmarkLbs: 70, sets: 3, reps: '12-15' },
-  'Calf Extension (Machine)': { muscle: 'calves', type: 'isolation', benchmarkLbs: 115, sets: 3, reps: '12-15' },
+  // ---- Calves ----
+  // All isolation, small muscle -> 60s (calves recover fast due to high slow-twitch fiber density)
+  'Standing Calf Raise': { muscle: 'calves', type: 'isolation', benchmarkLbs: 145, sets: 4, reps: '12-15', rest: 60 },
+  'Seated Calf Raise': { muscle: 'calves', type: 'isolation', benchmarkLbs: 70, sets: 3, reps: '12-15', rest: 60 },
+  'Calf Extension (Machine)': { muscle: 'calves', type: 'isolation', benchmarkLbs: 115, sets: 3, reps: '12-15', rest: 60 },
 
-  'Hanging Leg Raise': { muscle: 'core', type: 'isolation', benchmarkLbs: 0, sets: 3, reps: '10-15', note: 'bodyweight' },
-  'Hanging Knee Raise': { muscle: 'core', type: 'isolation', benchmarkLbs: 0, sets: 3, reps: '12-15', note: 'bodyweight' },
-  'Crunch': { muscle: 'core', type: 'isolation', benchmarkLbs: 0, sets: 3, reps: '15-20', note: 'bodyweight' },
-  'Crunch (Machine)': { muscle: 'core', type: 'isolation', benchmarkLbs: 65, sets: 3, reps: '12-15' },
-  'Decline Crunch': { muscle: 'core', type: 'isolation', benchmarkLbs: 0, sets: 3, reps: '12-15', note: 'bodyweight' },
-  'Plank': { muscle: 'core', type: 'isolation', benchmarkLbs: 0, sets: 3, reps: '45-60s', note: 'hold' },
-  'Sit Up': { muscle: 'core', type: 'isolation', benchmarkLbs: 0, sets: 3, reps: '15-20', note: 'bodyweight' },
-  'Leg Raise Parallel Bars': { muscle: 'core', type: 'isolation', benchmarkLbs: 0, sets: 3, reps: '10-15', note: 'bodyweight' },
-  'Knee Raise Parallel Bars': { muscle: 'core', type: 'isolation', benchmarkLbs: 0, sets: 3, reps: '12-15', note: 'bodyweight' },
+  // ---- Core ----
+  // All bodyweight/light isolation, endurance-oriented -> 60s
+  'Hanging Leg Raise': { muscle: 'core', type: 'isolation', benchmarkLbs: 0, sets: 3, reps: '10-15', note: 'bodyweight', rest: 60 },
+  'Hanging Knee Raise': { muscle: 'core', type: 'isolation', benchmarkLbs: 0, sets: 3, reps: '12-15', note: 'bodyweight', rest: 60 },
+  'Crunch': { muscle: 'core', type: 'isolation', benchmarkLbs: 0, sets: 3, reps: '15-20', note: 'bodyweight', rest: 60 },
+  'Crunch (Machine)': { muscle: 'core', type: 'isolation', benchmarkLbs: 65, sets: 3, reps: '12-15', rest: 60 },
+  'Decline Crunch': { muscle: 'core', type: 'isolation', benchmarkLbs: 0, sets: 3, reps: '12-15', note: 'bodyweight', rest: 60 },
+  'Plank': { muscle: 'core', type: 'isolation', benchmarkLbs: 0, sets: 3, reps: '45-60s', note: 'hold', rest: 60 },
+  'Sit Up': { muscle: 'core', type: 'isolation', benchmarkLbs: 0, sets: 3, reps: '15-20', note: 'bodyweight', rest: 60 },
+  'Leg Raise Parallel Bars': { muscle: 'core', type: 'isolation', benchmarkLbs: 0, sets: 3, reps: '10-15', note: 'bodyweight', rest: 60 },
+  'Knee Raise Parallel Bars': { muscle: 'core', type: 'isolation', benchmarkLbs: 0, sets: 3, reps: '12-15', note: 'bodyweight', rest: 60 },
 
-  // Neck
-  'Neck Curl (Plate)': { muscle: 'neck', type: 'isolation', benchmarkLbs: 25, sets: 3, reps: '15-20' },
-  'Neck Extension (Plate)': { muscle: 'neck', type: 'isolation', benchmarkLbs: 25, sets: 3, reps: '15-20' },
-  'Neck Curl (Harness)': { muscle: 'neck', type: 'isolation', benchmarkLbs: 35, sets: 3, reps: '12-15' },
-  'Neck Extension (Harness)': { muscle: 'neck', type: 'isolation', benchmarkLbs: 35, sets: 3, reps: '12-15' },
-  'Neck Lateral Flexion': { muscle: 'neck', type: 'isolation', benchmarkLbs: 15, sets: 2, reps: '12-15', note: 'per side' },
+  // ---- Neck ----
+  // Small muscle, light load, endurance-oriented -> 60s
+  'Neck Curl (Plate)': { muscle: 'neck', type: 'isolation', benchmarkLbs: 25, sets: 3, reps: '15-20', rest: 60 },
+  'Neck Extension (Plate)': { muscle: 'neck', type: 'isolation', benchmarkLbs: 25, sets: 3, reps: '15-20', rest: 60 },
+  'Neck Curl (Harness)': { muscle: 'neck', type: 'isolation', benchmarkLbs: 35, sets: 3, reps: '12-15', rest: 60 },
+  'Neck Extension (Harness)': { muscle: 'neck', type: 'isolation', benchmarkLbs: 35, sets: 3, reps: '12-15', rest: 60 },
+  'Neck Lateral Flexion': { muscle: 'neck', type: 'isolation', benchmarkLbs: 15, sets: 2, reps: '12-15', note: 'per side', rest: 60 },
 
-  // Forearms
-  'Wrist Curl (Barbell)': { muscle: 'forearms', type: 'isolation', benchmarkLbs: 50, sets: 3, reps: '15-20' },
-  'Wrist Curl (Dumbbell)': { muscle: 'forearms', type: 'isolation', benchmarkLbs: 20, sets: 3, reps: '15-20', note: 'per hand' },
-  'Reverse Wrist Curl (Barbell)': { muscle: 'forearms', type: 'isolation', benchmarkLbs: 30, sets: 3, reps: '12-15' },
-  'Reverse Curl (Barbell)': { muscle: 'forearms', type: 'isolation', benchmarkLbs: 40, sets: 3, reps: '10-12' },
-  'Reverse Curl (Dumbbell)': { muscle: 'forearms', type: 'isolation', benchmarkLbs: 15, sets: 3, reps: '10-12', note: 'per hand' },
-  'Farmer Carry (Dumbbell)': { muscle: 'forearms', type: 'compound', benchmarkLbs: 50, sets: 3, reps: '40-60s', note: 'per hand' },
-  'Dead Hang': { muscle: 'forearms', type: 'isolation', benchmarkLbs: 0, sets: 3, reps: '30-60s', note: 'bodyweight' },
+  // ---- Forearms ----
+  // Small muscle, endurance-oriented -> 60s; Farmer carry is systemic -> 90s
+  'Wrist Curl (Barbell)': { muscle: 'forearms', type: 'isolation', benchmarkLbs: 50, sets: 3, reps: '15-20', rest: 60 },
+  'Wrist Curl (Dumbbell)': { muscle: 'forearms', type: 'isolation', benchmarkLbs: 20, sets: 3, reps: '15-20', note: 'per hand', rest: 60 },
+  'Reverse Wrist Curl (Barbell)': { muscle: 'forearms', type: 'isolation', benchmarkLbs: 30, sets: 3, reps: '12-15', rest: 60 },
+  'Reverse Curl (Barbell)': { muscle: 'forearms', type: 'isolation', benchmarkLbs: 40, sets: 3, reps: '10-12', rest: 90 },
+  'Reverse Curl (Dumbbell)': { muscle: 'forearms', type: 'isolation', benchmarkLbs: 15, sets: 3, reps: '10-12', note: 'per hand', rest: 60 },
+  'Farmer Carry (Dumbbell)': { muscle: 'forearms', type: 'compound', benchmarkLbs: 50, sets: 3, reps: '40-60s', note: 'per hand', rest: 90 },
+  'Dead Hang': { muscle: 'forearms', type: 'isolation', benchmarkLbs: 0, sets: 3, reps: '30-60s', note: 'bodyweight', rest: 60 },
 };
 
 const MUSCLE_EXERCISE_PICKS = {
@@ -2883,28 +2919,31 @@ function isLikelyCompound(name) {
   return COMPOUND_PATTERNS.some(function(p) { return p.test(name); });
 }
 
-// Evidence-based rest periods (Schoenfeld 2016, de Salles 2009):
-// Heavy barbell compounds (phosphocreatine recovery): 180s
-// Moderate compounds: 120s
-// Isolation: 60s
+// Evidence-based rest periods (Schoenfeld 2016, de Salles 2009, Singer 2024):
+// 180s: Heavy barbell compounds (squat, deadlift, bench, OHP, heavy rows, leg press)
+// 120s: Moderate compounds (dumbbell/machine presses, pulls, dips, RDL, hip thrust)
+//  90s: Multi-joint machines, heavier isolation (barbell curl, skullcrusher, lat pulldown)
+//  60s: Pure isolation, small muscles (raises, curls, extensions, core, neck, forearms, calves)
+// Hardcoded per-exercise in EXERCISE_DB.rest; heuristic fallback for unknown exercises
 const HEAVY_COMPOUND_PATTERNS = [
   /squat.*barbell/i, /barbell.*squat/i,
   /^squat$/i,
   /deadlift.*barbell/i, /barbell.*deadlift/i, /^deadlift$/i,
   /bench press.*barbell/i, /barbell.*bench press/i, /^bench press$/i,
-  /rack pull/i, /pendlay row/i,
+  /overhead press.*barbell/i, /military press/i,
+  /rack pull/i, /pendlay row/i, /leg press/i,
 ];
 
 function getRestSeconds(name) {
+  // Use hardcoded value if available
   var db = EXERCISE_DB[name];
-  // Check for heavy barbell compounds first (big 3 + variants)
+  if (db && db.rest) return db.rest;
+  // Fallback heuristic for exercises not in EXERCISE_DB
   for (var i = 0; i < HEAVY_COMPOUND_PATTERNS.length; i++) {
     if (HEAVY_COMPOUND_PATTERNS[i].test(name)) return 180;
   }
-  // Moderate compounds
   var compound = db ? db.type === 'compound' : isLikelyCompound(name);
   if (compound) return 120;
-  // Isolation
   return 60;
 }
 
