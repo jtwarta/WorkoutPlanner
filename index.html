@@ -1548,6 +1548,8 @@ let dedicationData = [];
 let bodyCompData = [];
 let WEIGHT_DATA = [];
 let LAST_RECS = null;
+let _lastBuiltSession = null; // Last session from buildTimedSession for Hevy push
+let _templateIdMap = {};      // exercise name -> exercise_template_id from Hevy
 let healthData = null;
 let healthStatus = 'pending'; // 'ok' | 'stale' | 'missing' | 'pending'
 let hevyStatus = 'pending'; // 'ok' | 'error'
@@ -1703,6 +1705,7 @@ function preprocessWorkouts(workouts, bodyweightLbs, weightData) {
 
   // ---- Output structures ----
   const exHistory = {};
+  const templateIdMap = {};
   const muscleStats = {};
   const muscle1RMInputs = {}; // { muscleKey: { best1RM, exercise } }
   const siRolling1RMs = { bench: 0, squat: 0, deadlift: 0, ohp: 0, row: 0 };
@@ -1768,6 +1771,10 @@ function preprocessWorkouts(workouts, bodyweightLbs, weightData) {
         exHistory[name].lastSets = workingSets.length;
         exHistory[name].weights.push(bestWeight);
         exHistory[name].dates.push(wDate);
+        // Capture Hevy exercise_template_id for Send to Hevy
+        if (ex.exercise_template_id && !templateIdMap[name]) {
+          templateIdMap[name] = ex.exercise_template_id;
+        }
       }
 
       if (classification.primary === 'cardio') {
@@ -2110,6 +2117,7 @@ function preprocessWorkouts(workouts, bodyweightLbs, weightData) {
 
   return {
     exerciseHistory: exHistory,
+    templateIdMap,
     muscleStats,
     muscle1RMs: muscle1RMResults,
     strengthIndexTimeline: siTimeline,
@@ -2840,10 +2848,201 @@ function buildTimedSession(recs, prefs) {
   return { exercises: session, totalSec };
 }
 
+// Store for Send to Hevy feature
+function buildTimedSessionAndStore(recs, prefs) {
+  const result = buildTimedSession(recs, prefs);
+  _lastBuiltSession = result;
+  return result;
+}
+
 // ============================================================
 // RENDERING
 // ============================================================
 // renderRecommendations removed in v1.7 -- replaced by renderTimedSession
+
+// ============================================================
+// SEND TO HEVY (Routine Push)
+// ============================================================
+
+function showToast(msg, isError) {
+  var existing = document.getElementById('ls-toast');
+  if (existing) existing.remove();
+  var bg = isError ? '#7f1d1d' : '#14532d';
+  var border = isError ? C.danger : C.accent;
+  var div = document.createElement('div');
+  div.id = 'ls-toast';
+  div.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);padding:12px 20px;border-radius:10px;font-size:13px;font-weight:500;font-family:Space Grotesk,sans-serif;color:#f4f4f6;z-index:9999;opacity:0;transition:opacity 0.3s ease;max-width:90vw;text-align:center;background:' + bg + ';border:1px solid ' + border + '40;';
+  div.textContent = msg;
+  document.body.appendChild(div);
+  requestAnimationFrame(function() { div.style.opacity = '1'; });
+  setTimeout(function() {
+    div.style.opacity = '0';
+    setTimeout(function() { div.remove(); }, 300);
+  }, 3500);
+}
+
+// Fetch exercise templates from Hevy to resolve missing template IDs
+async function resolveTemplateIds(names) {
+  var missing = names.filter(function(n) { return !_templateIdMap[n]; });
+  if (missing.length === 0) return true;
+
+  try {
+    var page = 1;
+    var maxPages = 30; // up to ~300 templates
+    while (missing.length > 0 && page <= maxPages) {
+      var resp = await fetchWithTimeout(API_BASE + '/exercise_templates?page=' + page + '&pageSize=10', {
+        headers: { 'api-key': apiKey },
+        mode: 'cors'
+      });
+      if (!resp.ok) break;
+      var data = await resp.json();
+      var templates = data.exercise_templates || [];
+      if (templates.length === 0) break;
+
+      for (var i = 0; i < templates.length; i++) {
+        var t = templates[i];
+        var tName = t.title || '';
+        if (tName && !_templateIdMap[tName]) {
+          _templateIdMap[tName] = t.id;
+        }
+      }
+
+      missing = names.filter(function(n) { return !_templateIdMap[n]; });
+      var totalPages = data.page_count || 1;
+      if (page >= totalPages) break;
+      page++;
+    }
+  } catch (e) {
+    console.error('resolveTemplateIds error:', e);
+  }
+  return names.filter(function(n) { return !_templateIdMap[n]; }).length === 0;
+}
+
+async function sendSessionToHevy() {
+  var btn = document.getElementById('send-to-hevy-btn');
+  if (!btn || !_lastBuiltSession || !_lastBuiltSession.exercises || _lastBuiltSession.exercises.length === 0) {
+    showToast('No session to send', true);
+    return;
+  }
+
+  // Disable button and show loading
+  btn.disabled = true;
+  var origHTML = btn.innerHTML;
+  btn.innerHTML = '<span style="display:inline-flex;align-items:center;gap:6px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="animation:spin 1s linear infinite;"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg> Sending...</span>';
+  btn.style.opacity = '0.6';
+
+  try {
+    // Get all exercise names in session
+    var exNames = _lastBuiltSession.exercises.map(function(ex) { return ex.name; });
+
+    // Resolve any missing template IDs
+    var allResolved = await resolveTemplateIds(exNames);
+    var unresolvedNames = exNames.filter(function(n) { return !_templateIdMap[n]; });
+    if (unresolvedNames.length > 0) {
+      showToast('Could not find Hevy IDs for: ' + unresolvedNames.join(', '), true);
+      btn.innerHTML = origHTML;
+      btn.style.opacity = '1';
+      btn.disabled = false;
+      return;
+    }
+
+    // Build routine payload
+    var now = new Date();
+    var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    var routineTitle = 'LiftScript ' + months[now.getMonth()] + ' ' + now.getDate();
+
+    var exercises = [];
+    for (var i = 0; i < _lastBuiltSession.exercises.length; i++) {
+      var ex = _lastBuiltSession.exercises[i];
+      var p = ex.prescription;
+      var templateId = _templateIdMap[ex.name];
+
+      // Parse rep range (e.g. "8-10")
+      var repStr = String(p.reps || '8-10');
+      var repParts = repStr.split('-');
+      var repLow = parseInt(repParts[0], 10) || 8;
+      var repHigh = repParts.length > 1 ? (parseInt(repParts[1], 10) || repLow) : repLow;
+
+      // Convert lbs to kg
+      var weightKg = p.weightLbs > 0 ? Math.round(p.weightLbs * 0.453592 * 10) / 10 : null;
+
+      // Build sets array
+      var sets = [];
+      for (var s = 0; s < (p.sets || 3); s++) {
+        var setObj = { type: 'normal' };
+        if (weightKg !== null) setObj.weight_kg = weightKg;
+        if (repLow === repHigh) {
+          setObj.reps = repLow;
+        } else {
+          // Hevy routine sets don't support repRange directly in all API versions
+          // Use the midpoint as target reps
+          setObj.reps = Math.round((repLow + repHigh) / 2);
+        }
+        sets.push(setObj);
+      }
+
+      var exObj = {
+        exercise_template_id: templateId,
+        superset_id: null,
+        rest_seconds: 90,
+        notes: '',
+        sets: sets
+      };
+
+      // Add note about per-hand/per-side exercises
+      if (p.note === 'per hand' || p.note === 'per side') {
+        exObj.notes = p.note;
+      }
+
+      exercises.push(exObj);
+    }
+
+    var payload = {
+      routine: {
+        title: routineTitle,
+        folder_id: null,
+        exercises: exercises
+      }
+    };
+
+    var resp = await fetchWithTimeout(API_BASE + '/routines', {
+      method: 'POST',
+      headers: {
+        'api-key': apiKey,
+        'Content-Type': 'application/json'
+      },
+      mode: 'cors',
+      body: JSON.stringify(payload)
+    });
+
+    if (resp.ok) {
+      var result = await resp.json();
+      showToast('\u2714 Routine \"' + routineTitle + '\" created in Hevy!', false);
+      btn.innerHTML = '<span style="display:inline-flex;align-items:center;gap:6px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="' + C.accent + '" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> <span style="color:' + C.accent + ';">Sent!</span></span>';
+      btn.style.opacity = '1';
+      btn.disabled = true;
+      // Re-enable after 10s
+      setTimeout(function() {
+        btn.innerHTML = origHTML;
+        btn.disabled = false;
+      }, 10000);
+    } else {
+      var errBody = '';
+      try { errBody = await resp.text(); } catch(_) {}
+      console.error('Hevy routine create failed:', resp.status, errBody);
+      showToast('Hevy API error ' + resp.status + ': ' + (errBody || resp.statusText), true);
+      btn.innerHTML = origHTML;
+      btn.style.opacity = '1';
+      btn.disabled = false;
+    }
+  } catch (e) {
+    console.error('sendSessionToHevy error:', e);
+    showToast('Network error: ' + e.message, true);
+    btn.innerHTML = origHTML;
+    btn.style.opacity = '1';
+    btn.disabled = false;
+  }
+}
 
 // B2: Sort mode state for Today tab -- 'urgency' (default) or 'anatomy'
 const ANATOMY_ORDER = ['chest', 'back', 'shoulders', 'quads', 'hamstrings', 'glutes', 'biceps', 'triceps', 'calves', 'core', 'neck', 'forearms'];
@@ -2858,7 +3057,7 @@ function toggleTodayChips() {
 }
 
 function renderTimedSession(recs) {
-  const { exercises, totalSec } = buildTimedSession(recs);
+  const { exercises, totalSec } = buildTimedSessionAndStore(recs);
   const totalMin = Math.round(totalSec / 60);
 
   // Gather unique muscle groups in display order
@@ -2896,6 +3095,12 @@ function renderTimedSession(recs) {
       </div>
       <div style="display:flex;flex-wrap:wrap;align-items:center;gap:4px 0;line-height:1.8;">${muscleDots}</div>
       ${restChip}
+      <div style="margin-top:12px;">
+        <button id="send-to-hevy-btn" onclick="sendSessionToHevy()" style="display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:8px;background:${C.surface2};border:1px solid ${C.border};color:${C.textMid};font-size:13px;font-weight:600;font-family:'Space Grotesk',sans-serif;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:all 0.2s ease;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+          Send to Hevy
+        </button>
+      </div>
     </div>`;
 
   // --- COLLAPSIBLE CHIPS ---
@@ -5278,6 +5483,7 @@ function renderDashboard(workouts) {
   const pp = preprocessWorkouts(workouts, PROFILE.bodyweightLbs, WEIGHT_DATA);
 
   exerciseHistory = pp.exerciseHistory;
+  _templateIdMap = pp.templateIdMap || {};
   muscleAnalysis = pp.muscleStats;
   muscle1RMs = pp.muscle1RMs;
   strengthIndexData = pp.strengthIndexTimeline;
