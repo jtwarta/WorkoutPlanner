@@ -1236,18 +1236,18 @@ const EXERCISE_DB = {
 };
 
 const MUSCLE_EXERCISE_PICKS = {
-  chest:      ['Bench Press (Barbell)', 'Incline Bench Press (Dumbbell)', 'Chest Fly (Machine)', 'Cable Fly Crossovers'],
-  back:       ['Bent Over Row (Barbell)', 'Pull Up', 'Lat Pulldown (Cable)', 'Seated Row (Machine)'],
-  shoulders:  ['Overhead Press (Barbell)', 'Lateral Raise (Dumbbell)', 'Arnold Press (Dumbbell)', 'Lateral Raise (Machine)'],
-  biceps:     ['Bicep Curl (Barbell)', 'Hammer Curl (Dumbbell)', 'Concentration Curl'],
-  triceps:    ['Triceps Pushdown', 'Triceps Extension (Cable)', 'Skullcrusher (Dumbbell)'],
-  quads:      ['Squat (Barbell)', 'Leg Press (Machine)', 'Front Squat', 'Lunge (Dumbbell)'],
-  hamstrings: ['Romanian Deadlift (Barbell)', 'Seated Leg Curl (Machine)'],
-  glutes:     ['Hip Thrust (Barbell)', 'Glute Kickback (Machine)', 'Hip Abduction (Machine)'],
-  calves:     ['Standing Calf Raise', 'Seated Calf Raise'],
-  core:       ['Hanging Leg Raise', 'Crunch (Machine)', 'Plank'],
-  neck:       ['Neck Curl (Plate)', 'Neck Extension (Plate)', 'Neck Lateral Flexion'],
-  forearms:   ['Wrist Curl (Barbell)', 'Reverse Curl (Barbell)', 'Farmer Carry (Dumbbell)'],
+  chest:      ['Bench Press (Barbell)', 'Incline Bench Press (Dumbbell)', 'Incline Bench Press (Barbell)', 'Chest Fly (Machine)', 'Chest Fly (Dumbbell)', 'Chest Dip', 'Cable Fly Crossovers', 'Chest Press (Machine)', 'Decline Bench Press (Barbell)'],
+  back:       ['Bent Over Row (Barbell)', 'Pull Up', 'Chin Up', 'Lat Pulldown (Cable)', 'Lat Pulldown (Machine)', 'Seated Row (Machine)', 'Dumbbell Row', 'Deadlift (Barbell)', 'Pendlay Row (Barbell)'],
+  shoulders:  ['Overhead Press (Barbell)', 'Overhead Press (Dumbbell)', 'Lateral Raise (Dumbbell)', 'Lateral Raise (Machine)', 'Arnold Press (Dumbbell)', 'Seated Shoulder Press (Machine)', 'Shoulder Press (Dumbbell)', 'Standing Military Press (Barbell)'],
+  biceps:     ['Bicep Curl (Barbell)', 'Bicep Curl (Dumbbell)', 'Hammer Curl (Dumbbell)', 'Hammer Curl (Cable)', 'Concentration Curl'],
+  triceps:    ['Triceps Pushdown', 'Triceps Rope Pushdown', 'Triceps Extension (Cable)', 'Triceps Extension (Dumbbell)', 'Skullcrusher (Dumbbell)', 'Triceps Dip'],
+  quads:      ['Squat (Barbell)', 'Squat (Bodyweight)', 'Leg Press (Machine)', 'Front Squat', 'Goblet Squat', 'Lunge (Dumbbell)', 'Lunge'],
+  hamstrings: ['Romanian Deadlift (Barbell)', 'Romanian Deadlift (Dumbbell)', 'Seated Leg Curl (Machine)'],
+  glutes:     ['Hip Thrust (Barbell)', 'Hip Thrust (Machine)', 'Hip Thrust', 'Glute Kickback (Machine)', 'Hip Abduction (Machine)', 'Hip Adduction (Machine)'],
+  calves:     ['Standing Calf Raise', 'Seated Calf Raise', 'Calf Extension (Machine)'],
+  core:       ['Hanging Leg Raise', 'Hanging Knee Raise', 'Crunch', 'Crunch (Machine)', 'Decline Crunch', 'Plank', 'Sit Up', 'Leg Raise Parallel Bars', 'Knee Raise Parallel Bars'],
+  neck:       ['Neck Curl (Plate)', 'Neck Extension (Plate)', 'Neck Curl (Harness)', 'Neck Extension (Harness)', 'Neck Lateral Flexion'],
+  forearms:   ['Wrist Curl (Barbell)', 'Wrist Curl (Dumbbell)', 'Reverse Wrist Curl (Barbell)', 'Reverse Curl (Barbell)', 'Reverse Curl (Dumbbell)', 'Farmer Carry (Dumbbell)', 'Dead Hang'],
 };
 
 // Primary compound anchor per group -- always gets a priority boost
@@ -2902,9 +2902,29 @@ function showToast(msg, isError) {
 
 // Fetch exercise templates from Hevy to resolve missing template IDs
 async function fetchAllHevyTemplateIds() {
+  // Try localStorage cache first
   try {
+    var cached = Storage.get('hevy_template_map');
+    if (cached && typeof cached === 'object' && Object.keys(cached).length > 20) {
+      Object.assign(_templateIdMap, cached);
+      _hevyTemplatesLoaded = true;
+      console.log('Hevy templates loaded from cache: ' + Object.keys(_templateIdMap).length + ' exercises');
+      warnUnmatchedExercises();
+      return;
+    }
+  } catch (e) { /* ignore cache errors */ }
+
+  try {
+    // Collect all exercise names we need to match
+    var needed = new Set();
+    for (var key in MUSCLE_EXERCISE_PICKS) {
+      var arr = MUSCLE_EXERCISE_PICKS[key];
+      for (var i = 0; i < arr.length; i++) needed.add(arr[i]);
+    }
+
     var page = 1;
-    var maxPages = 50; // up to ~500 templates
+    var maxPages = 50;
+    var matched = 0;
     while (page <= maxPages) {
       var resp = await fetchWithTimeout(API_BASE + '/exercise_templates?page=' + page + '&pageSize=10', {
         headers: { 'api-key': apiKey },
@@ -2915,23 +2935,48 @@ async function fetchAllHevyTemplateIds() {
       var templates = data.exercise_templates || [];
       if (templates.length === 0) break;
 
-      for (var i = 0; i < templates.length; i++) {
-        var t = templates[i];
+      for (var j = 0; j < templates.length; j++) {
+        var t = templates[j];
         var tName = t.title || '';
         if (tName && !_templateIdMap[tName]) {
           _templateIdMap[tName] = t.id;
+          if (needed.has(tName)) matched++;
         }
+      }
+
+      // Early stop: all MUSCLE_EXERCISE_PICKS exercises are matched
+      if (matched >= needed.size) {
+        console.log('Hevy templates: all ' + needed.size + ' needed exercises matched after ' + page + ' pages');
+        break;
       }
 
       var totalPages = data.page_count || 1;
       if (page >= totalPages) break;
       page++;
     }
+
     _hevyTemplatesLoaded = true;
-    console.log('Hevy templates loaded: ' + Object.keys(_templateIdMap).length + ' exercises mapped');
+    console.log('Hevy templates loaded: ' + Object.keys(_templateIdMap).length + ' total, ' + matched + '/' + needed.size + ' needed');
+
+    // Cache to localStorage for fast future loads
+    Storage.set('hevy_template_map', _templateIdMap);
+
+    warnUnmatchedExercises();
   } catch (e) {
     console.error('fetchAllHevyTemplateIds error:', e);
-    // Don't set flag -- filter stays inactive so all exercises remain available
+  }
+}
+
+function warnUnmatchedExercises() {
+  var unmatched = [];
+  for (var key in MUSCLE_EXERCISE_PICKS) {
+    var arr = MUSCLE_EXERCISE_PICKS[key];
+    for (var i = 0; i < arr.length; i++) {
+      if (!_templateIdMap[arr[i]]) unmatched.push(arr[i] + ' (' + key + ')');
+    }
+  }
+  if (unmatched.length > 0) {
+    console.warn('Hevy template mismatch - these exercises will be excluded from sessions:\n  ' + unmatched.join('\n  '));
   }
 }
 
