@@ -2594,12 +2594,23 @@ function prescribeExercise(name) {
     } else {
       weightLbs = Math.round(trend * 1.025 / 5) * 5;
     }
+    // Enforce 5lb minimum increment: if target is above last weight
+    // but less than a full 5lb jump, snap up to lastW + 5
+    if (weightLbs > lastW && weightLbs < lastW + 5) {
+      weightLbs = lastW + 5;
+    }
+    // Never prescribe less than last weight (rep progression instead)
+    if (weightLbs < lastW) {
+      weightLbs = lastW;
+    }
     if (hist.lastSets >= 2 && hist.lastSets <= 6) sets = hist.lastSets;
   } else if (!db) {
     return { sets: 3, reps: '8-10', weightLbs: 0, note: 'no data' };
   }
 
   if (note === 'bodyweight' || note === 'hold') weightLbs = 0;
+  // Final guard: ensure weight is always a multiple of 5
+  if (weightLbs > 0) weightLbs = Math.round(weightLbs / 5) * 5;
   return { sets, reps, weightLbs, note };
 }
 
