@@ -1261,10 +1261,56 @@ const COMPOUND_ANCHORS = {
   glutes: 'Hip Thrust (Barbell)',
 };
 
+// Build the dynamic exercise pool from all known sources
+// Tier 1 (instant): EXERCISE_DB + workout history
+// Tier 2 (background): Hevy template library (added by fetchAllHevyTemplateIds)
+function buildDynamicExercisePool() {
+  const pool = {};
+  const muscleKeys = Object.keys(MUSCLE_GROUPS);
+  for (const key of muscleKeys) pool[key] = new Set();
+
+  // Source 1: All exercises in EXERCISE_DB (always available)
+  for (const name in EXERCISE_DB) {
+    const db = EXERCISE_DB[name];
+    if (db.muscle && pool[db.muscle]) pool[db.muscle].add(name);
+  }
+
+  // Source 2: All exercises from workout history (classify by name)
+  for (const name in exerciseHistory) {
+    const cls = classifyExercise(name);
+    if (cls.primary !== 'cardio' && cls.primary !== 'other' && pool[cls.primary]) {
+      pool[cls.primary].add(name);
+    }
+  }
+
+  _dynamicExercisePool = pool;
+  return pool;
+}
+
+// Add exercises from Hevy templates into the dynamic pool
+function addHevyTemplatesToPool() {
+  for (const name in _templateIdMap) {
+    // Skip if already in pool from EXERCISE_DB or history
+    var alreadyInPool = false;
+    for (var key in _dynamicExercisePool) {
+      if (_dynamicExercisePool[key].has(name)) { alreadyInPool = true; break; }
+    }
+    if (alreadyInPool) continue;
+
+    var cls = classifyExercise(name);
+    if (cls.primary !== 'cardio' && cls.primary !== 'other' && _dynamicExercisePool[cls.primary]) {
+      _dynamicExercisePool[cls.primary].add(name);
+    }
+  }
+}
+
 // Rank exercises within a muscle group using history data
 // Returns the same exercise names but reordered by composite score
 function rankExercisesForMuscle(muscleKey) {
-  let pool = MUSCLE_EXERCISE_PICKS[muscleKey] || [];
+  let pool = _dynamicExercisePool[muscleKey]
+    ? Array.from(_dynamicExercisePool[muscleKey])
+    : (MUSCLE_EXERCISE_PICKS[muscleKey] || []);
+
   if (pool.length === 0) return pool;
 
   // Filter to only exercises that exist in Hevy (once templates are loaded)
@@ -1558,6 +1604,7 @@ let LAST_RECS = null;
 let _lastBuiltSession = null; // Last session from buildTimedSession for Hevy push
 let _templateIdMap = {};      // exercise name -> exercise_template_id from Hevy
 let _hevyTemplatesLoaded = false; // true once all Hevy templates have been fetched
+let _dynamicExercisePool = {}; // muscleKey -> Set of exercise names (built dynamically)
 let healthData = null;
 let healthStatus = 'pending'; // 'ok' | 'stale' | 'missing' | 'pending'
 let hevyStatus = 'pending'; // 'ok' | 'error'
@@ -2764,6 +2811,18 @@ function getMovementPattern(exName) {
   return null;
 }
 
+// Heuristic: infer compound vs isolation from exercise name
+// Used for exercises not in EXERCISE_DB
+const COMPOUND_PATTERNS = [
+  /press/i, /squat/i, /deadlift/i, /row/i, /pull.?up/i, /chin.?up/i,
+  /dip/i, /lunge/i, /thrust/i, /clean/i, /snatch/i, /step.?up/i,
+  /good morning/i, /leg press/i, /rack pull/i, /farmer/i,
+];
+
+function isLikelyCompound(name) {
+  return COMPOUND_PATTERNS.some(function(p) { return p.test(name); });
+}
+
 function buildTimedSession(recs, prefs) {
   prefs = prefs || sessionPrefs;
   const topKeys = recs.slice(0, 3).map(r => r.key);
@@ -2791,9 +2850,11 @@ function buildTimedSession(recs, prefs) {
       const mp = getMovementPattern(exName);
 
       // No OHP filter: exclude compound vertical push
-      if (prefs.avoidOHP && mp === 'vertical_push' && db && db.type === 'compound') continue;
+      if (prefs.avoidOHP && mp === 'vertical_push' && (db ? db.type === 'compound' : isLikelyCompound(exName))) continue;
 
-      const typeBonus = (db && db.type === 'compound') ? 1.5 : 1.0;
+      const compound = db ? db.type === 'compound' : isLikelyCompound(exName);
+      const isolation = db ? db.type === 'isolation' : !isLikelyCompound(exName);
+      const typeBonus = compound ? 1.5 : 1.0;
       let deficitBonus = 1.0;
       if (db && db.benchmarkLbs > 0 && p.weightLbs > 0) {
         deficitBonus = (p.weightLbs / db.benchmarkLbs) < 0.85 ? 1.3 : 1.0;
@@ -2805,8 +2866,8 @@ function buildTimedSession(recs, prefs) {
       candidates.push({
         name: exName, muscle: key, prescription: p,
         importance, timeSec,
-        isCompound: db && db.type === 'compound',
-        isIsolation: db && db.type === 'isolation',
+        isCompound: compound,
+        isIsolation: isolation,
         movementPattern: mp,
       });
     }
@@ -2909,6 +2970,7 @@ async function fetchAllHevyTemplateIds() {
       Object.assign(_templateIdMap, cached);
       _hevyTemplatesLoaded = true;
       console.log('Hevy templates loaded from cache: ' + Object.keys(_templateIdMap).length + ' exercises');
+      addHevyTemplatesToPool();
       warnUnmatchedExercises();
       return;
     }
@@ -2917,8 +2979,12 @@ async function fetchAllHevyTemplateIds() {
   try {
     // Collect all exercise names we need to match
     var needed = new Set();
-    for (var key in MUSCLE_EXERCISE_PICKS) {
-      var arr = MUSCLE_EXERCISE_PICKS[key];
+    for (var key in _dynamicExercisePool) {
+      _dynamicExercisePool[key].forEach(function(n) { needed.add(n); });
+    }
+    // Also include static MUSCLE_EXERCISE_PICKS as fallback
+    for (var key2 in MUSCLE_EXERCISE_PICKS) {
+      var arr = MUSCLE_EXERCISE_PICKS[key2];
       for (var i = 0; i < arr.length; i++) needed.add(arr[i]);
     }
 
@@ -2961,6 +3027,9 @@ async function fetchAllHevyTemplateIds() {
     // Cache to localStorage for fast future loads
     Storage.set('hevy_template_map', _templateIdMap);
 
+    // Expand dynamic pool with newly discovered Hevy exercises
+    addHevyTemplatesToPool();
+
     warnUnmatchedExercises();
   } catch (e) {
     console.error('fetchAllHevyTemplateIds error:', e);
@@ -2969,12 +3038,16 @@ async function fetchAllHevyTemplateIds() {
 
 function warnUnmatchedExercises() {
   var unmatched = [];
-  for (var key in MUSCLE_EXERCISE_PICKS) {
-    var arr = MUSCLE_EXERCISE_PICKS[key];
-    for (var i = 0; i < arr.length; i++) {
-      if (!_templateIdMap[arr[i]]) unmatched.push(arr[i] + ' (' + key + ')');
-    }
+  var totalPool = 0;
+  var matchedPool = 0;
+  for (var key in _dynamicExercisePool) {
+    _dynamicExercisePool[key].forEach(function(name) {
+      totalPool++;
+      if (_templateIdMap[name]) matchedPool++;
+      else unmatched.push(name + ' (' + key + ')');
+    });
   }
+  console.log('Exercise pool: ' + matchedPool + '/' + totalPool + ' matched to Hevy templates');
   if (unmatched.length > 0) {
     console.warn('Hevy template mismatch - these exercises will be excluded from sessions:\n  ' + unmatched.join('\n  '));
   }
@@ -5618,6 +5691,9 @@ function renderDashboard(workouts) {
   cardioScoreData = pp.cardioScoreTimeline;
   dedicationData = pp.dedicationTimeline || [];
   computeBodyCompTimeline();
+
+  // Build dynamic exercise pool from EXERCISE_DB + workout history (Tier 1)
+  buildDynamicExercisePool();
 
   const recs = generateRecommendations(pp.muscleStats);
   LAST_RECS = recs;
