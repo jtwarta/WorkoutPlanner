@@ -225,15 +225,6 @@ color: var(--accent);
 white-space: nowrap;
 flex-shrink: 0;
 }
-.ex-time {
-font-family: 'Space Grotesk', sans-serif;
-font-size: 11px;
-color: var(--text-dim);
-white-space: nowrap;
-flex-shrink: 0;
-min-width: 30px;
-text-align: right;
-}
 
 /* ===================== */
 /* MUSCLE GRID (v1.2: tappable with explainers) */
@@ -936,16 +927,16 @@ function estimatePercentile(standardKey, bwMultiplier) {
 const TIME_CONSTANTS = {
   compoundSetSec: 45,
   isolationSetSec: 35,
-  restBetweenSets: 120,
   transitionSec: 90,
   sessionCapMin: 60,
 };
 
 function calculateExerciseTime(exerciseName, sets) {
   const db = EXERCISE_DB[exerciseName];
-  const isCompound = db && db.type === 'compound';
+  const isCompound = db ? db.type === 'compound' : isLikelyCompound(exerciseName);
   const setTime = isCompound ? TIME_CONSTANTS.compoundSetSec : TIME_CONSTANTS.isolationSetSec;
-  return (sets * setTime) + ((sets - 1) * TIME_CONSTANTS.restBetweenSets) + TIME_CONSTANTS.transitionSec;
+  const restSec = getRestSeconds(exerciseName);
+  return (sets * setTime) + ((sets - 1) * restSec) + TIME_CONSTANTS.transitionSec;
 }
 
 // ============================================================
@@ -3397,12 +3388,6 @@ function renderTimedSession(recs) {
   }
 
   // --- HERO BLOCK ---
-  const muscleKeys = Object.keys(grouped);
-  const muscleDots = muscleKeys.map(key => {
-    const meta = MUSCLE_GROUPS[key];
-    if (!meta) return '';
-    return `<span style="display:inline-flex;align-items:center;gap:4px;font-size:13px;font-weight:600;color:${meta.color};font-family:'Space Grotesk',sans-serif;white-space:nowrap;"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${meta.color};"></span>${meta.name}</span>`;
-  }).filter(Boolean).join(`<span style="color:${C.textDark};margin:0 4px;">\u00b7</span>`);
 
   // Rest-day chip (compact, inline)
   let restChip = '';
@@ -3418,18 +3403,17 @@ function renderTimedSession(recs) {
 
   document.getElementById('today-hero').innerHTML = `
     <div style="margin-bottom:16px;">
-      <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:8px;">
-        <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:1.2px;color:${C.textDim};">Today\u2019s Session</div>
-        <div style="font-family:'Space Grotesk',sans-serif;font-size:20px;font-weight:700;color:${C.accent};">~${totalMin}<span style="font-size:13px;font-weight:500;color:${C.textDim};margin-left:2px;">min</span></div>
-      </div>
-      <div style="display:flex;flex-wrap:wrap;align-items:center;gap:4px 0;line-height:1.8;">${muscleDots}</div>
-      <div style="display:flex;align-items:center;gap:8px;margin-top:10px;">
-        ${restChip}
-        <button id="send-to-hevy-btn" onclick="sendSessionToHevy()" style="display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border-radius:6px;background:${C.surface2};border:1px solid ${C.border};color:${C.textMid};font-size:12px;font-weight:600;font-family:'Space Grotesk',sans-serif;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:all 0.2s ease;margin-left:auto;white-space:nowrap;">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+        <div style="display:flex;align-items:baseline;gap:6px;">
+          <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:1.2px;color:${C.textDim};">Today\u2019s Session</div>
+          <div style="font-family:'Space Grotesk',sans-serif;font-size:20px;font-weight:700;color:${C.accent};">~${totalMin}<span style="font-size:13px;font-weight:500;color:${C.textDim};margin-left:2px;">min</span></div>
+        </div>
+        <button id="send-to-hevy-btn" onclick="sendSessionToHevy()" style="display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border-radius:6px;background:${C.surface2};border:1px solid ${C.border};color:${C.textMid};font-size:12px;font-weight:600;font-family:'Space Grotesk',sans-serif;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:all 0.2s ease;white-space:nowrap;">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
           Send to Hevy
         </button>
       </div>
+      ${restChip ? `<div style="margin-top:10px;">${restChip}</div>` : ''}
     </div>`;
 
   // --- COLLAPSIBLE CHIPS ---
@@ -3515,12 +3499,10 @@ function renderTimedSession(recs) {
 
     for (const ex of exes) {
       const rx = formatPrescription(ex.prescription);
-      const timeMin = (ex.timeSec / 60).toFixed(0);
       exHtml += `
         <div class="ex-row">
           <div class="ex-name" style="color:${C.textMid}">${ex.name}</div>
           <div class="ex-prescription" style="color:${C.accent}">${rx}</div>
-          <div class="ex-time" style="color:${C.textDim}">${timeMin}m</div>
         </div>`;
     }
     exHtml += `</div>`;
