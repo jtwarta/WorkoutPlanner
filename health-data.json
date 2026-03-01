@@ -1,18 +1,32 @@
 {"updated":"
-2026-03-01T07:31:39-08:00
+2026-03-01T12:19:00-08:00
 ","resting_heart_rate":
-57
+58
 ,"cardio_fitness":
 40.81
 ,"cardio_recovery":
 36.63855095766542
 ,"steps":
-12340.5
+13074
 ,"active_energy_kcal":
-636.215833333334
+611.037285714285
 ,"walking_heart_rate_avg":
-115
-,"workouts":[{"type":"Walking
+85
+,"workouts":[{"type":"Elliptical
+
+","start":"Mar 1, 2026 at 12:00 PM
+
+","duration_min":17.6
+
+,"calories":141 kcal}
+{"type":"Traditional Strength Training
+
+","start":"Mar 1, 2026 at 11:22 AM
+
+","duration_min":37.7
+
+,"calories":189 kcal}
+{"type":"Walking
 
 ","start":"Feb 27, 2026 at 8:34 PM
 
@@ -347,21 +361,7 @@
 
 ","duration_min":10.9
 
-,"calories":59 kcal}
-{"type":"Stair Climbing
-
-","start":"Dec 18, 2025 at 8:25 PM
-
-","duration_min":8.9
-
-,"calories":64 kcal}
-{"type":"Traditional Strength Training
-
-","start":"Dec 17, 2025 at 8:09 PM
-
-","duration_min":2827.8
-
-,"calories":9,423 kcal}]
+,"calories":59 kcal}]
 ,"weight_entries": [{"date":"2026-02-16","lbs":166.0001974158344}
 
 {"date":"2026-02-12","lbs":167.0001986050864}
