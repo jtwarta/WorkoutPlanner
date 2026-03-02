@@ -4036,9 +4036,9 @@ function showChartTooltip(canvas, pt) {
   const dateStr = dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   let label = `${pt.weight.toFixed(1)} lbs`;
   if (pt.si) label += `<br><span style="color:${C.strength};">SI ${pt.si.toFixed(2)}</span>`;
-  if (pt.cs) label += `<br><span style="color:${C.cardio};">CF ${pt.cs.toFixed(2)}</span>`;
-  if (pt.ded) label += `<br><span style="color:${C.teal};">Ded ${pt.ded.toFixed(2)}</span>`;
-  if (pt.bc) label += `<br><span style="color:${C.pink};">BC ${pt.bc.toFixed(2)}</span>`;
+  if (pt.cs) label += `<br><span style="color:${C.danger};">CF ${pt.cs.toFixed(2)}</span>`;
+  if (pt.ded) label += `<br><span style="color:${C.gold};">Ded ${pt.ded.toFixed(2)}</span>`;
+  if (pt.bc) label += `<br><span style="color:${C.fuchsia};">BC ${pt.bc.toFixed(2)}</span>`;
 
   const tip = document.createElement('div');
   tip.className = 'chart-tooltip';
@@ -4240,7 +4240,7 @@ function renderWeightChart() {
 
       if (_chartLineVisible.cardio) {
         ctx.beginPath();
-        ctx.strokeStyle = C.cardio;
+        ctx.strokeStyle = C.danger;
         ctx.lineWidth = 2;
         ctx.setLineDash([6, 3]);
         csFiltered.forEach((d, i) => {
@@ -4258,7 +4258,7 @@ function renderWeightChart() {
           const y = pad.top + (1 - (d.score - csMin) / (csMax - csMin)) * chartH;
           ctx.beginPath();
           ctx.arc(x, y, 3.5, 0, Math.PI * 2);
-          ctx.fillStyle = C.cardio;
+          ctx.fillStyle = C.danger;
           ctx.fill();
         });
       }
@@ -4303,7 +4303,7 @@ function renderWeightChart() {
 
       if (_chartLineVisible.dedication) {
         ctx.beginPath();
-        ctx.strokeStyle = C.teal;
+        ctx.strokeStyle = C.gold;
         ctx.lineWidth = 1.5;
         ctx.setLineDash([2, 3]);
         smoothed.forEach((d, i) => {
@@ -4345,9 +4345,9 @@ function renderWeightChart() {
 
       if (_chartLineVisible.bodyComp) {
         ctx.beginPath();
-        ctx.strokeStyle = C.pink;
+        ctx.strokeStyle = C.fuchsia;
         ctx.lineWidth = 2;
-        ctx.setLineDash([6, 3]);
+        ctx.setLineDash([8, 4]);
         bcFiltered.forEach((d, i) => {
           const dayOffset = (new Date(d.date) - new Date(firstDate)) / (1000 * 60 * 60 * 24);
           const x = pad.left + (totalDays > 0 ? (dayOffset / totalDays) : 0) * chartW;
@@ -4403,9 +4403,9 @@ function renderWeightChart() {
     const items = [
       { key: 'weight', color: C.accent, label: 'Weight', alwaysOn: true },
       { key: 'si', color: C.strength, label: 'Strength' },
-      { key: 'cardio', color: C.cardio, label: 'Cardio' },
-      { key: 'dedication', color: C.teal, label: 'Dedication' },
-      { key: 'bodyComp', color: C.pink, label: 'Body Comp' },
+      { key: 'cardio', color: C.danger, label: 'Cardio' },
+      { key: 'dedication', color: C.gold, label: 'Dedication' },
+      { key: 'bodyComp', color: C.fuchsia, label: 'Body Comp' },
     ];
     legendEl.innerHTML = items.map(it => {
       const vis = it.alwaysOn || _chartLineVisible[it.key];
