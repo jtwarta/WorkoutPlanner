@@ -3502,18 +3502,19 @@ function renderTimedSession(recs) {
       </div>
       ${(() => {
         const rd = computeReadiness();
-        const dotSvg = '<svg width="8" height="8" viewBox="0 0 8 8" style="flex-shrink:0;"><circle cx="4" cy="4" r="4" fill="' + rd.color + '"/></svg>';
         const signalDots = rd.signals.map(function(s) {
           var c = s.ok ? C.accent : C.danger;
-          return '<span style="display:inline-flex;align-items:center;gap:3px;font-size:10px;font-family:Space Grotesk,sans-serif;color:' + c + ';"><svg width="5" height="5" viewBox="0 0 5 5"><circle cx="2.5" cy="2.5" r="2.5" fill="' + c + '"/></svg>' + s.label + '</span>';
-        }).join('<span style="color:' + C.textDark + ';font-size:8px;margin:0 2px;">\\u00b7</span>');
-        const issueText = rd.issues.length > 0 ? '<div style="font-size:10px;font-family:Space Grotesk,sans-serif;color:' + C.textDim + ';margin-top:3px;">' + rd.issues.join(' \\u00b7 ') + '</div>' : '';
-        return '<div id="readiness-chip" style="margin-top:10px;padding:8px 10px;border-radius:8px;background:' + C.surface2 + ';border:1px solid ' + rd.color + '20;">' +
-          '<div style="display:flex;align-items:center;gap:6px;">' +
-            dotSvg +
+          return '<div style="display:flex;flex-direction:column;align-items:center;gap:2px;">' +
+            '<svg width="6" height="6" viewBox="0 0 6 6"><circle cx="3" cy="3" r="3" fill="' + c + '"/></svg>' +
+            '<span style="font-size:8px;font-family:Space Grotesk,sans-serif;color:' + C.textDim + ';white-space:nowrap;">' + s.label + '</span></div>';
+        }).join('');
+        var issueText = rd.issues.length > 0 ? '<div style="font-size:10px;font-family:Space Grotesk,sans-serif;color:' + C.textDim + ';margin-top:4px;">' + rd.issues.join(' \u00b7 ') + '</div>' : '';
+        return '<div id="readiness-chip" style="margin-top:10px;padding:8px 12px;border-radius:8px;background:' + C.surface2 + ';border:1px solid ' + rd.color + '20;">' +
+          '<div style="display:flex;align-items:center;gap:8px;">' +
+            '<svg width="8" height="8" viewBox="0 0 8 8" style="flex-shrink:0;"><circle cx="4" cy="4" r="4" fill="' + rd.color + '"/></svg>' +
             '<span style="font-family:Space Grotesk,sans-serif;font-size:12px;font-weight:600;color:' + rd.color + ';">' + rd.level + '</span>' +
             '<span style="font-family:Space Grotesk,sans-serif;font-size:10px;color:' + C.textDim + ';">readiness</span>' +
-            '<div style="margin-left:auto;display:flex;align-items:center;gap:6px;">' + signalDots + '</div>' +
+            '<div style="margin-left:auto;display:flex;align-items:center;gap:12px;">' + signalDots + '</div>' +
           '</div>' +
           issueText +
         '</div>';
@@ -4642,7 +4643,6 @@ function renderPRBoard() {
 
     html += '<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid ' + C.surface2 + ';">' +
       '<div style="width:58px;font-size:13px;font-weight:600;color:' + C.text + ';font-family:Space Grotesk,sans-serif;flex-shrink:0;">' + liftLabels[k] + '</div>' +
-      '<div style="flex-shrink:0;">' + prSparkline(pr.history) + '</div>' +
       '<div style="flex:1;min-width:0;">' +
         '<div style="display:flex;align-items:baseline;gap:4px;">' +
           '<span style="font-family:Space Grotesk,sans-serif;font-size:16px;font-weight:700;color:' + (isAtPR ? C.accent : C.text) + ';">' + pr.allTimePR + '</span>' +
@@ -4650,14 +4650,15 @@ function renderPRBoard() {
           prBadge +
         '</div>' +
         '<div style="font-family:Space Grotesk,sans-serif;font-size:10px;color:' + C.textDim + ';">' +
-          prDateStr + (deltaStr ? ' \\u00b7 ' + deltaStr : '') +
+          prDateStr + (deltaStr ? ' \u00b7 ' + deltaStr : '') +
         '</div>' +
       '</div>' +
+      '<div style="flex-shrink:0;">' + prSparkline(pr.history) + '</div>' +
     '</div>';
   }
 
   if (!hasAny) {
-    html += '<div style="font-size:12px;color:' + C.textDim + ';font-family:Space Grotesk,sans-serif;padding:8px 0;">No PR data yet \\u2014 train the big 5 lifts to track records.</div>';
+    html += '<div style="font-size:12px;color:' + C.textDim + ';font-family:Space Grotesk,sans-serif;padding:8px 0;">No PR data yet \u2014 train the big 5 lifts to track records.</div>';
   }
 
   html += '</div>';
@@ -4932,7 +4933,7 @@ function populateStrengthDetail() {
       <div style="display:flex;align-items:center;gap:10px;padding:9px 0;">
         <div style="width:58px;flex-shrink:0;">
           <div style="font-size:16px;font-weight:600;color:${C.text};">${info.label}</div>
-          ${(() => { const tr = _trends[key]; if (!tr) return ''; const arrow = tr.diff > 0 ? '\u2191' : tr.diff < 0 ? '\u2193' : '\u2192'; const tColor = tr.diff > 0 ? C.accent : tr.diff < 0 ? C.danger : C.textDim; return '<div style="font-family:Space Grotesk,sans-serif;font-size:10px;font-weight:600;color:' + tColor + ';">' + arrow + (tr.diff > 0 ? '+' : '') + tr.diff + '</div>'; })()}</div>
+          ${(() => { const tr = _trends[key]; if (!tr || tr.diff === 0) return ''; const arrow = tr.diff > 0 ? '\u2191' : '\u2193'; const tColor = tr.diff > 0 ? C.accent : C.danger; return '<div style="font-family:Space Grotesk,sans-serif;font-size:10px;font-weight:600;color:' + tColor + ';">' + arrow + (tr.diff > 0 ? '+' : '') + tr.diff + '<span style="font-weight:500;color:' + C.textDim + ';font-size:9px;"> 30d</span></div>'; })()}</div>
         <div data-str-bar style="flex:1;height:14px;border-radius:3px;background:${C.surface3};position:relative;overflow:visible;" onclick="event.stopPropagation();showStrengthPctile(this)">
           <div style="position:absolute;top:4px;left:0;right:0;height:6px;border-radius:3px;background:linear-gradient(90deg,${C.danger} 0%,${C.warn} 40%,${C.accent} 100%);opacity:0.3;"></div>
           ${hasData ? `<div style="position:absolute;top:50%;left:${markerLeft}%;width:10px;height:10px;border-radius:50%;background:${markerColor};transform:translate(-50%,-50%);border:1.5px solid ${C.surface};pointer-events:none;"></div>` : ''}
