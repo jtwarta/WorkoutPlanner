@@ -6,7 +6,6 @@
   1.  PR Board: personal records with sparkline history, delta from previous PR, current % of PR
   2.  Progressive overload: 30-day trend arrows on each lift in Strength Index detail
   3.  Chart period toggles: tappable 1M/3M/6M/1Y/ALL chips on Weight & Trends chart
-  4.  Recovery readiness: compact indicator on Today tab surfacing HIIT gate signals
   Changes from v1.14:
   1.  Fix UTC/local date math: all day keys now use localDateStr() consistently
   2.  Measurements persistence: localStorage stores only deltas, baseline stays in HTML
@@ -3382,80 +3381,6 @@ function toggleTodayChips() {
   row.style.display = isOpen ? 'none' : 'flex';
 }
 
-// ============================================================
-// RECOVERY READINESS INDICATOR (v1.16)
-// Surfaces HIIT gate checks as a compact readiness chip on Today tab
-// ============================================================
-function computeReadiness() {
-  var signals = [];
-  var issues = [];
-  var score = 100; // Start at 100, deduct for each issue
-
-  // Gate 1: RHR elevation
-  var rhr = healthData ? (healthData.resting_heart_rate || 0) : 0;
-  if (rhr > 0) {
-    var rhrBaseline = (healthData && (healthData.rhr_3m || healthData.rhr_6m || healthData.rhr_12m)) || 0;
-    if (rhrBaseline > 0) {
-      var rhrPct = ((rhr - rhrBaseline) / rhrBaseline) * 100;
-      if (rhrPct > 10) {
-        issues.push('RHR elevated ' + Math.round(rhrPct) + '% vs baseline');
-        score -= 30;
-      } else if (rhrPct > 5) {
-        issues.push('RHR slightly elevated');
-        score -= 10;
-      }
-      signals.push({ label: 'RHR', ok: rhrPct <= 10 });
-    }
-  }
-
-  // Gate 2: Recovery score
-  var recovery = healthData ? (healthData.cardio_recovery || 0) : 0;
-  if (recovery > 0) {
-    if (recovery < 15) {
-      issues.push('Low HR recovery (' + Math.round(recovery) + ' bpm)');
-      score -= 25;
-    } else if (recovery < 20) {
-      score -= 5;
-    }
-    signals.push({ label: 'Recovery', ok: recovery >= 15 });
-  }
-
-  // Gate 3: Cardio base
-  var now = new Date();
-  var sessions14d = 0;
-  for (var i = 0; i < 14; i++) {
-    var d = new Date(now);
-    d.setDate(d.getDate() - i);
-    var key = localDateStr(d);
-    var cd = heatmapDayCardio[key];
-    if (cd && cd.sessions && cd.sessions.length > 0) sessions14d++;
-  }
-  if (sessions14d <= 1) {
-    issues.push('Low cardio base (14d)');
-    score -= 15;
-  }
-  signals.push({ label: 'Cardio Base', ok: sessions14d > 1 });
-
-  // Gate 4: Consecutive training days
-  var consec = (typeof _consecutiveTrainDays !== 'undefined') ? _consecutiveTrainDays : 0;
-  if (consec >= 5) {
-    issues.push(consec + ' days straight');
-    score -= 25;
-  } else if (consec >= 4) {
-    issues.push(consec + ' consecutive days');
-    score -= 15;
-  }
-  signals.push({ label: 'Rest', ok: consec < 4 });
-
-  score = Math.max(0, Math.min(100, score));
-  var level, color;
-  if (score >= 80) { level = 'Ready'; color = C.accent; }
-  else if (score >= 55) { level = 'Moderate'; color = C.warn; }
-  else { level = 'Fatigued'; color = C.danger; }
-
-  return { score: score, level: level, color: color, issues: issues, signals: signals };
-}
-
 function renderTimedSession(recs) {
   const { exercises, totalSec } = buildTimedSessionAndStore(recs);
   const totalMin = Math.round(totalSec / 60);
@@ -3500,25 +3425,6 @@ function renderTimedSession(recs) {
         <div style="font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:${C.text};font-family:'Space Grotesk',sans-serif;">${sessionLabel}</div>
         <div style="font-family:'Space Grotesk',sans-serif;font-size:22px;font-weight:700;color:${C.accent};">~${totalMin}<span style="font-size:14px;font-weight:500;color:${C.textDim};margin-left:2px;">min</span></div>
       </div>
-      ${(() => {
-        const rd = computeReadiness();
-        const signalDots = rd.signals.map(function(s) {
-          var c = s.ok ? C.accent : C.danger;
-          return '<div style="display:flex;flex-direction:column;align-items:center;gap:2px;">' +
-            '<svg width="6" height="6" viewBox="0 0 6 6"><circle cx="3" cy="3" r="3" fill="' + c + '"/></svg>' +
-            '<span style="font-size:8px;font-family:Space Grotesk,sans-serif;color:' + C.textDim + ';white-space:nowrap;">' + s.label + '</span></div>';
-        }).join('');
-        var issueText = rd.issues.length > 0 ? '<div style="font-size:10px;font-family:Space Grotesk,sans-serif;color:' + C.textDim + ';margin-top:4px;">' + rd.issues.join(' \u00b7 ') + '</div>' : '';
-        return '<div id="readiness-chip" style="margin-top:10px;padding:8px 12px;border-radius:8px;background:' + C.surface2 + ';border:1px solid ' + rd.color + '20;">' +
-          '<div style="display:flex;align-items:center;gap:8px;">' +
-            '<svg width="8" height="8" viewBox="0 0 8 8" style="flex-shrink:0;"><circle cx="4" cy="4" r="4" fill="' + rd.color + '"/></svg>' +
-            '<span style="font-family:Space Grotesk,sans-serif;font-size:12px;font-weight:600;color:' + rd.color + ';">' + rd.level + '</span>' +
-            '<span style="font-family:Space Grotesk,sans-serif;font-size:10px;color:' + C.textDim + ';">readiness</span>' +
-            '<div style="margin-left:auto;display:flex;align-items:center;gap:12px;">' + signalDots + '</div>' +
-          '</div>' +
-          issueText +
-        '</div>';
-      })()}
       ${restChip ? `<div style="margin-top:10px;">${restChip}</div>` : ''}
     </div>`;
 
@@ -4607,7 +4513,7 @@ function renderPRBoard() {
     var mn = Math.min.apply(null, vals);
     var mx = Math.max.apply(null, vals);
     if (mx === mn) { mn -= 1; mx += 1; }
-    var w = 60, h = 22, pad = 2;
+    var w = 100, h = 22, pad = 2;
     var pts = [];
     for (var i = 0; i < vals.length; i++) {
       var x = pad + (i / (vals.length - 1)) * (w - 2 * pad);
