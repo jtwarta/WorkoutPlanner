@@ -2455,6 +2455,17 @@ function analyzeCardioHistory(dayCardioMap) {
     cardioSessions7d, estimatedMinutes7d, recentModalities,
     hevySessions, appleSessions, hevyMinutes, appleMinutes,
     cardioLog,
+    // Estimate how many sessions this week were high-intensity
+    // Heuristic: short sessions (<=25 min) with interval/sprint/HIIT in name, or matching HIIT protocol names
+    hiitSessions7d: cardioLog.filter(function(s) {
+      var n = (s.type || '').toLowerCase();
+      if (/interval|sprint|hiit|tabata/i.test(n)) return true;
+      // Match known HIIT protocol names from CARDIO_PROTOCOLS.hiit
+      for (var j = 0; j < CARDIO_PROTOCOLS.hiit.length; j++) {
+        if (n === CARDIO_PROTOCOLS.hiit[j].name.toLowerCase()) return true;
+      }
+      return false;
+    }).length,
   };
 }
 
@@ -2506,7 +2517,7 @@ function generateCardioRecommendations(dayCardioMap, rerollOffset) {
     }
   }
 
-  // Gate 3: Very low cardio base -- 0-1 sessions in last 14 days means ramp with Zone 2 first
+  // Gate 3: No cardio base at all -- 0 sessions in last 14 days means start with Zone 2
   if (hiitAllowed) {
     // Count cardio sessions in last 14 days
     const now = new Date();
@@ -2518,9 +2529,9 @@ function generateCardioRecommendations(dayCardioMap, rerollOffset) {
       const cd = dayCardioMap[key];
       if (cd && cd.sessions && cd.sessions.length > 0) sessions14d++;
     }
-    if (sessions14d <= 1) {
+    if (sessions14d === 0) {
       hiitAllowed = false;
-      hiitBlockReason = 'Low cardio base (ramp with Zone 2 first)';
+      hiitBlockReason = 'No cardio base (ramp with Zone 2 first)';
     }
   }
 
@@ -2533,11 +2544,36 @@ function generateCardioRecommendations(dayCardioMap, rerollOffset) {
     }
   }
 
-  // Decide session split
+  // Decide session split -- polarized 80/20 model
+  // Target: 2 Zone 2 + 1 HIIT per week (Seiler 2010, Stoggl & Sperlich 2014)
+  // Logic: prescribe based on what has ALREADY been done this week,
+  // not just how many slots remain.
   const effectiveSessions = remainingSessions > 0 ? remainingSessions : (remainingMin > 0 ? 1 : 0);
-  const needHIIT = hiitAllowed && effectiveSessions >= 2 && history.cardioSessions7d < 1;
-  const hiitCount = hiitAllowed ? (needHIIT ? 1 : (effectiveSessions >= 2 ? 1 : 0)) : 0;
-  const zone2Count = hiitCount > 0 ? Math.max(1, effectiveSessions - hiitCount) : Math.min(effectiveSessions, 2);
+  const zone2Done = Math.max(0, history.cardioSessions7d - history.hiitSessions7d);
+  const hiitDone = history.hiitSessions7d;
+
+  let hiitCount = 0;
+  let zone2Count = 0;
+
+  if (!hiitAllowed || effectiveSessions <= 0) {
+    // Gates failed or nothing to prescribe -- all Zone 2
+    zone2Count = Math.min(effectiveSessions, 2);
+  } else if (hiitDone >= 1) {
+    // Already did HIIT this week -- remaining slots are Zone 2
+    zone2Count = Math.min(effectiveSessions, 2);
+  } else if (zone2Done >= 1) {
+    // Have aerobic base this week, HIIT slot is due
+    hiitCount = 1;
+    zone2Count = Math.max(0, effectiveSessions - 1);
+  } else {
+    // No cardio done yet this week -- Zone 2 first, HIIT if 2+ slots
+    if (effectiveSessions >= 2) {
+      zone2Count = effectiveSessions - 1;
+      hiitCount = 1;
+    } else {
+      zone2Count = 1;
+    }
+  }
 
   // Pick zone 2 protocols (avoid recently used modalities for variety)
   const z2Pool = CARDIO_PROTOCOLS.zone2.filter(p => !history.recentModalities.includes(p.modality));
@@ -2566,7 +2602,7 @@ function generateCardioRecommendations(dayCardioMap, rerollOffset) {
     });
   }
 
-  return { zones, history, prescriptions, weekComplete: false, remainingMin, targetMin };
+  return { zones, history, prescriptions, weekComplete: false, remainingMin, targetMin, hiitBlockReason };
 }
 
 // ============================================================
@@ -2666,6 +2702,11 @@ function renderCardioPlan(dayCardioMap) {
           <span style="font-size:11px;font-family:'Space Grotesk',sans-serif;color:${zs.color};padding:2px 7px;border-radius:4px;background:${zs.bg};white-space:nowrap;">\u2661 ${rx.hrRange}</span>
         </div>
       </div>`;
+    }
+
+    // Surface HIIT gate block reason if applicable
+    if (result.hiitBlockReason) {
+      html += `<div style="padding:6px 0;font-size:11px;font-family:'Space Grotesk',sans-serif;color:${C.textDark};">HIIT gated: ${result.hiitBlockReason}</div>`;
     }
   }
 
