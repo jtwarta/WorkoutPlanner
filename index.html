@@ -2286,6 +2286,7 @@ const CARDIO_PROTOCOLS = {
       durationMin: 35,
       notes: 'Nose-breathing pace \u2014 you should be able to hold a conversation',
       modality: 'treadmill',
+      instructions: 'Set speed to 3.5 mph. Start at 8% incline and increase by 1% every few sessions as it gets easier. Breathe through your nose the entire time \u2014 if you need to mouth-breathe, drop the incline. Do not hold the rails. Arms swing naturally at your sides.',
     },
     {
       name: 'Steady-State Cycling',
@@ -2293,6 +2294,7 @@ const CARDIO_PROTOCOLS = {
       durationMin: 30,
       notes: 'Maintain cadence, keep effort conversational',
       modality: 'bike',
+      instructions: 'Set resistance so you can hold 70-80 RPM comfortably. Your heart rate should settle within 5 minutes and stay steady. If RPM drops below 70, lower resistance. You should be able to talk in full sentences. Stay seated, keep core engaged and avoid rocking side to side.',
     },
     {
       name: 'Elliptical Steady State',
@@ -2300,6 +2302,7 @@ const CARDIO_PROTOCOLS = {
       durationMin: 30,
       notes: 'Full range of motion, upright posture',
       modality: 'elliptical',
+      instructions: 'Set resistance to moderate (5-8 out of 20). Maintain 130+ strides per minute with a full range of motion on each stride. Keep your posture upright \u2014 avoid leaning on the handles. Use a light grip for balance only. This is the lowest-impact option and easiest on joints.',
     },
     {
       name: 'Stair Climber Steady',
@@ -2307,6 +2310,7 @@ const CARDIO_PROTOCOLS = {
       durationMin: 25,
       notes: 'Hands off rails, upright posture',
       modality: 'stairclimber',
+      instructions: 'Set level to 5-7. Keep hands completely off the rails \u2014 gripping offloads 20-30% of your bodyweight and defeats the purpose. Stay upright, drive through the full foot on each step. Shorter duration than other Zone 2 options because stair climbing has higher metabolic demand per minute.',
     },
     {
       name: 'Rowing Steady State',
@@ -2314,6 +2318,7 @@ const CARDIO_PROTOCOLS = {
       durationMin: 25,
       notes: 'Drive with legs first, steady breathing',
       modality: 'rower',
+      instructions: 'Set damper to 4-5. The stroke sequence is legs-back-arms on the drive, then arms-back-legs on the recovery. Push with legs first (60% of power), then lean back slightly, then pull handle to lower chest. Pace should be around 2:10-2:20 per 500m. Keep breathing rhythmic and controlled.',
     },
   ],
   hiit: [
@@ -2324,6 +2329,7 @@ const CARDIO_PROTOCOLS = {
       notes: '500m pace target: push hard on work sets',
       modality: 'rower',
       zone: 4,
+      instructions: 'Set damper to 5-7. Work intervals: drive hard with legs, target 1:45-1:55 per 500m pace. You should be breathing hard but able to maintain form. Rest intervals: slow to an easy 2:15-2:30 pace, keep the chain moving. 5 rounds total with a 1 min easy warmup before starting.',
     },
     {
       name: 'Cycling Intervals',
@@ -2332,6 +2338,7 @@ const CARDIO_PROTOCOLS = {
       notes: 'High resistance on sprints, spin easy on rest',
       modality: 'bike',
       zone: 5,
+      instructions: 'Warm up 2 min at easy resistance. For sprints: crank resistance up to where you can barely maintain 80+ RPM \u2014 you should be gasping by the end of each minute. Recovery: drop resistance way down, spin light at 90+ RPM for 2 min. 6 rounds. This is a classic Billat VO2max protocol.',
     },
     {
       name: 'Stair Climber Intervals',
@@ -2340,14 +2347,16 @@ const CARDIO_PROTOCOLS = {
       notes: 'Hands off rails during work intervals',
       modality: 'stairclimber',
       zone: 4,
+      instructions: 'Work intervals: set level to 10-12, hands completely off rails, drive through the full foot on each step. You should be breathing hard but can maintain the pace. Rest intervals: drop to level 4-5 for 2 min. 5 rounds. This hits threshold HR without the impact forces of running.',
     },
     {
-      name: 'Treadmill Intervals',
-      detail: '6\u00d71 min run @ 8-9 mph / 2 min walk',
+      name: 'Incline Treadmill Sprints',
+      detail: '6\u00d71 min @ 6 mph, 8-10% grade / 2 min walk',
       durationMin: 20,
-      notes: 'Flat or 1% incline, max effort on sprints',
+      notes: 'Incline delivers Zone 5 HR with lower impact than flat sprints',
       modality: 'treadmill',
       zone: 5,
+      instructions: 'Set incline to 8-10% and speed to 6 mph. Run with a slight forward lean, driving knees up against the grade. After 1 min, drop to 0% incline and 3.0 mph walk for 2 min. Repeat 6 rounds. If 6 mph feels easy at 8%, bump to 10% before increasing speed.',
     },
   ],
 };
@@ -2575,6 +2584,19 @@ function generateCardioRecommendations(dayCardioMap, rerollOffset) {
     }
   }
 
+  // Progressive Zone 2 duration scaling
+  // As aerobic base builds, extend durations to maintain stimulus (up to +10 min cap)
+  // Based on 30-day cardio session count as a proxy for training consistency
+  let sessions30d = 0;
+  const now30 = new Date();
+  for (let i = 0; i < 30; i++) {
+    const d30 = new Date(now30);
+    d30.setDate(d30.getDate() - i);
+    const k30 = localDateStr(d30);
+    if (dayCardioMap[k30] && dayCardioMap[k30].sessions && dayCardioMap[k30].sessions.length > 0) sessions30d++;
+  }
+  const z2DurationBonus = sessions30d >= 12 ? 10 : sessions30d >= 6 ? 5 : 0;
+
   // Pick zone 2 protocols
   // When rerolling (offset > 0), cycle through ALL protocols for guaranteed variety
   // When initial (offset === 0), prefer protocols whose modality wasn't recently used
@@ -2587,6 +2609,7 @@ function generateCardioRecommendations(dayCardioMap, rerollOffset) {
     prescriptions.push({
       ...protocol,
       zone: 2,
+      durationMin: protocol.durationMin + z2DurationBonus,
       hrRange: `${zones.zone2.low}-${zones.zone2.high}`,
     });
   }
@@ -2623,6 +2646,19 @@ let _cardioRerollOffset = 0;
 function rerollCardio() {
   _cardioRerollOffset++;
   renderCardioPlan(heatmapDayCardio);
+}
+
+function toggleCardioInstr(id) {
+  var el = document.getElementById(id);
+  if (!el) return;
+  var isOpen = el.style.maxHeight && el.style.maxHeight !== '0px';
+  if (isOpen) {
+    el.style.maxHeight = '0';
+    el.style.opacity = '0';
+  } else {
+    el.style.maxHeight = '120px';
+    el.style.opacity = '1';
+  }
 }
 
 function buildCardioBreakdownHTML(history) {
@@ -2691,11 +2727,14 @@ function renderCardioPlan(dayCardioMap) {
       5: { bg: C.dangerDim, color: C.danger, label: 'Zone 5' },
     };
 
-    for (const rx of result.prescriptions) {
+    for (let rxIdx = 0; rxIdx < result.prescriptions.length; rxIdx++) {
+      const rx = result.prescriptions[rxIdx];
       const zs = zoneStyles[rx.zone] || zoneStyles[2];
       const detailNote = [rx.detail, rx.notes].filter(Boolean).join(' \u00b7 ');
+      const instrId = 'cardio-instr-' + rxIdx;
+      const hasInstr = rx.instructions && rx.instructions.length > 0;
 
-      html += `<div style="padding:10px 0;border-bottom:1px solid ${C.surface2};">
+      html += `<div style="padding:10px 0;border-bottom:1px solid ${C.surface2};${hasInstr ? 'cursor:pointer;-webkit-tap-highlight-color:transparent;' : ''}" ${hasInstr ? 'onclick="toggleCardioInstr(\'' + instrId + '\')"' : ''}>
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
           <span style="font-size:10px;font-weight:600;padding:2px 7px;border-radius:4px;font-family:'Space Grotesk',sans-serif;text-transform:uppercase;letter-spacing:0.5px;background:${zs.bg};color:${zs.color};">${zs.label}</span>
           <span style="font-size:14px;font-weight:600;color:${C.text};flex:1;">${rx.name}</span>
@@ -2705,6 +2744,7 @@ function renderCardioPlan(dayCardioMap) {
           <div style="font-size:12px;font-family:'Space Grotesk',sans-serif;color:${C.textDim};line-height:1.4;flex:1;">${detailNote}</div>
           <span style="font-size:11px;font-family:'Space Grotesk',sans-serif;color:${zs.color};padding:2px 7px;border-radius:4px;background:${zs.bg};white-space:nowrap;">\u2661 ${rx.hrRange}</span>
         </div>
+        ${hasInstr ? '<div id="' + instrId + '" style="max-height:0;overflow:hidden;opacity:0;transition:max-height 0.3s ease,opacity 0.25s ease;"><div style="margin-top:8px;padding:8px 10px;border-radius:6px;background:' + C.surface + ';font-size:11px;font-family:Space Grotesk,sans-serif;color:' + C.textMid + ';line-height:1.5;">' + rx.instructions + '</div></div>' : ''}
       </div>`;
     }
 
