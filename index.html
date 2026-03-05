@@ -1119,18 +1119,18 @@ function classifyExercise(name) {
 // Frequency: realistic for non-PPL splits (each muscle every 5-7 days)
 // ============================================================
 const MUSCLE_GROUPS = {
-  chest:      { name: 'Chest',      idealFreqDays: 5, color: '#e88080', idealSetsPerWeek: 10 },
-  back:       { name: 'Back',       idealFreqDays: 5, color: C.blue, idealSetsPerWeek: 12 },
-  shoulders:  { name: 'Shoulders',  idealFreqDays: 5, color: C.purple, idealSetsPerWeek: 10 },
-  biceps:     { name: 'Biceps',     idealFreqDays: 6, color: C.teal, idealSetsPerWeek: 6 },
-  triceps:    { name: 'Triceps',    idealFreqDays: 6, color: '#e8c870', idealSetsPerWeek: 6 },
-  quads:      { name: 'Quads',      idealFreqDays: 5, color: C.cardio, idealSetsPerWeek: 10 },
-  hamstrings: { name: 'Hamstrings', idealFreqDays: 6, color: C.pink, idealSetsPerWeek: 8 },
-  glutes:     { name: 'Glutes',     idealFreqDays: 6, color: C.purpleLt, idealSetsPerWeek: 8 },
-  calves:     { name: 'Calves',     idealFreqDays: 6, color: '#50c8b8', idealSetsPerWeek: 6 },
-  core:       { name: 'Core',       idealFreqDays: 4, color: C.fuchsia, idealSetsPerWeek: 6 },
-  neck:       { name: 'Neck',       idealFreqDays: 5, color: '#d8b060', idealSetsPerWeek: 4 },
-  forearms:   { name: 'Forearms',   idealFreqDays: 5, color: C.cyan, idealSetsPerWeek: 4 },
+  chest:      { name: 'Chest',      idealFreqDays: 5, color: '#e88080', idealSetsPerWeek: 10, tier: 1 },
+  back:       { name: 'Back',       idealFreqDays: 5, color: C.blue, idealSetsPerWeek: 12, tier: 1 },
+  shoulders:  { name: 'Shoulders',  idealFreqDays: 5, color: C.purple, idealSetsPerWeek: 10, tier: 1 },
+  quads:      { name: 'Quads',      idealFreqDays: 5, color: C.cardio, idealSetsPerWeek: 10, tier: 1 },
+  hamstrings: { name: 'Hamstrings', idealFreqDays: 6, color: C.pink, idealSetsPerWeek: 8, tier: 2 },
+  glutes:     { name: 'Glutes',     idealFreqDays: 6, color: C.purpleLt, idealSetsPerWeek: 8, tier: 2 },
+  biceps:     { name: 'Biceps',     idealFreqDays: 6, color: C.teal, idealSetsPerWeek: 6, tier: 3 },
+  triceps:    { name: 'Triceps',    idealFreqDays: 6, color: '#e8c870', idealSetsPerWeek: 6, tier: 3 },
+  calves:     { name: 'Calves',     idealFreqDays: 6, color: '#50c8b8', idealSetsPerWeek: 6, tier: 3 },
+  core:       { name: 'Core',       idealFreqDays: 4, color: C.fuchsia, idealSetsPerWeek: 6, tier: 3 },
+  neck:       { name: 'Neck',       idealFreqDays: 5, color: '#d8b060', idealSetsPerWeek: 4, tier: 3 },
+  forearms:   { name: 'Forearms',   idealFreqDays: 5, color: C.cyan, idealSetsPerWeek: 4, tier: 3 },
 };
 
 // ============================================================
@@ -2885,6 +2885,29 @@ function generateRecommendations(muscleStats) {
   const volumeW    = hasProportions ? 0.25 : 0.30;
   const imbalanceW = hasProportions ? 0.25 : 0.30;
 
+  // Structural importance: bias toward foundation muscle groups when
+  // training frequency is low. At full frequency (5+/wk) the bonus is
+  // minimal so neglect signals dominate. At low frequency (1-2/wk) the
+  // bonus is strong so limited sessions hit big compounds first.
+  // Tier 1 = large compound groups (chest, back, shoulders, quads)
+  // Tier 2 = posterior chain (hamstrings, glutes)
+  // Tier 3 = accessories (biceps, triceps, calves, core, neck, forearms)
+  var liftDays14d = 0;
+  var freqNow = new Date();
+  for (var fi = 0; fi < 14; fi++) {
+    var fd = new Date(freqNow);
+    fd.setDate(fd.getDate() - fi);
+    var fk = localDateStr(fd);
+    if (heatmapDayWorkouts[fk] && heatmapDayWorkouts[fk].length > 0) liftDays14d++;
+  }
+  var weeklyFreq = liftDays14d / 2;
+  // Scale: 5+/wk -> 0.03, 3-4/wk -> 0.08, 1-2/wk -> 0.15, 0/wk -> 0.20
+  var structuralW = weeklyFreq >= 5 ? 0.03
+                  : weeklyFreq >= 3 ? 0.08
+                  : weeklyFreq >= 1 ? 0.15
+                  : 0.20;
+  var tierBonus = { 1: 1.0, 2: 0.5, 3: 0.0 };
+
   for (const [key, stat] of Object.entries(muscleStats)) {
     // Recency uses PRIMARY training date -- secondary stimulus (e.g. RDLs for back)
     // doesn't reset the clock. This prevents back from being deprioritized when
@@ -2895,10 +2918,15 @@ function generateRecommendations(muscleStats) {
     const imbalanceScore = maxRatio > 0 ? Math.max(0, 1 - (volumeRatios[key] / maxRatio)) : 0;
     const propDeficit = proportionDeficits[key] || 0;
 
+    // Structural importance bonus (tier from MUSCLE_GROUPS)
+    const muscleTier = (MUSCLE_GROUPS[key] && MUSCLE_GROUPS[key].tier) || 3;
+    const structBonus = (tierBonus[muscleTier] || 0) * structuralW;
+
     const score = (recencyScore * recencyW)
                + (volumeDeficit * volumeW)
                + (imbalanceScore * imbalanceW)
-               + (propDeficit * proportionWeight);
+               + (propDeficit * proportionWeight)
+               + structBonus;
 
     let urgency = 'low';
     if (stat.daysSincePrimary >= stat.idealFreqDays * 2.5 || (volumeDeficit > 0.7 && imbalanceScore > 0.5)) {
