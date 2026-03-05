@@ -1349,11 +1349,6 @@ function rankExercisesForMuscle(muscleKey) {
 
   if (pool.length === 0) return pool;
 
-  // Filter to only exercises that exist in Hevy (once templates are loaded)
-  if (_hevyTemplatesLoaded) {
-    pool = pool.filter(function(exName) { return !!_templateIdMap[exName]; });
-  }
-
   if (pool.length <= 1) return pool;
 
   const now = new Date();
@@ -6079,12 +6074,12 @@ function renderDashboard(workouts) {
 
   renderTimedSession(recs);
 
-  // Background: fetch all Hevy exercise templates so future sessions
-  // only propose exercises that exist in Hevy
+  // Background: fetch all Hevy exercise templates for ID resolution at send-time
+  // Note: we intentionally do NOT re-render the session when templates load.
+  // The session is built from the full exercise pool for best recommendations.
+  // Unresolvable exercises are filtered at send-time in sendSessionToHevy().
   if (!_hevyTemplatesLoaded) {
-    fetchAllHevyTemplateIds().then(function() {
-      if (_hevyTemplatesLoaded && LAST_RECS) renderTimedSession(LAST_RECS);
-    });
+    fetchAllHevyTemplateIds();
   }
 
   heatmapDayCardio = pp.heatmapDayCardio || {};
