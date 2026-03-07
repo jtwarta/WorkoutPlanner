@@ -2021,16 +2021,16 @@ function preprocessWorkouts(workouts, bodyweightLbs, weightData) {
   // Merge Apple Watch cardio into heatmap (dedup against Hevy within 30 min)
   const WATCH_NON_CARDIO_HM = /strength|weight\s*train|yoga|pilates|stretch|cool\s*down|flexibility|mind.*body|tai\s*chi/i;
   const WALK_PATTERN = /walk|hiking|hike/i;
-  // Compute Zone 2 floor for walk HR gating
-  var z2Floor = 0;
+  // Walk HR gate: use global walking HR average from Apple Health.
+  // If avg walking HR is below Zone 2 floor, walks aren't intense enough
+  // to count as moderate-intensity cardio for the 150 min/week target.
+  var walkHRPassesGate = false;
   if (healthData) {
     var _rhr = healthData.resting_heart_rate || 0;
     var _hrMax = 220 - PROFILE.age;
-    if (_rhr > 0) {
-      z2Floor = Math.round(_rhr + (_hrMax - _rhr) * 0.55); // slightly below Zone 2 low to be generous
-    } else {
-      z2Floor = Math.round(_hrMax * 0.55);
-    }
+    var z2Floor = _rhr > 0 ? Math.round(_rhr + (_hrMax - _rhr) * 0.55) : Math.round(_hrMax * 0.55);
+    var globalWalkHR = parseFloat(healthData.walking_heart_rate_avg) || 0;
+    walkHRPassesGate = globalWalkHR >= z2Floor;
   }
   if (healthData && Array.isArray(healthData.workouts)) {
     // Collect actual Hevy cardio timestamps for accurate dedup
@@ -2045,12 +2045,13 @@ function preprocessWorkouts(workouts, bodyweightLbs, weightData) {
     for (const aw of healthData.workouts) {
       if (WATCH_NON_CARDIO_HM.test(aw.type || '')) continue;
 
-      // HR gate for walks: only count if avg HR reaches Zone 2
-      // Walks without HR data are excluded (can't verify intensity;
-      // passive steps are already tracked via Apple Health vitals)
+      // Walk HR gate: indoor walks always count (intentional treadmill
+      // cardio, typically with incline). Outdoor walks only count if
+      // global walking HR avg reaches Zone 2 -- otherwise they're
+      // casual walks already captured by step tracking in vitals.
       if (WALK_PATTERN.test(aw.type || '')) {
-        var awHR = parseFloat(aw.avg_hr) || 0;
-        if (awHR <= 0 || awHR < z2Floor) continue;
+        var isIndoor = /indoor/i.test(aw.type || '');
+        if (!isIndoor && !walkHRPassesGate) continue;
       }
 
       const startStr = (aw.start || '').replace(/\s+at\s+/i, ' ');
