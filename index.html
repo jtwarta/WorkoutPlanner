@@ -3209,7 +3209,12 @@ async function fetchAllHevyTemplateIds() {
     var cacheAge = cachedTs ? (Date.now() - cachedTs) : Infinity;
     var CACHE_TTL = 7 * 24 * 60 * 60 * 1000; // 7 days
     if (cached && typeof cached === 'object' && Object.keys(cached).length > 20 && cacheAge < CACHE_TTL) {
+      // Preserve workout-derived IDs (custom exercises) over cached ones
+      var workoutDerived = {};
+      for (var wk in _templateIdMap) { workoutDerived[wk] = _templateIdMap[wk]; }
       Object.assign(_templateIdMap, cached);
+      // Overlay workout-derived IDs back on top (fresher, includes custom exercises)
+      Object.assign(_templateIdMap, workoutDerived);
       _hevyTemplatesLoaded = true;
       console.log('Hevy templates loaded from cache: ' + Object.keys(_templateIdMap).length + ' exercises (age: ' + Math.round(cacheAge / 3600000) + 'h)');
       addHevyTemplatesToPool();
@@ -6100,6 +6105,10 @@ function renderDashboard(workouts) {
   document.getElementById('last-updated').innerHTML =
     `v1.16 \u00b7${now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })} <span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${syncColor};margin-left:5px;vertical-align:middle;position:relative;top:-1px;"></span>`;
 
+  // Populate globals BEFORE renderTimedSession so lifted-today detection works
+  heatmapDayWorkouts = pp.heatmapDayWorkouts || {};
+  heatmapDayCardio = pp.heatmapDayCardio || {};
+
   renderTimedSession(recs);
 
   // Background: fetch all Hevy exercise templates for ID resolution at send-time
@@ -6110,7 +6119,6 @@ function renderDashboard(workouts) {
     fetchAllHevyTemplateIds();
   }
 
-  heatmapDayCardio = pp.heatmapDayCardio || {};
   renderCardioPlan(pp.heatmapDayCardio);
   renderMuscleGrid(pp.muscleStats, recs);
   renderWeeklySummary(pp.heatmapDayWorkouts, pp.heatmapDayMuscle, pp.heatmapDayCardio, workouts);
