@@ -1,5 +1,5 @@
 {"updated":"
-2026-03-07T07:49:08-08:00
+2026-03-07T11:35:32-08:00
 ","resting_heart_rate":
 59
 ,"cardio_fitness":
@@ -7,361 +7,461 @@
 ,"cardio_recovery":
 36.63855095766542
 ,"steps":
-12981.25
+13299.75
 ,"active_energy_kcal":
-582.980499999999
+524.205571428571
 ,"walking_heart_rate_avg":
 99
-,"workouts":[{"type":"Walking
+,"workouts":[{"type":"Traditional Strength Training
+
+","start":"Mar 7, 2026 at 10:21 AM
+
+","duration_min":39.4
+
+,"calories":171 kcal
+
+}
+{"type":"Walking
 
 ","start":"Mar 6, 2026 at 5:00 PM
 
 ","duration_min":43.4
 
-,"calories":158 kcal}
+,"calories":158 kcal
+
+}
 {"type":"Traditional Strength Training
 
 ","start":"Mar 4, 2026 at 8:25 PM
 
 ","duration_min":32.5
 
-,"calories":140 kcal}
+,"calories":140 kcal
+
+}
 {"type":"Stair Climbing
 
 ","start":"Mar 3, 2026 at 8:29 PM
 
 ","duration_min":22.9
 
-,"calories":91 kcal}
+,"calories":91 kcal
+
+}
 {"type":"Stair Climbing
 
 ","start":"Mar 3, 2026 at 8:21 PM
 
 ","duration_min":3.7
 
-,"calories":33 kcal}
+,"calories":33 kcal
+
+}
 {"type":"Stair Climbing
 
 ","start":"Mar 3, 2026 at 8:15 PM
 
 ","duration_min":4.4
 
-,"calories":39 kcal}
+,"calories":39 kcal
+
+}
 {"type":"Traditional Strength Training
 
 ","start":"Mar 3, 2026 at 7:46 PM
 
 ","duration_min":40.1
 
-,"calories":224 kcal}
+,"calories":224 kcal
+
+}
 {"type":"Elliptical
 
 ","start":"Mar 1, 2026 at 12:00 PM
 
 ","duration_min":17.6
 
-,"calories":141 kcal}
+,"calories":141 kcal
+
+}
 {"type":"Traditional Strength Training
 
 ","start":"Mar 1, 2026 at 11:22 AM
 
 ","duration_min":37.7
 
-,"calories":189 kcal}
+,"calories":189 kcal
+
+}
 {"type":"Walking
 
 ","start":"Feb 27, 2026 at 8:34 PM
 
 ","duration_min":28.1
 
-,"calories":111 kcal}
+,"calories":111 kcal
+
+}
 {"type":"Traditional Strength Training
 
 ","start":"Feb 27, 2026 at 7:21 PM
 
 ","duration_min":40.1
 
-,"calories":166 kcal}
+,"calories":166 kcal
+
+}
 {"type":"Cycling
 
 ","start":"Feb 26, 2026 at 8:14 PM
 
 ","duration_min":15.3
 
-,"calories":133 kcal}
+,"calories":133 kcal
+
+}
 {"type":"Traditional Strength Training
 
 ","start":"Feb 26, 2026 at 7:31 PM
 
 ","duration_min":42
 
-,"calories":204 kcal}
+,"calories":204 kcal
+
+}
 {"type":"Walking
 
 ","start":"Feb 24, 2026 at 9:33 PM
 
 ","duration_min":35.9
 
-,"calories":139 kcal}
+,"calories":139 kcal
+
+}
 {"type":"Elliptical
 
 ","start":"Feb 22, 2026 at 5:10 PM
 
 ","duration_min":15.3
 
-,"calories":148 kcal}
+,"calories":148 kcal
+
+}
 {"type":"Traditional Strength Training
 
 ","start":"Feb 22, 2026 at 4:20 PM
 
 ","duration_min":48.8
 
-,"calories":328 kcal}
+,"calories":328 kcal
+
+}
 {"type":"Walking
 
 ","start":"Feb 22, 2026 at 11:44 AM
 
 ","duration_min":13.5
 
-,"calories":49 kcal}
+,"calories":49 kcal
+
+}
 {"type":"Traditional Strength Training
 
 ","start":"Feb 21, 2026 at 1:06 PM
 
 ","duration_min":44.6
 
-,"calories":205 kcal}
+,"calories":205 kcal
+
+}
 {"type":"Walking
 
 ","start":"Feb 21, 2026 at 11:35 AM
 
 ","duration_min":30.3
 
-,"calories":82 kcal}
+,"calories":82 kcal
+
+}
 {"type":"Stair Climbing
 
 ","start":"Feb 19, 2026 at 8:31 PM
 
 ","duration_min":12.1
 
-,"calories":102 kcal}
+,"calories":102 kcal
+
+}
 {"type":"Traditional Strength Training
 
 ","start":"Feb 19, 2026 at 7:47 PM
 
 ","duration_min":42.9
 
-,"calories":214 kcal}
+,"calories":214 kcal
+
+}
 {"type":"Traditional Strength Training
 
 ","start":"Feb 18, 2026 at 9:00 PM
 
 ","duration_min":24.7
 
-,"calories":193 kcal}
+,"calories":193 kcal
+
+}
 {"type":"Elliptical
 
 ","start":"Feb 18, 2026 at 9:00 PM
 
 ","duration_min":21.2
 
-,"calories":186 kcal}
+,"calories":186 kcal
+
+}
 {"type":"Traditional Strength Training
 
 ","start":"Feb 18, 2026 at 8:10 PM
 
 ","duration_min":50.4
 
-,"calories":282 kcal}
+,"calories":282 kcal
+
+}
 {"type":"Traditional Strength Training
 
 ","start":"Feb 17, 2026 at 7:32 PM
 
 ","duration_min":79.8
 
-,"calories":307 kcal}
+,"calories":307 kcal
+
+}
 {"type":"Traditional Strength Training
 
 ","start":"Feb 16, 2026 at 9:44 AM
 
 ","duration_min":56.4
 
-,"calories":246 kcal}
+,"calories":246 kcal
+
+}
 {"type":"Walking
 
 ","start":"Feb 14, 2026 at 5:10 PM
 
 ","duration_min":5.7
 
-,"calories":32 kcal}
+,"calories":32 kcal
+
+}
 {"type":"Traditional Strength Training
 
 ","start":"Feb 14, 2026 at 4:55 PM
 
 ","duration_min":33.5
 
-,"calories":147 kcal}
+,"calories":147 kcal
+
+}
 {"type":"Traditional Strength Training
 
 ","start":"Feb 14, 2026 at 10:23 AM
 
 ","duration_min":19.3
 
-,"calories":85 kcal}
+,"calories":85 kcal
+
+}
 {"type":"Traditional Strength Training
 
 ","start":"Feb 13, 2026 at 10:01 AM
 
 ","duration_min":35.7
 
-,"calories":156 kcal}
+,"calories":156 kcal
+
+}
 {"type":"Hiking
 
 ","start":"Feb 12, 2026 at 10:55 AM
 
 ","duration_min":84.8
 
-,"calories":440 kcal}
+,"calories":440 kcal
+
+}
 {"type":"Traditional Strength Training
 
 ","start":"Feb 10, 2026 at 7:07 PM
 
 ","duration_min":61.3
 
-,"calories":232 kcal}
+,"calories":232 kcal
+
+}
 {"type":"Traditional Strength Training
 
 ","start":"Feb 4, 2026 at 7:51 PM
 
 ","duration_min":68.5
 
-,"calories":227 kcal}
+,"calories":227 kcal
+
+}
 {"type":"Walking
 
 ","start":"Feb 2, 2026 at 1:56 PM
 
 ","duration_min":25.6
 
-,"calories":68 kcal}
+,"calories":68 kcal
+
+}
 {"type":"Traditional Strength Training
 
 ","start":"Feb 1, 2026 at 10:16 AM
 
 ","duration_min":54
 
-,"calories":177 kcal}
+,"calories":177 kcal
+
+}
 {"type":"Traditional Strength Training
 
 ","start":"Jan 29, 2026 at 7:37 PM
 
 ","duration_min":49.1
 
-,"calories":163 kcal}
+,"calories":163 kcal
+
+}
 {"type":"Traditional Strength Training
 
 ","start":"Jan 28, 2026 at 7:31 PM
 
 ","duration_min":41
 
-,"calories":137 kcal}
+,"calories":137 kcal
+
+}
 {"type":"Traditional Strength Training
 
 ","start":"Jan 26, 2026 at 4:24 PM
 
 ","duration_min":260.3
 
-,"calories":867 kcal}
+,"calories":867 kcal
+
+}
 {"type":"Traditional Strength Training
 
 ","start":"Jan 25, 2026 at 2:05 PM
 
 ","duration_min":25.4
 
-,"calories":83 kcal}
+,"calories":83 kcal
+
+}
 {"type":"Traditional Strength Training
 
 ","start":"Jan 23, 2026 at 2:51 PM
 
 ","duration_min":56.9
 
-,"calories":187 kcal}
+,"calories":187 kcal
+
+}
 {"type":"Traditional Strength Training
 
 ","start":"Jan 22, 2026 at 6:36 PM
 
 ","duration_min":69.2
 
-,"calories":230 kcal}
+,"calories":230 kcal
+
+}
 {"type":"Walking
 
 ","start":"Jan 22, 2026 at 1:18 PM
 
 ","duration_min":4.7
 
-,"calories":12 kcal}
+,"calories":12 kcal
+
+}
 {"type":"Walking
 
 ","start":"Jan 22, 2026 at 12:55 PM
 
 ","duration_min":12.2
 
-,"calories":40 kcal}
+,"calories":40 kcal
+
+}
 {"type":"Walking
 
 ","start":"Jan 21, 2026 at 7:46 PM
 
 ","duration_min":11.2
 
-,"calories":45 kcal}
+,"calories":45 kcal
+
+}
 {"type":"Walking
 
 ","start":"Jan 20, 2026 at 3:25 PM
 
 ","duration_min":50.6
 
-,"calories":167 kcal}
+,"calories":167 kcal
+
+}
 {"type":"Traditional Strength Training
 
 ","start":"Jan 18, 2026 at 12:38 PM
 
 ","duration_min":366.7
 
-,"calories":1,220 kcal}
+,"calories":1,220 kcal
+
+}
 {"type":"Traditional Strength Training
 
 ","start":"Jan 17, 2026 at 11:31 AM
 
 ","duration_min":376.6
 
-,"calories":1,253 kcal}
+,"calories":1,253 kcal
+
+}
 {"type":"Traditional Strength Training
 
 ","start":"Jan 14, 2026 at 6:52 PM
 
 ","duration_min":1278.9
 
-,"calories":4,260 kcal}
+,"calories":4,260 kcal
+
+}
 {"type":"Traditional Strength Training
 
 ","start":"Jan 13, 2026 at 4:25 PM
 
 ","duration_min":1579.3
 
-,"calories":5,263 kcal}
+,"calories":5,263 kcal
+
+}
 {"type":"Walking
 
 ","start":"Jan 12, 2026 at 5:16 PM
 
 ","duration_min":30.1
 
-,"calories":92 kcal}
-{"type":"Hiking
+,"calories":92 kcal
 
-","start":"Jan 9, 2026 at 4:03 PM
-
-","duration_min":61.5
-
-,"calories":481 kcal}]
+}]
 ,"weight_entries": [{"date":"2026-02-16","lbs":166.0001974158344}
 
 {"date":"2026-02-12","lbs":167.0001986050864}
