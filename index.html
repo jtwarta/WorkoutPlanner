@@ -2020,6 +2020,18 @@ function preprocessWorkouts(workouts, bodyweightLbs, weightData) {
 
   // Merge Apple Watch cardio into heatmap (dedup against Hevy within 30 min)
   const WATCH_NON_CARDIO_HM = /strength|weight\s*train|yoga|pilates|stretch|cool\s*down|flexibility|mind.*body|tai\s*chi/i;
+  const WALK_PATTERN = /walk|hiking|hike/i;
+  // Compute Zone 2 floor for walk HR gating
+  var z2Floor = 0;
+  if (healthData) {
+    var _rhr = healthData.resting_heart_rate || 0;
+    var _hrMax = 220 - PROFILE.age;
+    if (_rhr > 0) {
+      z2Floor = Math.round(_rhr + (_hrMax - _rhr) * 0.55); // slightly below Zone 2 low to be generous
+    } else {
+      z2Floor = Math.round(_hrMax * 0.55);
+    }
+  }
   if (healthData && Array.isArray(healthData.workouts)) {
     // Collect actual Hevy cardio timestamps for accurate dedup
     const hevyCardioTs = [];
@@ -2032,6 +2044,15 @@ function preprocessWorkouts(workouts, bodyweightLbs, weightData) {
     }
     for (const aw of healthData.workouts) {
       if (WATCH_NON_CARDIO_HM.test(aw.type || '')) continue;
+
+      // HR gate for walks: only count if avg HR reaches Zone 2
+      // Walks without HR data are excluded (can't verify intensity;
+      // passive steps are already tracked via Apple Health vitals)
+      if (WALK_PATTERN.test(aw.type || '')) {
+        var awHR = parseFloat(aw.avg_hr) || 0;
+        if (awHR <= 0 || awHR < z2Floor) continue;
+      }
+
       const startStr = (aw.start || '').replace(/\s+at\s+/i, ' ');
       const awDate = new Date(startStr);
       if (isNaN(awDate.getTime())) continue;
