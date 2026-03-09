@@ -1,5 +1,5 @@
 {"updated":"
-2026-03-08T08:48:11-07:00
+2026-03-09T08:27:51-07:00
 ","resting_heart_rate":
 59
 ,"cardio_fitness":
@@ -7,9 +7,9 @@
 ,"cardio_recovery":
 36.63855095766542
 ,"steps":
-13343.375
+13128.75
 ,"active_energy_kcal":
-524.205571428571
+527.4375
 ,"walking_heart_rate_avg":
 99
 ,"workouts":[{"type":"Traditional Strength Training
@@ -474,7 +474,7 @@
 ,"lean_body_mass_lbs": 
 ,"waist_circumference_in": 34.90000000000001
 
-,"rhr_12m":63,"rhr_6m":51,"rhr_3m":58
+,"rhr_12m":63,"rhr_6m":51,"rhr_3m":52
 ,"vo2_12m":38.25,"vo2_6m":40.62,"vo2_3m":38.06
 ,"rec_12m":30.09545454545454,"rec_6m":34.1305518408384,"rec_3m":29.84074918545938
 
