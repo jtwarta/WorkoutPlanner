@@ -3403,13 +3403,13 @@ async function sendSessionToHevy() {
       var repLow = parseInt(repParts[0], 10) || 8;
       var repHigh = repParts.length > 1 ? (parseInt(repParts[1], 10) || repLow) : repLow;
 
-      // Convert lbs to kg
-      var weightKg = p.weightLbs > 0 ? p.weightLbs * 0.453592 : null;
+      // Convert lbs to kg (round to nearest 0.5 per Hevy API)
+      var weightKg = p.weightLbs > 0 ? Math.round(p.weightLbs * 0.453592 * 2) / 2 : null;
 
       // Build sets array
       var sets = [];
       for (var s = 0; s < (p.sets || 3); s++) {
-        var setObj = { type: 'normal' };
+        var setObj = { set_type: 'normal' };
         if (weightKg !== null) setObj.weight_kg = weightKg;
         if (repLow === repHigh) {
           setObj.reps = repLow;
@@ -3421,7 +3421,6 @@ async function sendSessionToHevy() {
 
       var exObj = {
         exercise_template_id: templateId,
-        superset_id: null,
         rest_seconds: getRestSeconds(ex.name),
         notes: '',
         sets: sets
@@ -3436,7 +3435,6 @@ async function sendSessionToHevy() {
 
     var routinePayload = {
       title: routineTitle,
-      folder_id: null,
       exercises: exercises
     };
 
@@ -3493,7 +3491,7 @@ async function sendSessionToHevy() {
         var putErr = '';
         try { putErr = await resp.text(); } catch(_) {}
         console.error('Hevy routine update failed:', resp.status, putErr);
-        showToast('Hevy update error ' + resp.status, true);
+        showToast('Hevy update error ' + resp.status + ': ' + (putErr || '').slice(0, 100), true);
         btn.innerHTML = origHTML;
         btn.style.opacity = '1';
         btn.disabled = false;
