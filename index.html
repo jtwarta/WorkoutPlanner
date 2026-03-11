@@ -3442,6 +3442,32 @@ async function sendSessionToHevy() {
 
     // Check for existing routine ID in localStorage
     var existingId = Storage.get('hevy_routine_id');
+
+    // Fallback: search Hevy for existing "LiftScript Daily" routine by name
+    // This prevents duplicates when localStorage is cleared or PWA storage differs
+    if (!existingId) {
+      try {
+        var searchResp = await fetchWithTimeout(API_BASE + '/routines?page=1&pageSize=10', {
+          headers: { 'api-key': apiKey },
+          mode: 'cors'
+        });
+        if (searchResp.ok) {
+          var searchData = await searchResp.json();
+          var routines = searchData.routines || [];
+          for (var ri = 0; ri < routines.length; ri++) {
+            if (routines[ri].title === routineTitle) {
+              existingId = routines[ri].id;
+              Storage.set('hevy_routine_id', existingId);
+              console.log('Found existing LiftScript routine: ' + existingId);
+              break;
+            }
+          }
+        }
+      } catch (e) {
+        console.warn('Routine search failed:', e.message);
+      }
+    }
+
     var resp;
     var isUpdate = false;
 
@@ -3460,8 +3486,18 @@ async function sendSessionToHevy() {
       if (resp.status === 404) {
         Storage.remove('hevy_routine_id');
         existingId = null;
-      } else {
+      } else if (resp.ok) {
         isUpdate = true;
+      } else {
+        // PUT failed with non-404 error -- don't create a duplicate
+        var putErr = '';
+        try { putErr = await resp.text(); } catch(_) {}
+        console.error('Hevy routine update failed:', resp.status, putErr);
+        showToast('Hevy update error ' + resp.status, true);
+        btn.innerHTML = origHTML;
+        btn.style.opacity = '1';
+        btn.disabled = false;
+        return;
       }
     }
 
