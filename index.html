@@ -3486,12 +3486,24 @@ async function sendSessionToHevy() {
         existingId = null;
       } else if (resp.ok) {
         isUpdate = true;
+      } else if (resp.status === 400) {
+        // 400 on PUT means routine schema mismatch -- delete and recreate
+        console.warn('PUT 400 on routine ' + existingId + ', deleting and recreating');
+        try {
+          await fetchWithTimeout(API_BASE + '/routines/' + existingId, {
+            method: 'DELETE',
+            headers: { 'api-key': apiKey },
+            mode: 'cors'
+          });
+        } catch(_) {}
+        Storage.remove('hevy_routine_id');
+        existingId = null;
       } else {
-        // PUT failed with non-404 error -- don't create a duplicate
+        // Other error -- abort
         var putErr = '';
         try { putErr = await resp.text(); } catch(_) {}
         console.error('Hevy routine update failed:', resp.status, putErr);
-        showToast('Hevy update error ' + resp.status + ': ' + (putErr || '').slice(0, 100), true);
+        showToast('Hevy error ' + resp.status + ': ' + (putErr || '').slice(0, 100), true);
         btn.innerHTML = origHTML;
         btn.style.opacity = '1';
         btn.disabled = false;
@@ -3501,6 +3513,8 @@ async function sendSessionToHevy() {
 
     if (!existingId) {
       // Create new routine via POST
+      var postBody = JSON.stringify({ routine: routinePayload });
+      console.log('Hevy POST payload:', postBody);
       resp = await fetchWithTimeout(API_BASE + '/routines', {
         method: 'POST',
         headers: {
@@ -3508,7 +3522,7 @@ async function sendSessionToHevy() {
           'Content-Type': 'application/json'
         },
         mode: 'cors',
-        body: JSON.stringify({ routine: routinePayload })
+        body: postBody
       });
       isUpdate = false;
     }
