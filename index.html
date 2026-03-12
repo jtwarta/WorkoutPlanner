@@ -3421,6 +3421,7 @@ async function sendSessionToHevy() {
 
       var exObj = {
         exercise_template_id: templateId,
+        superset_id: null,
         rest_seconds: getRestSeconds(ex.name),
         notes: '',
         sets: sets
@@ -3435,7 +3436,7 @@ async function sendSessionToHevy() {
 
     var routinePayload = {
       title: routineTitle,
-      folder_id: 0,
+      folder_id: null,
       exercises: exercises
     };
 
