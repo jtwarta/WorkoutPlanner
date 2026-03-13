@@ -3223,6 +3223,41 @@ function showToast(msg, isError) {
 }
 
 // Fetch exercise templates from Hevy to resolve missing template IDs
+// Fuzzy-match EXERCISE_DB and pool names to Hevy template names
+// Handles cases like "Standing Calf Raise" -> "Standing Calf Raise (Barbell)"
+function fuzzyMatchTemplateIds() {
+  var allTemplateNames = Object.keys(_templateIdMap);
+  var fuzzyMatched = 0;
+  // Check all EXERCISE_DB names
+  for (var exName in EXERCISE_DB) {
+    if (_templateIdMap[exName]) continue;
+    var needle = exName.toLowerCase().trim();
+    for (var fi = 0; fi < allTemplateNames.length; fi++) {
+      var tn = allTemplateNames[fi].toLowerCase().trim();
+      if (tn.indexOf(needle) === 0 || needle.indexOf(tn) === 0) {
+        _templateIdMap[exName] = _templateIdMap[allTemplateNames[fi]];
+        fuzzyMatched++;
+        break;
+      }
+    }
+  }
+  // Check all dynamic pool names
+  for (var key in _dynamicExercisePool) {
+    _dynamicExercisePool[key].forEach(function(exName) {
+      if (_templateIdMap[exName]) return;
+      var needle = exName.toLowerCase().trim();
+      for (var fi = 0; fi < allTemplateNames.length; fi++) {
+        var tn = allTemplateNames[fi].toLowerCase().trim();
+        if (tn.indexOf(needle) === 0 || needle.indexOf(tn) === 0) {
+          _templateIdMap[exName] = _templateIdMap[allTemplateNames[fi]];
+          fuzzyMatched++;
+        }
+      }
+    });
+  }
+  if (fuzzyMatched > 0) console.log('Fuzzy-matched ' + fuzzyMatched + ' exercises to Hevy templates');
+}
+
 async function fetchAllHevyTemplateIds() {
   // Try localStorage cache first (7-day TTL)
   try {
@@ -3240,6 +3275,7 @@ async function fetchAllHevyTemplateIds() {
       _hevyTemplatesLoaded = true;
       console.log('Hevy templates loaded from cache: ' + Object.keys(_templateIdMap).length + ' exercises (age: ' + Math.round(cacheAge / 3600000) + 'h)');
       addHevyTemplatesToPool();
+      fuzzyMatchTemplateIds();
       warnUnmatchedExercises();
       return;
     }
@@ -3293,12 +3329,13 @@ async function fetchAllHevyTemplateIds() {
     _hevyTemplatesLoaded = true;
     console.log('Hevy templates loaded: ' + Object.keys(_templateIdMap).length + ' total, ' + matched + '/' + needed.size + ' needed');
 
-    // Cache to localStorage for fast future loads
-    Storage.set('hevy_template_map', _templateIdMap);
-    Storage.set('hevy_template_map_ts', Date.now());
-
     // Expand dynamic pool with newly discovered Hevy exercises
     addHevyTemplatesToPool();
+    fuzzyMatchTemplateIds();
+
+    // Cache to localStorage for fast future loads (includes fuzzy matches)
+    Storage.set('hevy_template_map', _templateIdMap);
+    Storage.set('hevy_template_map_ts', Date.now());
 
     warnUnmatchedExercises();
   } catch (e) {
@@ -3327,9 +3364,36 @@ async function resolveTemplateIds(names) {
   var missing = names.filter(function(n) { return !_templateIdMap[n]; });
   if (missing.length === 0) return true;
 
+  // First: try fuzzy match against already-loaded templates
+  // If LiftScript says "Standing Calf Raise" and Hevy has "Standing Calf Raise (Barbell)",
+  // match on the base name
+  if (missing.length > 0) {
+    var allLoaded = Object.keys(_templateIdMap);
+    for (var mi = 0; mi < missing.length; mi++) {
+      var needle = missing[mi].toLowerCase().trim();
+      // Strategy 1: LiftScript name is a prefix of a Hevy template name
+      // e.g. "Standing Calf Raise" matches "Standing Calf Raise (Barbell)"
+      var bestMatch = null;
+      for (var ti = 0; ti < allLoaded.length; ti++) {
+        var tl = allLoaded[ti].toLowerCase().trim();
+        if (tl === needle) { bestMatch = allLoaded[ti]; break; }
+        if (tl.indexOf(needle) === 0 || needle.indexOf(tl) === 0) {
+          bestMatch = allLoaded[ti];
+        }
+      }
+      if (bestMatch && !_templateIdMap[missing[mi]]) {
+        _templateIdMap[missing[mi]] = _templateIdMap[bestMatch];
+      }
+    }
+    missing = names.filter(function(n) { return !_templateIdMap[n]; });
+  }
+
+  if (missing.length === 0) return true;
+
+  // Second: fetch from API for any still missing
   try {
     var page = 1;
-    var maxPages = 30; // up to ~300 templates
+    var maxPages = 30;
     while (missing.length > 0 && page <= maxPages) {
       var resp = await fetchWithTimeout(API_BASE + '/exercise_templates?page=' + page + '&pageSize=10', {
         headers: { 'api-key': apiKey },
@@ -3346,6 +3410,14 @@ async function resolveTemplateIds(names) {
         if (tName && !_templateIdMap[tName]) {
           _templateIdMap[tName] = t.id;
         }
+        // Fuzzy match: check if any missing name is a prefix of this template
+        for (var mi2 = 0; mi2 < missing.length; mi2++) {
+          var mn = missing[mi2].toLowerCase().trim();
+          var tn = tName.toLowerCase().trim();
+          if (!_templateIdMap[missing[mi2]] && (tn.indexOf(mn) === 0 || mn.indexOf(tn) === 0)) {
+            _templateIdMap[missing[mi2]] = t.id;
+          }
+        }
       }
 
       missing = names.filter(function(n) { return !_templateIdMap[n]; });
@@ -3356,7 +3428,14 @@ async function resolveTemplateIds(names) {
   } catch (e) {
     console.error('resolveTemplateIds error:', e);
   }
-  return names.filter(function(n) { return !_templateIdMap[n]; }).length === 0;
+
+  // Log any still unresolved for debugging
+  var stillMissing = names.filter(function(n) { return !_templateIdMap[n]; });
+  if (stillMissing.length > 0) {
+    console.warn('Unresolved exercises after fuzzy match:', stillMissing.join(', '));
+  }
+
+  return stillMissing.length === 0;
 }
 
 async function sendSessionToHevy() {
