@@ -3440,106 +3440,67 @@ async function sendSessionToHevy() {
       exercises: exercises
     };
 
-    // Check for existing routine ID in localStorage
-    var existingId = Storage.get('hevy_routine_id');
-
-    // Fallback: search Hevy for existing "LiftScript Daily" routine by name
-    // This prevents duplicates when localStorage is cleared or PWA storage differs
-    if (!existingId) {
-      try {
-        var searchResp = await fetchWithTimeout(API_BASE + '/routines?page=1&pageSize=10', {
+    // Clean slate: delete ALL existing "LiftScript Daily" routines to prevent duplicates
+    // Then create fresh. Simpler than PUT/update which breaks on schema changes.
+    try {
+      var searchPage = 1;
+      var maxSearchPages = 5;
+      var deletedCount = 0;
+      while (searchPage <= maxSearchPages) {
+        var searchResp = await fetchWithTimeout(API_BASE + '/routines?page=' + searchPage + '&pageSize=10', {
           headers: { 'api-key': apiKey },
           mode: 'cors'
         });
-        if (searchResp.ok) {
-          var searchData = await searchResp.json();
-          var routines = searchData.routines || [];
-          for (var ri = 0; ri < routines.length; ri++) {
-            if (routines[ri].title === routineTitle) {
-              existingId = routines[ri].id;
-              Storage.set('hevy_routine_id', existingId);
-              console.log('Found existing LiftScript routine: ' + existingId);
-              break;
-            }
+        if (!searchResp.ok) break;
+        var searchData = await searchResp.json();
+        var routines = searchData.routines || [];
+        if (routines.length === 0) break;
+        for (var ri = 0; ri < routines.length; ri++) {
+          if (routines[ri].title === routineTitle) {
+            try {
+              await fetchWithTimeout(API_BASE + '/routines/' + routines[ri].id, {
+                method: 'DELETE',
+                headers: { 'api-key': apiKey },
+                mode: 'cors'
+              });
+              deletedCount++;
+            } catch(_) {}
           }
         }
-      } catch (e) {
-        console.warn('Routine search failed:', e.message);
+        var totalPages = searchData.page_count || 1;
+        if (searchPage >= totalPages) break;
+        searchPage++;
       }
+      if (deletedCount > 0) console.log('Deleted ' + deletedCount + ' old LiftScript Daily routine(s)');
+    } catch (e) {
+      console.warn('Routine cleanup failed:', e.message);
     }
 
-    var resp;
-    var isUpdate = false;
+    Storage.remove('hevy_routine_id');
 
-    if (existingId) {
-      // Try to update existing routine via PUT
-      resp = await fetchWithTimeout(API_BASE + '/routines/' + existingId, {
-        method: 'PUT',
-        headers: {
-          'api-key': apiKey,
-          'Content-Type': 'application/json'
-        },
-        mode: 'cors',
-        body: JSON.stringify({ routine: routinePayload })
-      });
-      // If 404 (routine was manually deleted), fall through to create
-      if (resp.status === 404) {
-        Storage.remove('hevy_routine_id');
-        existingId = null;
-      } else if (resp.ok) {
-        isUpdate = true;
-      } else if (resp.status === 400) {
-        // 400 on PUT means routine schema mismatch -- delete and recreate
-        console.warn('PUT 400 on routine ' + existingId + ', deleting and recreating');
-        try {
-          await fetchWithTimeout(API_BASE + '/routines/' + existingId, {
-            method: 'DELETE',
-            headers: { 'api-key': apiKey },
-            mode: 'cors'
-          });
-        } catch(_) {}
-        Storage.remove('hevy_routine_id');
-        existingId = null;
-      } else {
-        // Other error -- abort
-        var putErr = '';
-        try { putErr = await resp.text(); } catch(_) {}
-        console.error('Hevy routine update failed:', resp.status, putErr);
-        showToast('Hevy error ' + resp.status + ': ' + (putErr || '').slice(0, 100), true);
-        btn.innerHTML = origHTML;
-        btn.style.opacity = '1';
-        btn.disabled = false;
-        return;
-      }
-    }
-
-    if (!existingId) {
-      // Create new routine via POST
-      var postBody = JSON.stringify({ routine: routinePayload });
-      console.log('Hevy POST payload:', postBody);
-      resp = await fetchWithTimeout(API_BASE + '/routines', {
-        method: 'POST',
-        headers: {
-          'api-key': apiKey,
-          'Content-Type': 'application/json'
-        },
-        mode: 'cors',
-        body: postBody
-      });
-      isUpdate = false;
-    }
+    // Create new routine via POST
+    var postBody = JSON.stringify({ routine: routinePayload });
+    console.log('Hevy POST payload:', postBody);
+    var resp = await fetchWithTimeout(API_BASE + '/routines', {
+      method: 'POST',
+      headers: {
+        'api-key': apiKey,
+        'Content-Type': 'application/json'
+      },
+      mode: 'cors',
+      body: postBody
+    });
 
     if (resp.ok) {
       var result = await resp.json();
-      // Save routine ID for future updates
-      if (!isUpdate && result && result.routine && result.routine.id) {
+      // Save routine ID for reference
+      if (result && result.routine && result.routine.id) {
         Storage.set('hevy_routine_id', result.routine.id);
       }
       var skipMsg = unresolvedNames.length > 0
         ? ' (skipped ' + unresolvedNames.length + ': ' + unresolvedNames.join(', ') + ')'
         : '';
-      var verb = isUpdate ? 'updated' : 'created';
-      showToast('\u2714 \"' + routineTitle + '\" ' + verb + ' in Hevy!' + skipMsg, false);
+      showToast('\u2714 \"' + routineTitle + '\" sent to Hevy!' + skipMsg, false);
       btn.innerHTML = '<span style="display:inline-flex;align-items:center;gap:5px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="' + C.accent + '" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> <span style="color:' + C.accent + ';">Sent!</span></span>';
       btn.style.opacity = '1';
       btn.disabled = true;
