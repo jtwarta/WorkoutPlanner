@@ -1683,19 +1683,6 @@ const CHIP_DEFS = [
   { key: 'strictness', label: v => v.charAt(0).toUpperCase() + v.slice(1), values: ['loose', 'balanced', 'strict'] },
 ];
 
-function renderConstraintChips() {
-  const row = document.getElementById('constraints-row');
-  if (!row) return;
-  row.innerHTML = CHIP_DEFS.map(def => {
-    const current = sessionPrefs[def.key];
-    const isNonDefault = current !== PREFS_DEFAULTS[def.key];
-    const chipStyle = isNonDefault
-      ? `background:${C.accentDim};color:${C.accent};border:1px solid ${C.accentBorder};padding:5px 10px;font-size:12px;font-weight:500;font-family:Space Grotesk,sans-serif;border-radius:6px;cursor:pointer;user-select:none;`
-      : `background:${C.surface2};color:${C.textDim};border:1px solid ${C.border};padding:5px 10px;font-size:12px;font-weight:500;font-family:Space Grotesk,sans-serif;border-radius:6px;cursor:pointer;user-select:none;`;
-    return `<div class="constraint-chip${isNonDefault ? ' active' : ''}" style="${chipStyle}" data-key="${def.key}" onclick="cycleChip('${def.key}')">${def.label(current)} <span style="opacity:0.35;font-size:9px;margin-left:1px;">\u21BB</span></div>`;
-  }).join('');
-}
-
 function cycleChip(key) {
   const def = CHIP_DEFS.find(d => d.key === key);
   if (!def) return;
@@ -2438,15 +2425,6 @@ const APPLE_CARDIO_FUZZY = [
   { pattern: /swim/i,      modality: 'swimming' },
   { pattern: /cross.?train/i, modality: 'cross-training' },
 ];
-
-function resolveAppleCardioModality(type) {
-  const lower = (type || '').toLowerCase().trim();
-  if (APPLE_CARDIO_TYPES[lower]) return APPLE_CARDIO_TYPES[lower];
-  for (const f of APPLE_CARDIO_FUZZY) {
-    if (f.pattern.test(lower)) return f.modality;
-  }
-  return null; // not a recognized cardio type
-}
 
 function analyzeCardioHistory(dayCardioMap) {
   // Single source of truth: dayCardioMap (already deduped in preprocessWorkouts)
