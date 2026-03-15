@@ -2021,7 +2021,6 @@ function preprocessWorkouts(workouts, bodyweightLbs, weightData) {
 
   // Merge Apple Watch cardio into heatmap (dedup against Hevy within 30 min)
   const WATCH_NON_CARDIO_HM = /strength|weight\s*train|yoga|pilates|stretch|cool\s*down|flexibility|mind.*body|tai\s*chi/i;
-  const WALK_PATTERN = /walk|hiking|hike/i;
   // Walk HR gate: use global walking HR average from Apple Health.
   // If avg walking HR is below Zone 2 floor, walks aren't intense enough
   // to count as moderate-intensity cardio for the 150 min/week target.
@@ -2046,11 +2045,11 @@ function preprocessWorkouts(workouts, bodyweightLbs, weightData) {
     for (const aw of healthData.workouts) {
       if (WATCH_NON_CARDIO_HM.test(aw.type || '')) continue;
 
-      // Walk HR gate: indoor walks always count (intentional treadmill
-      // cardio, typically with incline). Outdoor walks only count if
-      // global walking HR avg reaches Zone 2 -- otherwise they're
-      // casual walks already captured by step tracking in vitals.
-      if (WALK_PATTERN.test(aw.type || '')) {
+      // Walk HR gate: only applies to WALKS, not hikes.
+      // Indoor walks always count (intentional treadmill cardio).
+      // Outdoor walks only count if global walking HR avg reaches Zone 2.
+      // Hikes always count -- starting a hike workout is an intentional decision.
+      if (/walk/i.test(aw.type || '') && !/hik/i.test(aw.type || '')) {
         var isIndoor = /indoor/i.test(aw.type || '');
         if (!isIndoor && !walkHRPassesGate) continue;
       }
