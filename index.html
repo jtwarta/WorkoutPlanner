@@ -3509,8 +3509,9 @@ async function sendSessionToHevy() {
       var repLow = parseInt(repParts[0], 10) || 8;
       var repHigh = repParts.length > 1 ? (parseInt(repParts[1], 10) || repLow) : repLow;
 
-      // Convert lbs to kg (round to nearest 0.5 per Hevy API)
-      var weightKg = p.weightLbs > 0 ? Math.round(p.weightLbs * 0.453592 * 2) / 2 : null;
+      // Round weight up to nearest 5 lbs, then convert to kg (round to nearest 0.5 per Hevy API)
+      var weightLbsRounded = p.weightLbs > 0 ? Math.ceil(p.weightLbs / 5) * 5 : 0;
+      var weightKg = weightLbsRounded > 0 ? Math.round(weightLbsRounded * 0.453592 * 2) / 2 : null;
 
       // Build sets array
       var sets = [];
