@@ -2855,27 +2855,30 @@ function prescribeExercise(name) {
   let weightLbs = db ? db.benchmarkLbs : 0;
   let note = db ? (db.note || '') : '';
 
+  // Parse the target rep range from EXERCISE_DB (e.g. "8-10" -> low=8, high=10)
+  const repStr = String(db ? (db.reps || '8-10') : '8-10');
+  const repParts = repStr.split('-');
+  const repRangeLow = parseInt(repParts[0], 10) || 8;
+  const repRangeHigh = repParts.length > 1 ? (parseInt(repParts[1], 10) || repRangeLow) : repRangeLow;
+
   if (hist && hist.lastWeightLbs > 0) {
     const lastW = hist.lastWeightLbs;
-    const trend = hist.weights.length >= 3
-      ? hist.weights.slice(-3).reduce((a, b) => a + b, 0) / 3
-      : lastW;
-
-    if (db && lastW < db.benchmarkLbs * 0.85) {
-      weightLbs = Math.min(Math.round(trend * 1.05 / 5) * 5, db.benchmarkLbs);
-    } else {
-      weightLbs = Math.round(trend * 1.025 / 5) * 5;
-    }
-    // Enforce 5lb minimum increment: if target is above last weight
-    // but less than a full 5lb jump, snap up to lastW + 5
-    if (weightLbs > lastW && weightLbs < lastW + 5) {
-      weightLbs = lastW + 5;
-    }
-    // Never prescribe less than last weight (rep progression instead)
-    if (weightLbs < lastW) {
-      weightLbs = lastW;
-    }
+    const lastR = hist.lastReps || repRangeLow;
     if (hist.lastSets >= 2 && hist.lastSets <= 6) sets = hist.lastSets;
+
+    // Double progression:
+    // Phase 1 — same weight, +1 rep, until top of rep range is reached
+    // Phase 2 — once top of rep range is hit, bump weight +5 lbs and reset to bottom of rep range
+    if (lastR >= repRangeHigh) {
+      // Hit the top of the rep range — bump weight, reset to low end
+      weightLbs = lastW + 5;
+      reps = String(repRangeLow);
+    } else {
+      // Still within rep range — hold weight, add one rep
+      weightLbs = lastW;
+      reps = String(lastR + 1);
+    }
+
   } else if (!db) {
     // No EXERCISE_DB entry and no history: estimate from peer exercises
     weightLbs = estimateWeightFromPeers(name);
