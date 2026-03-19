@@ -1646,6 +1646,21 @@ let WEIGHT_DATA = [];
 let LAST_RECS = null;
 let _lastBuiltSession = null; // Last session from buildTimedSession for Hevy push
 let _templateIdMap = {};      // exercise name -> exercise_template_id from Hevy
+// Hardcoded overrides for LiftScript exercise names that don't fuzzy-match Hevy's library names.
+// Format: 'LiftScript name': 'Hevy template ID'
+const HEVY_ID_OVERRIDES = {
+  // Neck
+  'Neck Curl (Plate)':          '28f6dd48-2f96-4c57-97a8-c01ac49227c2', // Weighted Neck Flexion
+  'Neck Extension (Plate)':     '36d508a0-4f8c-4ef4-b8b1-c527e2d00d1e', // Weighted Neck Extension
+  'Neck Curl (Harness)':        '31B8DA0F',                              // Lying Neck Curls (Weighted)
+  'Neck Extension (Harness)':   'D6A73CF2',                              // Lying Neck Extension (Weighted)
+  'Neck Lateral Flexion':       '41771f7a-7dcd-4fbc-9e14-e22ba2da345c', // Weighted Lateral Neck Flexion
+  // Forearms
+  'Wrist Curl (Barbell)':       '1006DF48',                              // Seated Palms Up Wrist Curl
+  'Wrist Curl (Dumbbell)':      '78cb61d6-53f5-47b4-b5da-9ab2d72dda4a', // Seated Palms Down Wrist Curl (Dumbbell)
+  'Reverse Wrist Curl (Barbell)':'9202CC23',                             // Seated Wrist Extension (Barbell)
+  'Farmer Carry (Dumbbell)':    '50C613D0',                              // Farmers Walk
+};
 let _hevyTemplatesLoaded = false; // true once all Hevy templates have been fetched
 let _dynamicExercisePool = {}; // muscleKey -> Set of exercise names (built dynamically)
 let healthData = null;
@@ -3363,6 +3378,12 @@ function warnUnmatchedExercises() {
 }
 
 async function resolveTemplateIds(names) {
+  // Apply hardcoded ID overrides first (neck, forearm exercises with non-matching Hevy names)
+  for (var oi = 0; oi < names.length; oi++) {
+    if (HEVY_ID_OVERRIDES[names[oi]] && !_templateIdMap[names[oi]]) {
+      _templateIdMap[names[oi]] = HEVY_ID_OVERRIDES[names[oi]];
+    }
+  }
   var missing = names.filter(function(n) { return !_templateIdMap[n]; });
   if (missing.length === 0) return true;
 
@@ -3461,6 +3482,10 @@ async function sendSessionToHevy() {
     var allResolved = await resolveTemplateIds(exNames);
     var unresolvedNames = exNames.filter(function(n) { return !_templateIdMap[n]; });
     var resolvedExercises = _lastBuiltSession.exercises.filter(function(ex) { return !!_templateIdMap[ex.name]; });
+    var droppedExercises = _lastBuiltSession.exercises.filter(function(ex) { return !_templateIdMap[ex.name]; });
+    if (droppedExercises.length > 0) {
+      console.warn('Dropped (no Hevy template):', droppedExercises.map(function(e){return e.name;}).join(', '));
+    }
 
     if (resolvedExercises.length === 0) {
       showToast('Could not find any Hevy IDs for these exercises', true);
