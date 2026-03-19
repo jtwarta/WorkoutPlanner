@@ -6246,10 +6246,10 @@ function renderDashboard(workouts) {
   showScreen('dashboard');
 
   const now = new Date();
-  const syncColor = (hevyStatus === 'ok' && healthStatus === 'ok') ? C.accent
-    : (hevyStatus === 'error' || healthStatus === 'missing') ? C.textDim : C.warn;
+  const syncColor = (hevyStatus === 'error' || healthStatus === 'missing') ? C.textDim
+    : (healthStatus === 'stale') ? C.warn : C.accent;
   document.getElementById('last-updated').innerHTML =
-    `v1.17 \u00b7${now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })} <span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${syncColor};margin-left:5px;vertical-align:middle;position:relative;top:-1px;"></span>`;
+    `v1.17 \u00b7${now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })} <span id="sync-dot" style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${syncColor};margin-left:5px;vertical-align:middle;position:relative;top:-1px;"></span>`;
 
   // Populate globals BEFORE renderTimedSession so lifted-today detection works
   heatmapDayWorkouts = pp.heatmapDayWorkouts || {};
