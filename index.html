@@ -3559,34 +3559,33 @@ async function sendSessionToHevy() {
     };
 
     // Find existing "LiftScript Daily" routine to update (prevent duplicates)
-    var existingId = Storage.get('hevy_routine_id');
-    if (!existingId) {
-      try {
-        var searchPage = 1;
-        while (searchPage <= 5) {
-          var searchResp = await fetchWithTimeout(API_BASE + '/routines?page=' + searchPage + '&pageSize=10', {
-            headers: { 'api-key': apiKey },
-            mode: 'cors'
-          });
-          if (!searchResp.ok) break;
-          var searchData = await searchResp.json();
-          var routines = searchData.routines || [];
-          if (routines.length === 0) break;
-          for (var ri = 0; ri < routines.length; ri++) {
-            if (routines[ri].title === routineTitle) {
-              existingId = routines[ri].id;
-              Storage.set('hevy_routine_id', existingId);
-              console.log('Found existing LiftScript routine: ' + existingId);
-              break;
-            }
+    // Always search by name -- cached IDs can go stale if the routine was deleted in Hevy
+    var existingId = null;
+    try {
+      var searchPage = 1;
+      while (searchPage <= 5) {
+        var searchResp = await fetchWithTimeout(API_BASE + '/routines?page=' + searchPage + '&pageSize=10', {
+          headers: { 'api-key': apiKey },
+          mode: 'cors'
+        });
+        if (!searchResp.ok) break;
+        var searchData = await searchResp.json();
+        var routines = searchData.routines || [];
+        if (routines.length === 0) break;
+        for (var ri = 0; ri < routines.length; ri++) {
+          if (routines[ri].title === routineTitle) {
+            existingId = routines[ri].id;
+            Storage.set('hevy_routine_id', existingId);
+            console.log('Found existing LiftScript routine: ' + existingId);
+            break;
           }
-          if (existingId) break;
-          if (searchPage >= (searchData.page_count || 1)) break;
-          searchPage++;
         }
-      } catch (e) {
-        console.warn('Routine search failed:', e.message);
+        if (existingId) break;
+        if (searchPage >= (searchData.page_count || 1)) break;
+        searchPage++;
       }
+    } catch (e) {
+      console.warn('Routine search failed:', e.message);
     }
 
     var resp;
