@@ -2065,12 +2065,17 @@ function preprocessWorkouts(workouts, bodyweightLbs, weightData) {
     for (const aw of healthData.workouts) {
       if (WATCH_NON_CARDIO_HM.test(aw.type || '')) continue;
 
-      // Walk HR gate: only applies to walks explicitly labeled "Outdoor".
-      // Indoor walks and plain "Walking" (Watch workout started intentionally) always count.
-      // Hikes always count -- starting a hike workout is an intentional decision.
+      // Walk filter: only count walks that represent intentional cardio training.
+      // Indoor walks always count (treadmill = intentional).
+      // Hikes always count (starting a hike is an intentional decision).
+      // Other walks (plain "Walking", "Outdoor Walk") must be >= 20 min to count --
+      // this filters casual errands while keeping intentional cardio walks.
+      // The global walking HR avg is too noisy (blends casual + intense walks)
+      // and per-workout HR is not available from the Shortcut.
       if (/walk/i.test(aw.type || '') && !/hik/i.test(aw.type || '')) {
-        var isOutdoor = /outdoor/i.test(aw.type || '');
-        if (isOutdoor && !walkHRPassesGate) continue;
+        var isIndoor = /indoor/i.test(aw.type || '');
+        var walkDur = parseFloat(aw.duration_min) || 0;
+        if (!isIndoor && walkDur < 20) continue;
       }
 
       const startStr = (aw.start || '').replace(/\s+at\s+/i, ' ').replace(/\u202f/g, ' ');
