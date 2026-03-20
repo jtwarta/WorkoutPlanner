@@ -3522,9 +3522,13 @@ async function sendSessionToHevy() {
       // If reps is a range (e.g. "8-10" for exercises with no history), use the low end
       var prescribedReps = parseInt(repParts[0], 10) || 8;
 
-      // Round weight up to nearest 5 lbs, then convert to kg (round to nearest 0.5 per Hevy API)
+      // Round weight to nearest 5 lbs, then convert to kg.
+      // Use exact 5-lb-multiple kg values (5 lbs = 2.26796 kg) so Hevy displays clean numbers.
+      // e.g. 115 lbs -> round(115/5) * 2.26796 = 23 * 2.26796 = 52.16 kg -> Hevy shows 115 lbs
       var weightLbsRounded = p.weightLbs > 0 ? Math.ceil(p.weightLbs / 5) * 5 : 0;
-      var weightKg = weightLbsRounded > 0 ? Math.round(weightLbsRounded * 0.453592 * 2) / 2 : null;
+      var fiveLbInKg = 2.26796;
+      var weightKg = weightLbsRounded > 0 ? Math.round(weightLbsRounded / 5) * fiveLbInKg : null;
+      if (weightKg !== null) weightKg = Math.round(weightKg * 100) / 100;
 
       // Build sets array
       var sets = [];
