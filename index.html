@@ -3506,11 +3506,11 @@ async function sendSessionToHevy() {
       var p = ex.prescription;
       var templateId = _templateIdMap[ex.name];
 
-      // Parse rep range (e.g. "8-10")
-      var repStr = String(p.reps || '8-10');
+      // Use the exact prescribed rep count (double progression sets this as a single integer string)
+      var repStr = String(p.reps || '8');
       var repParts = repStr.split('-');
-      var repLow = parseInt(repParts[0], 10) || 8;
-      var repHigh = repParts.length > 1 ? (parseInt(repParts[1], 10) || repLow) : repLow;
+      // If reps is a range (e.g. "8-10" for exercises with no history), use the low end
+      var prescribedReps = parseInt(repParts[0], 10) || 8;
 
       // Round weight up to nearest 5 lbs, then convert to kg (round to nearest 0.5 per Hevy API)
       var weightLbsRounded = p.weightLbs > 0 ? Math.ceil(p.weightLbs / 5) * 5 : 0;
@@ -3521,11 +3521,7 @@ async function sendSessionToHevy() {
       for (var s = 0; s < (p.sets || 3); s++) {
         var setObj = { type: 'normal' };
         if (weightKg !== null) setObj.weight_kg = weightKg;
-        if (repLow === repHigh) {
-          setObj.reps = repLow;
-        } else {
-          setObj.reps = Math.round((repLow + repHigh) / 2);
-        }
+        setObj.reps = prescribedReps;
         sets.push(setObj);
       }
 
@@ -3545,6 +3541,7 @@ async function sendSessionToHevy() {
 
     var routinePayload = {
       title: routineTitle,
+      folder_id: null,
       exercises: exercises
     };
 
