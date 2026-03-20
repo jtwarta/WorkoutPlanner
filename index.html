@@ -3620,8 +3620,9 @@ async function sendSessionToHevy() {
     }
 
     if (!existingId) {
-      // Create new routine via POST
-      var postBody = JSON.stringify({ routine: routinePayload });
+      // Create new routine via POST (folder_id required for POST but rejected by PUT)
+      var postPayload = Object.assign({}, routinePayload, { folder_id: null });
+      var postBody = JSON.stringify({ routine: postPayload });
       console.log('Hevy POST payload:', postBody);
       resp = await fetchWithTimeout(API_BASE + '/routines', {
         method: 'POST',
