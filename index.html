@@ -630,7 +630,7 @@ color: var(--text-dim);
     <div class="header">
       <div style="display:flex;align-items:center;gap:10px;">
         <h1>LiftScript</h1>
-        <div class="subtitle" id="last-updated">v1.15-slate</div>
+        <div class="subtitle" id="last-updated">v1.18</div>
         <div id="power-score-wrap" style="margin-left:auto;display:flex;align-items:center;gap:6px;cursor:pointer;-webkit-tap-highlight-color:transparent;" onclick="togglePowerScoreDetail()">
           <div id="power-score-ring"></div>
         </div>
@@ -779,7 +779,7 @@ window.addEventListener('unhandledrejection', function(e) {
 </script>
 <script>
 // ============================================================
-// LIFTSCRIPT v1.15
+// LIFTSCRIPT v1.18
 // ============================================================
 // SCIENTIFIC FOUNDATION
 // PILLAR 1: Volume-Hypertrophy Targets
@@ -1047,6 +1047,7 @@ const EXERCISE_MUSCLE_MAP = [
 
   // Biceps
   { pattern: /bicep curl/i, primary: 'biceps', secondary: [] },
+  { pattern: /incline curl/i, primary: 'biceps', secondary: [] },
   { pattern: /hammer curl/i, primary: 'biceps', secondary: [] },
   { pattern: /concentration curl/i, primary: 'biceps', secondary: [] },
   { pattern: /preacher curl/i, primary: 'biceps', secondary: [] },
@@ -1178,6 +1179,7 @@ const EXERCISE_DB = {
   'Lat Pulldown (Cable)': { muscle: 'back', type: 'compound', benchmarkLbs: 115, sets: 3, reps: '8-10', rest: 90 },
   'Lat Pulldown (Machine)': { muscle: 'back', type: 'compound', benchmarkLbs: 115, sets: 3, reps: '8-10', rest: 90 },
   'Seated Row (Machine)': { muscle: 'back', type: 'compound', benchmarkLbs: 115, sets: 3, reps: '8-10', rest: 90 },
+  'Seated Cable Row': { muscle: 'back', type: 'compound', benchmarkLbs: 115, sets: 3, reps: '8-10', rest: 90 },
 
   // ---- Shoulders ----
   // Heavy barbell overhead: high stabilization demand -> 180s
@@ -1191,6 +1193,7 @@ const EXERCISE_DB = {
   // Isolation raises: small muscle, light load -> 60s
   'Lateral Raise (Dumbbell)': { muscle: 'shoulders', type: 'isolation', benchmarkLbs: 15, sets: 4, reps: '12-15', note: 'per hand', rest: 60 },
   'Lateral Raise (Machine)': { muscle: 'shoulders', type: 'isolation', benchmarkLbs: 65, sets: 3, reps: '12-15', rest: 60 },
+  'Cable Lateral Raise': { muscle: 'shoulders', type: 'isolation', benchmarkLbs: 15, sets: 3, reps: '12-15', note: 'per side', rest: 60 },
 
   // ---- Biceps ----
   // Barbell curl: heavier bilateral isolation -> 90s
@@ -1199,6 +1202,7 @@ const EXERCISE_DB = {
   'Bicep Curl (Dumbbell)': { muscle: 'biceps', type: 'isolation', benchmarkLbs: 25, sets: 3, reps: '10-12', note: 'per hand', rest: 60 },
   'Hammer Curl (Dumbbell)': { muscle: 'biceps', type: 'isolation', benchmarkLbs: 30, sets: 3, reps: '10-12', note: 'per hand', rest: 60 },
   'Hammer Curl (Cable)': { muscle: 'biceps', type: 'isolation', benchmarkLbs: 30, sets: 3, reps: '10-12', note: 'per side', rest: 60 },
+  'Incline Curl (Dumbbell)': { muscle: 'biceps', type: 'isolation', benchmarkLbs: 20, sets: 3, reps: '10-12', note: 'per hand', rest: 60 },
   'Concentration Curl': { muscle: 'biceps', type: 'isolation', benchmarkLbs: 20, sets: 3, reps: '10-12', note: 'per hand', rest: 60 },
 
   // ---- Triceps ----
@@ -1224,6 +1228,8 @@ const EXERCISE_DB = {
   // Bodyweight -> 60s
   'Squat (Bodyweight)': { muscle: 'quads', type: 'compound', benchmarkLbs: 0, sets: 3, reps: '15-20', note: 'bodyweight', rest: 60 },
   'Lunge': { muscle: 'quads', type: 'compound', benchmarkLbs: 0, sets: 3, reps: '12-15', note: 'bodyweight', rest: 60 },
+  // Machine isolation -> 60s
+  'Leg Extension (Machine)': { muscle: 'quads', type: 'isolation', benchmarkLbs: 100, sets: 3, reps: '10-12', rest: 60 },
 
   // ---- Hamstrings ----
   // RDL barbell: heavy posterior chain loading -> 120s (accessory, not maximal like conventional DL)
@@ -1281,11 +1287,11 @@ const EXERCISE_DB = {
 
 const MUSCLE_EXERCISE_PICKS = {
   chest:      ['Bench Press (Barbell)', 'Incline Bench Press (Dumbbell)', 'Incline Bench Press (Barbell)', 'Chest Fly (Machine)', 'Chest Fly (Dumbbell)', 'Chest Dip', 'Cable Fly Crossovers', 'Chest Press (Machine)', 'Decline Bench Press (Barbell)'],
-  back:       ['Bent Over Row (Barbell)', 'Pull Up', 'Chin Up', 'Lat Pulldown (Cable)', 'Lat Pulldown (Machine)', 'Seated Row (Machine)', 'Dumbbell Row', 'Deadlift (Barbell)', 'Pendlay Row (Barbell)'],
-  shoulders:  ['Overhead Press (Barbell)', 'Overhead Press (Dumbbell)', 'Lateral Raise (Dumbbell)', 'Lateral Raise (Machine)', 'Arnold Press (Dumbbell)', 'Seated Shoulder Press (Machine)', 'Shoulder Press (Dumbbell)', 'Standing Military Press (Barbell)'],
-  biceps:     ['Bicep Curl (Barbell)', 'Bicep Curl (Dumbbell)', 'Hammer Curl (Dumbbell)', 'Hammer Curl (Cable)', 'Concentration Curl'],
+  back:       ['Bent Over Row (Barbell)', 'Pull Up', 'Chin Up', 'Lat Pulldown (Cable)', 'Lat Pulldown (Machine)', 'Seated Row (Machine)', 'Seated Cable Row', 'Dumbbell Row', 'Deadlift (Barbell)', 'Pendlay Row (Barbell)'],
+  shoulders:  ['Overhead Press (Barbell)', 'Overhead Press (Dumbbell)', 'Lateral Raise (Dumbbell)', 'Lateral Raise (Machine)', 'Cable Lateral Raise', 'Arnold Press (Dumbbell)', 'Seated Shoulder Press (Machine)', 'Shoulder Press (Dumbbell)', 'Standing Military Press (Barbell)'],
+  biceps:     ['Bicep Curl (Barbell)', 'Bicep Curl (Dumbbell)', 'Hammer Curl (Dumbbell)', 'Hammer Curl (Cable)', 'Incline Curl (Dumbbell)', 'Concentration Curl'],
   triceps:    ['Triceps Pushdown', 'Triceps Rope Pushdown', 'Triceps Extension (Cable)', 'Triceps Extension (Dumbbell)', 'Skullcrusher (Dumbbell)', 'Triceps Dip'],
-  quads:      ['Squat (Barbell)', 'Squat (Bodyweight)', 'Leg Press (Machine)', 'Front Squat', 'Goblet Squat', 'Lunge (Dumbbell)', 'Lunge'],
+  quads:      ['Squat (Barbell)', 'Squat (Bodyweight)', 'Leg Press (Machine)', 'Leg Extension (Machine)', 'Front Squat', 'Goblet Squat', 'Lunge (Dumbbell)', 'Lunge'],
   hamstrings: ['Romanian Deadlift (Barbell)', 'Romanian Deadlift (Dumbbell)', 'Seated Leg Curl (Machine)'],
   glutes:     ['Hip Thrust (Barbell)', 'Hip Thrust (Machine)', 'Hip Thrust', 'Glute Kickback (Machine)', 'Hip Abduction (Machine)', 'Hip Adduction (Machine)'],
   calves:     ['Standing Calf Raise', 'Seated Calf Raise', 'Calf Extension (Machine)'],
@@ -1867,10 +1873,10 @@ function preprocessWorkouts(workouts, bodyweightLbs, weightData) {
         if (!exHistory[name]) exHistory[name] = { weights: [], dates: [] };
         exHistory[name].lastWeightLbs = bestWeight;
         exHistory[name].lastReps = bestReps;
-        exHistory[name].lastDate = wDate;
+        exHistory[name].lastDate = dateStr;
         exHistory[name].lastSets = workingSets.length;
         exHistory[name].weights.push(bestWeight);
-        exHistory[name].dates.push(wDate);
+        exHistory[name].dates.push(dateStr);
         // Capture Hevy exercise_template_id for Send to Hevy
         if (ex.exercise_template_id && !templateIdMap[name]) {
           templateIdMap[name] = ex.exercise_template_id;
@@ -2059,16 +2065,15 @@ function preprocessWorkouts(workouts, bodyweightLbs, weightData) {
     for (const aw of healthData.workouts) {
       if (WATCH_NON_CARDIO_HM.test(aw.type || '')) continue;
 
-      // Walk HR gate: only applies to WALKS, not hikes.
-      // Indoor walks always count (intentional treadmill cardio).
-      // Outdoor walks only count if global walking HR avg reaches Zone 2.
+      // Walk HR gate: only applies to walks explicitly labeled "Outdoor".
+      // Indoor walks and plain "Walking" (Watch workout started intentionally) always count.
       // Hikes always count -- starting a hike workout is an intentional decision.
       if (/walk/i.test(aw.type || '') && !/hik/i.test(aw.type || '')) {
-        var isIndoor = /indoor/i.test(aw.type || '');
-        if (!isIndoor && !walkHRPassesGate) continue;
+        var isOutdoor = /outdoor/i.test(aw.type || '');
+        if (isOutdoor && !walkHRPassesGate) continue;
       }
 
-      const startStr = (aw.start || '').replace(/\s+at\s+/i, ' ');
+      const startStr = (aw.start || '').replace(/\s+at\s+/i, ' ').replace(/\u202f/g, ' ');
       const awDate = new Date(startStr);
       if (isNaN(awDate.getTime())) continue;
       const dur = parseFloat(aw.duration_min) || 0;
@@ -2690,7 +2695,7 @@ function toggleCardioInstr(id) {
     el.style.maxHeight = '0';
     el.style.opacity = '0';
   } else {
-    el.style.maxHeight = '120px';
+    el.style.maxHeight = el.scrollHeight + 'px';
     el.style.opacity = '1';
   }
 }
@@ -2867,14 +2872,14 @@ function prescribeExercise(name) {
     if (hist.lastSets >= 2 && hist.lastSets <= 6) sets = hist.lastSets;
 
     // Double progression:
-    // Phase 1 — same weight, +1 rep, until top of rep range is reached
-    // Phase 2 — once top of rep range is hit, bump weight +5 lbs and reset to bottom of rep range
+    // Phase 1 -- same weight, +1 rep, until top of rep range is reached
+    // Phase 2 -- once top of rep range is hit, bump weight +5 lbs and reset to bottom of rep range
     if (lastR >= repRangeHigh) {
-      // Hit the top of the rep range — bump weight, reset to low end
+      // Hit the top of the rep range -- bump weight, reset to low end
       weightLbs = lastW + 5;
       reps = String(repRangeLow);
     } else {
-      // Still within rep range — hold weight, add one rep
+      // Still within rep range -- hold weight, add one rep
       weightLbs = lastW;
       reps = String(lastR + 1);
     }
@@ -6275,7 +6280,7 @@ function renderDashboard(workouts) {
   const syncColor = (hevyStatus === 'error' || healthStatus === 'missing') ? C.textDim
     : (healthStatus === 'stale') ? C.warn : C.accent;
   document.getElementById('last-updated').innerHTML =
-    `v1.17 \u00b7${now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })} <span id="sync-dot" style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${syncColor};margin-left:5px;vertical-align:middle;position:relative;top:-1px;"></span>`;
+    `v1.18 \u00b7${now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })} <span id="sync-dot" style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${syncColor};margin-left:5px;vertical-align:middle;position:relative;top:-1px;"></span>`;
 
   // Populate globals BEFORE renderTimedSession so lifted-today detection works
   heatmapDayWorkouts = pp.heatmapDayWorkouts || {};
