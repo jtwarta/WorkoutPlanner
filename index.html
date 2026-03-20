@@ -3533,7 +3533,6 @@ async function sendSessionToHevy() {
         exercise_template_id: templateId,
         superset_id: null,
         rest_seconds: getRestSeconds(ex.name),
-        notes: '',
         sets: sets
       };
 
@@ -3546,7 +3545,6 @@ async function sendSessionToHevy() {
 
     var routinePayload = {
       title: routineTitle,
-      folder_id: null,
       exercises: exercises
     };
 
@@ -3603,9 +3601,11 @@ async function sendSessionToHevy() {
         var putErr = '';
         try { putErr = await resp.text(); } catch(_) {}
         console.error('PUT failed:', resp.status, putErr);
-        // Fall through to create rather than failing
-        Storage.remove('hevy_routine_id');
-        existingId = null;
+        showToast('Hevy update error ' + resp.status + ': ' + (putErr || resp.statusText), true);
+        btn.innerHTML = origHTML;
+        btn.style.opacity = '1';
+        btn.disabled = false;
+        return;
       }
     }
 
