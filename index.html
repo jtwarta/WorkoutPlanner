@@ -53,7 +53,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#020202">
-<title>SYS // LIFTSCRIPT</title>
+<title>LIFTSCRIPT</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@100;300;400;500;700&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
 <style>
@@ -69,10 +69,10 @@
   --text-dim: #444444;
   --accent: #FFFFFF;
   --accent-dim: rgba(255,255,255,0.08);
-  --warn: #FF8C00;
-  --warn-dim: rgba(255,140,0,0.10);
-  --danger: #FF3B30;
-  --danger-dim: rgba(255,59,48,0.10);
+  --warn: #888888;
+  --warn-dim: rgba(255,255,255,0.06);
+  --danger: #666666;
+  --danger-dim: rgba(255,255,255,0.04);
   --blue: #888888;
   --blue-dim: rgba(255,255,255,0.06);
   --purple: #AAAAAA;
@@ -219,8 +219,8 @@ border-left: 2px solid var(--accent);
 }
 .ex-group:last-child { margin-bottom: 0; }
 .ex-group-title {
-font-size: 11px;
-font-weight: 500;
+font-size: 12px;
+font-weight: 700;
 padding: 10px 14px;
 background: var(--surface);
 text-transform: uppercase;
@@ -234,19 +234,19 @@ border-top: 1px solid var(--border);
 gap: 8px;
 }
 .ex-name {
-font-size: 11px;
-font-weight: 400;
+font-size: 13px;
+font-weight: 500;
 flex: 1;
 min-width: 0;
-color: var(--text-mid);
+color: var(--text);
 line-height: 1.3;
 text-transform: uppercase;
 letter-spacing: 0.06em;
 }
 .ex-prescription {
 font-family: 'JetBrains Mono', monospace;
-font-size: 12px;
-font-weight: 500;
+font-size: 13px;
+font-weight: 700;
 color: var(--accent);
 white-space: nowrap;
 flex-shrink: 0;
@@ -526,12 +526,12 @@ text-transform: uppercase;
 letter-spacing: 0.12em;
 }
 .error-msg {
-background: var(--danger-dim);
-border: 1px solid rgba(248,113,113,0.2);
+background: rgba(255,59,48,0.08);
+border: 1px solid rgba(255,59,48,0.2);
 border-radius: 6px;
 padding: 14px;
 font-size: 14px;
-color: var(--danger);
+color: #CC4444;
 margin-bottom: 14px;
 line-height: 1.4;
 }
@@ -839,7 +839,7 @@ body::before {
   <div id="dashboard" class="hidden">
     <div class="header">
       <div style="display:flex;align-items:center;gap:10px;">
-        <h1>SYS <span style="color:#333;font-weight:300;">//</span> LIFTSCRIPT</h1>
+        <h1>LIFTSCRIPT</h1>
         <div class="subtitle" id="last-updated" style="letter-spacing:0.15em;">v1.19 <span class="blink-status" style="color:#666;">&#9608;</span></div>
         <div id="power-score-wrap" style="margin-left:auto;display:flex;align-items:center;gap:6px;cursor:pointer;-webkit-tap-highlight-color:transparent;" onclick="togglePowerScoreDetail()">
           <div id="power-score-ring"></div>
@@ -1050,12 +1050,12 @@ const C = {
   accentMid: '#DDDDDD',
   accentDim: 'rgba(255,255,255,0.08)',
   accentBorder: 'rgba(255,255,255,0.25)',
-  warn:      '#FF8C00',
-  warnDim:   'rgba(255,140,0,0.10)',
-  amber:     '#FF8C00',
-  amberLt:   '#FFA033',
-  danger:    '#FF3B30',
-  dangerDim: 'rgba(255,59,48,0.10)',
+  warn:      '#888888',
+  warnDim:   'rgba(255,255,255,0.06)',
+  amber:     '#888888',
+  amberLt:   '#AAAAAA',
+  danger:    '#666666',
+  dangerDim: 'rgba(255,255,255,0.04)',
   blue:      '#888888',
   blueDim:   'rgba(255,255,255,0.06)',
   strength:  '#FFFFFF',
@@ -3448,8 +3448,8 @@ function buildTimedSessionAndStore(recs, prefs) {
 function showToast(msg, isError) {
   var existing = document.getElementById('ls-toast');
   if (existing) existing.remove();
-  var bg = isError ? '#7f1d1d' : '#14532d';
-  var border = isError ? C.danger : C.accent;
+  var bg = isError ? '#1a0808' : '#0C0C0E';
+  var border = isError ? '#CC4444' : C.accent;
   var div = document.createElement('div');
   div.id = 'ls-toast';
   div.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);padding:12px 20px;border-radius:10px;font-size:13px;font-weight:500;font-family:JetBrains Mono,monospace;color:#f4f4f6;z-index:9999;opacity:0;transition:opacity 0.3s ease;max-width:90vw;text-align:center;background:' + bg + ';border:1px solid ' + border + '40;';
@@ -3932,8 +3932,8 @@ function renderTimedSession(recs) {
     <div style="margin-bottom:16px;">
       ${completedBanner}
       <div style="display:flex;align-items:baseline;justify-content:space-between;">
-        <div style="font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:${C.text};font-family:'JetBrains Mono',monospace;">${sessionLabel}</div>
-        <div style="font-family:'JetBrains Mono',monospace;font-size:22px;font-weight:700;color:${C.accent};">~${totalMin}<span style="font-size:14px;font-weight:500;color:${C.textDim};margin-left:2px;">min</span></div>
+        <div style="font-size:16px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:${C.text};font-family:'JetBrains Mono',monospace;">${sessionLabel}</div>
+        <div style="font-family:'Inter',sans-serif;font-size:28px;font-weight:300;color:${C.text};letter-spacing:-0.02em;">~${totalMin}<span style="font-size:14px;font-weight:400;color:${C.textMid};margin-left:2px;">min</span></div>
       </div>
       ${restChip ? `<div style="margin-top:10px;">${restChip}</div>` : ''}
     </div>`;
@@ -4027,7 +4027,7 @@ function renderTimedSession(recs) {
       const rx = formatPrescription(ex.prescription);
       exHtml += `
         <div class="ex-row">
-          <div class="ex-name" style="color:${C.textMid}">${ex.name}</div>
+          <div class="ex-name" style="color:${C.text}">${ex.name}</div>
           <div class="ex-prescription" style="color:${C.accent}">${rx}</div>
         </div>`;
     }
@@ -4546,7 +4546,7 @@ function showChartTooltip(canvas, pt) {
   const dateStr = dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   let label = `${pt.weight.toFixed(1)} lbs`;
   if (pt.si) label += `<br><span style="color:${C.strength};">SI ${pt.si.toFixed(2)}</span>`;
-  if (pt.cs) label += `<br><span style="color:${C.danger};">CF ${pt.cs.toFixed(2)}</span>`;
+  if (pt.cs) label += `<br><span style="color:#999999;">CF ${pt.cs.toFixed(2)}</span>`;
   if (pt.ded) label += `<br><span style="color:${C.gold};">Ded ${pt.ded.toFixed(2)}</span>`;
   if (pt.bc) label += `<br><span style="color:${C.fuchsia};">BC ${pt.bc.toFixed(2)}</span>`;
 
@@ -4750,7 +4750,7 @@ function renderWeightChart() {
 
       if (_chartLineVisible.cardio) {
         ctx.beginPath();
-        ctx.strokeStyle = C.danger;
+        ctx.strokeStyle = '#999999';
         ctx.lineWidth = 2;
         ctx.setLineDash([6, 3]);
         csFiltered.forEach((d, i) => {
@@ -4768,7 +4768,7 @@ function renderWeightChart() {
           const y = pad.top + (1 - (d.score - csMin) / (csMax - csMin)) * chartH;
           ctx.beginPath();
           ctx.arc(x, y, 3.5, 0, Math.PI * 2);
-          ctx.fillStyle = C.danger;
+          ctx.fillStyle = '#999999';
           ctx.fill();
         });
       }
@@ -4913,7 +4913,7 @@ function renderWeightChart() {
     const items = [
       { key: 'weight', color: C.accent, label: 'Weight', alwaysOn: true },
       { key: 'si', color: C.strength, label: 'Strength' },
-      { key: 'cardio', color: C.danger, label: 'Cardio' },
+      { key: 'cardio', color: '#999999', label: 'Cardio' },
       { key: 'dedication', color: C.gold, label: 'Dedication' },
       { key: 'bodyComp', color: C.fuchsia, label: 'Body Comp' },
     ];
@@ -5379,9 +5379,9 @@ function importHevyCSV(fileInput) {
   const statusEl = document.getElementById('hevy-import-status');
   const showStatus = (msg, isError) => {
     statusEl.style.display = 'block';
-    statusEl.style.background = isError ? 'rgba(248,113,113,0.12)' : 'rgba(94,234,212,0.12)';
-    statusEl.style.color = isError ? C.danger : C.accent;
-    statusEl.style.border = `1px solid ${isError ? 'rgba(248,113,113,0.2)' : 'rgba(94,234,212,0.2)'}`;
+    statusEl.style.background = isError ? 'rgba(200,68,68,0.08)' : 'rgba(255,255,255,0.06)';
+    statusEl.style.color = isError ? '#CC4444' : C.accent;
+    statusEl.style.border = `1px solid ${isError ? 'rgba(200,68,68,0.15)' : 'rgba(255,255,255,0.15)'}`;
     statusEl.textContent = msg;
     setTimeout(() => { statusEl.style.display = 'none'; }, 5000);
   };
