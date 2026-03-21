@@ -52,41 +52,41 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="theme-color" content="#060606">
-<title>LiftScript</title>
+<meta name="theme-color" content="#020202">
+<title>SYS // LIFTSCRIPT</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@100;300;400;500;700&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
 <style>
 :root {
-  --bg: #060606;
-  --surface: #0E0E10;
-  --surface2: #16161A;
-  --surface3: #1E1E22;
-  --border: rgba(255,255,255,0.08);
-  --border-light: rgba(255,255,255,0.12);
+  --bg: #020202;
+  --surface: #060606;
+  --surface2: #0C0C0E;
+  --surface3: #141416;
+  --border: rgba(255,255,255,0.10);
+  --border-light: rgba(255,255,255,0.15);
   --text: #FFFFFF;
-  --text-mid: #A0A0A5;
-  --text-dim: #6B6B70;
-  --accent: #FF135A;
-  --accent-dim: rgba(255, 19, 90, 0.15);
+  --text-mid: #888888;
+  --text-dim: #444444;
+  --accent: #FFFFFF;
+  --accent-dim: rgba(255,255,255,0.08);
   --warn: #FF8C00;
-  --warn-dim: rgba(255, 140, 0, 0.14);
+  --warn-dim: rgba(255,140,0,0.10);
   --danger: #FF3B30;
-  --danger-dim: rgba(255, 59, 48, 0.12);
-  --blue: #5AC8FA;
-  --blue-dim: rgba(90, 200, 250, 0.14);
-  --purple: #BF5AF2;
-  --purple-dim: rgba(191, 90, 242, 0.14);
-  --strength: #BF5AF2;
-  --strength-dim: rgba(191, 90, 242, 0.14);
+  --danger-dim: rgba(255,59,48,0.10);
+  --blue: #888888;
+  --blue-dim: rgba(255,255,255,0.06);
+  --purple: #AAAAAA;
+  --purple-dim: rgba(255,255,255,0.06);
+  --strength: #FFFFFF;
+  --strength-dim: rgba(255,255,255,0.06);
   color-scheme: dark;
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
 html, body {
-background: #060606;
-background-color: #060606;
+background: #020202;
+background-color: #020202;
 color-scheme: dark;
 overscroll-behavior-y: none;
 }
@@ -105,7 +105,7 @@ max-width: 480px;
 margin: 0 auto;
 padding: 20px 18px;
 padding-bottom: 120px;
-background: #060606;
+background: #020202;
 }
 
 /* Header */
@@ -119,8 +119,8 @@ font-size: 22px;
 font-weight: 700;
 letter-spacing: 0.15em;
 text-transform: uppercase;
-color: var(--accent);
-text-shadow: 0 0 30px rgba(255, 19, 90, 0.3);
+color: var(--text);
+text-shadow: 0 0 20px rgba(255,255,255,0.15);
 }
 .header .subtitle {
 font-size: 10px;
@@ -178,9 +178,9 @@ font-family: 'JetBrains Mono', monospace;
 -webkit-tap-highlight-color: transparent;
 }
 .tab.active {
-background: rgba(255, 19, 90, 0.12);
-color: #FF135A;
-box-shadow: 0 0 0 1px rgba(255, 19, 90, 0.25);
+background: rgba(255,255,255,0.08);
+color: #FFFFFF;
+box-shadow: 0 0 0 1px rgba(255,255,255,0.15);
 }
 
 /* Expandable explainer */
@@ -329,11 +329,11 @@ position: relative;
 }
 .weight-chart canvas { width: 100%; height: 100%; }
 .weight-current {
-font-family: 'JetBrains Mono', monospace;
-font-size: 34px;
-font-weight: 700;
-letter-spacing: -1px;
-color: var(--accent);
+font-family: 'Inter', sans-serif;
+font-size: 42px;
+font-weight: 300;
+letter-spacing: -0.02em;
+color: var(--text);
 }
 .weight-delta {
 font-family: 'JetBrains Mono', monospace;
@@ -372,7 +372,7 @@ transform: scale(0.96);
 }
 .constraint-chip.active {
 color: var(--accent);
-border-color: rgba(255, 19, 90, 0.4);
+border-color: rgba(255,255,255,0.25);
 background: var(--accent-dim);
 }
 .chart-legend {
@@ -513,7 +513,7 @@ gap: 18px;
 .spinner {
 width: 28px; height: 28px;
 border: 2.5px solid var(--border);
-border-top-color: #FF135A;
+border-top-color: #FFFFFF;
 border-radius: 50%;
 animation: spin 0.75s linear infinite;
 }
@@ -560,10 +560,10 @@ color: var(--text-dim);
 margin-bottom: 6px;
 }
 .vital-value {
-font-family: 'JetBrains Mono', monospace;
-font-size: 22px;
-font-weight: 500;
-color: var(--accent);
+font-family: 'Inter', sans-serif;
+font-size: 24px;
+font-weight: 300;
+color: var(--text);
 line-height: 1.2;
 }
 .vital-unit {
@@ -597,10 +597,10 @@ align-items: baseline;
 gap: 6px;
 }
 .cardio-score-value {
-font-family: 'JetBrains Mono', monospace;
-font-size: 28px;
-font-weight: 500;
-color: var(--accent);
+font-family: 'Inter', sans-serif;
+font-size: 36px;
+font-weight: 300;
+color: var(--text);
 }
 .cardio-score-unit {
 font-size: 12px;
@@ -651,6 +651,176 @@ body {
 #power-score-ring {
   filter: hue-rotate(330deg) saturate(1.5);
 }
+
+/* ===================== */
+/* OCTO-KINETIC OVERLAY  */
+/* ===================== */
+
+/* CRT Scanline overlay */
+.app::after {
+  content: '';
+  position: fixed;
+  top: 0; left: 0; width: 100%; height: 100%;
+  background: repeating-linear-gradient(
+    to bottom,
+    transparent 0px,
+    transparent 2px,
+    rgba(0,0,0,0.15) 2px,
+    rgba(0,0,0,0.15) 4px
+  );
+  pointer-events: none;
+  z-index: 9998;
+}
+
+/* Global dot grid on body */
+body::before {
+  content: '';
+  position: fixed;
+  top: 0; left: 0; width: 100%; height: 100%;
+  background-image: radial-gradient(circle at center, rgba(255,255,255,0.06) 1px, transparent 1px);
+  background-size: 20px 20px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Module active dot */
+.card {
+  position: relative;
+}
+.card::before {
+  content: '';
+  position: absolute;
+  left: -1px;
+  top: 20px;
+  width: 3px;
+  height: 3px;
+  background: #333;
+  border-radius: 0;
+}
+
+/* Module header numbering style */
+.card-title {
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 8px;
+  font-size: 9px;
+  font-weight: 400;
+  letter-spacing: 0.15em;
+}
+
+/* Blink animation */
+@keyframes blinker { 50% { opacity: 0; } }
+.blink-status {
+  animation: blinker 1.2s linear infinite;
+}
+
+/* Active tab glow */
+.tab.active {
+  text-shadow: 0 0 8px rgba(255,255,255,0.4);
+}
+
+/* Card hover subtle glow on active dot */
+.card:first-child::before,
+#tab-today .card::before {
+  background: #FFFFFF;
+  box-shadow: 0 0 6px rgba(255,255,255,0.6);
+}
+
+/* Matrix bar styling */
+.matrix-bar {
+  font-family: monospace;
+  font-size: 10px;
+  color: var(--text);
+  letter-spacing: 1px;
+  white-space: pre;
+  line-height: 1.2;
+}
+
+/* Data rows - module style */
+.data-row-module {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-size: 11px;
+  padding: 2px 0;
+}
+.data-row-module .label { color: #888; }
+.data-row-module .val { color: #fff; text-align: right; }
+
+/* Section dividers - dashed */
+.card + .card {
+  border-top: none;
+}
+
+/* Override chart legend for monochrome */
+.chart-legend {
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+/* Corner marks for featured sections */
+.corner-mark {
+  position: relative;
+}
+.corner-mark::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0;
+  width: 12px; height: 12px;
+  border-top: 1px solid rgba(255,255,255,0.2);
+  border-left: 1px solid rgba(255,255,255,0.2);
+}
+.corner-mark::after {
+  content: '';
+  position: absolute;
+  bottom: 0; right: 0;
+  width: 12px; height: 12px;
+  border-bottom: 1px solid rgba(255,255,255,0.2);
+  border-right: 1px solid rgba(255,255,255,0.2);
+}
+
+/* Constraint chips - angular monochrome */
+.constraint-chip {
+  border-radius: 2px !important;
+  font-size: 9px !important;
+  letter-spacing: 0.12em !important;
+}
+
+/* Remove dot-grid from individual cards (now on body) */
+.card {
+  background-image: none !important;
+}
+
+/* Power score ring monochrome */
+#power-score-ring {
+  filter: grayscale(1) brightness(1.2) !important;
+}
+
+/* Heatmap cells - square, no radius */
+.heatmap-cell {
+  border-radius: 1px !important;
+}
+
+/* Loading spinner monochrome */
+.spinner {
+  border-color: rgba(255,255,255,0.1) !important;
+  border-top-color: #FFFFFF !important;
+}
+
+/* Tab transitions */
+[id^="tab-"] {
+  transition: opacity 0.2s ease;
+}
+
+/* Exercise group monochrome accent */
+.ex-group {
+  border-left-color: rgba(255,255,255,0.3) !important;
+}
+
+/* Muscle cell dot grid removed (body has it) */
+.muscle-cell {
+  background-image: none !important;
+}
 </style>
 
 </head>
@@ -661,7 +831,7 @@ body {
 
   <div id="loading-screen" class="loading">
     <div class="spinner"></div>
-    <div class="loading-text" id="loading-text">Connecting to Hevy...</div>
+    <div class="loading-text" id="loading-text">INITIALIZING TELEMETRY...</div>
   </div>
 
   <!-- Main Dashboard -->
@@ -669,14 +839,14 @@ body {
   <div id="dashboard" class="hidden">
     <div class="header">
       <div style="display:flex;align-items:center;gap:10px;">
-        <h1>LiftScript</h1>
-        <div class="subtitle" id="last-updated">v1.18</div>
+        <h1>SYS <span style="color:#333;font-weight:300;">//</span> LIFTSCRIPT</h1>
+        <div class="subtitle" id="last-updated" style="letter-spacing:0.15em;">v1.19 <span class="blink-status" style="color:#666;">&#9608;</span></div>
         <div id="power-score-wrap" style="margin-left:auto;display:flex;align-items:center;gap:6px;cursor:pointer;-webkit-tap-highlight-color:transparent;" onclick="togglePowerScoreDetail()">
           <div id="power-score-ring"></div>
         </div>
         <button id="header-refresh-btn" onclick="refreshData()" title="Refresh data" style="background:none;border:none;cursor:pointer;padding:2px 4px;position:relative;top:1px;line-height:1;-webkit-tap-highlight-color:transparent;">
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style="display:block;">
-            <path d="M13.65 2.35A7.96 7.96 0 008 0C3.58 0 .01 3.58.01 8S3.58 16 8 16c3.73 0 6.84-2.55 7.73-6h-2.08A5.99 5.99 0 018 14 6 6 0 012 8a6 6 0 016-6c1.66 0 3.14.69 4.22 1.78L9 7h7V0l-2.35 2.35z" fill="#6B6B70"/>
+            <path d="M13.65 2.35A7.96 7.96 0 008 0C3.58 0 .01 3.58.01 8S3.58 16 8 16c3.73 0 6.84-2.55 7.73-6h-2.08A5.99 5.99 0 018 14 6 6 0 012 8a6 6 0 016-6c1.66 0 3.14.69 4.22 1.78L9 7h7V0l-2.35 2.35z" fill="#333333"/>
           </svg>
         </button>
       </div>
@@ -707,7 +877,7 @@ body {
   <div class="card">
     <div class="card-title" style="cursor:pointer;display:flex;align-items:center;justify-content:space-between;" onclick="toggleSectionExplainer('muscle-grid-legend',this)">
       <span>Muscle Group Status</span>
-      <span class="section-chevron" style="font-size:10px;color:#6B6B70;transition:transform 0.3s ease;display:inline-block;">&#9662;</span>
+      <span class="section-chevron" style="font-size:10px;color:#444444;transition:transform 0.3s ease;display:inline-block;">&#9662;</span>
     </div>
     <div id="muscle-grid" class="muscle-grid"></div>
     <div class="muscle-detail" id="muscle-detail">
@@ -764,7 +934,7 @@ body {
   <div class="card" id="health-vitals-card" style="display:none;">
     <div class="card-title" style="display:flex;align-items:center;justify-content:space-between;">
       <span>Health Vitals</span>
-      <span class="health-sync-time" id="health-sync-time" style="font-size:11px;font-family:'JetBrains Mono',monospace;color:#6B6B70;text-transform:none;letter-spacing:0;"></span>
+      <span class="health-sync-time" id="health-sync-time" style="font-size:11px;font-family:'JetBrains Mono',monospace;color:#444444;text-transform:none;letter-spacing:0;"></span>
     </div>
     <!-- Cardio Fitness Score -->
     <div class="cardio-score-row" id="cardio-score-row">
@@ -792,8 +962,8 @@ body {
     <div class="card-title" style="display:flex;align-items:center;justify-content:space-between;">
       <span>Body Measurements</span>
       <div style="display:flex;gap:6px;">
-        <button class="btn-log-weight" onclick="exportEmbeddableData()" style="background:rgba(142,142,152,0.12);color:#6B6B70;font-size:11px;padding:4px 8px;">Export</button>
-        <button class="btn-log-weight" onclick="document.getElementById('hevy-csv-input').click()" style="background:rgba(90,200,250,0.14);color:#5AC8FA;border-color:rgba(90,200,250,0.30);">Import Hevy</button>
+        <button class="btn-log-weight" onclick="exportEmbeddableData()" style="background:rgba(255,255,255,0.06);color:#444444;font-size:11px;padding:4px 8px;">Export</button>
+        <button class="btn-log-weight" onclick="document.getElementById('hevy-csv-input').click()" style="background:rgba(255,255,255,0.06);color:#888888;border-color:rgba(255,255,255,0.15);">Import Hevy</button>
       </div>
     </div>
     <input type="file" id="hevy-csv-input" accept=".csv" style="display:none;" onchange="importHevyCSV(this)">
@@ -819,7 +989,7 @@ window.addEventListener('unhandledrejection', function(e) {
 </script>
 <script>
 // ============================================================
-// LIFTSCRIPT v1.18
+// LIFTSCRIPT v1.19 // OCTO-KINETIC PROTOCOL
 // ============================================================
 // SCIENTIFIC FOUNDATION
 // PILLAR 1: Volume-Hypertrophy Targets
@@ -866,37 +1036,37 @@ function localDateStr(d) {
 // Hex values here match the CSS custom properties in <style>.
 // ============================================================
 const C = {
-  bg:        '#060606',
-  surface:   '#0E0E10',
-  surface2:  '#16161A',
-  surface3:  '#1E1E22',
-  border:    'rgba(255,255,255,0.08)',
+  bg:        '#020202',
+  surface:   '#060606',
+  surface2:  '#0C0C0E',
+  surface3:  '#141416',
+  border:    'rgba(255,255,255,0.10)',
   text:      '#FFFFFF',
-  textMid:   '#A0A0A5',
-  textDim:   '#6B6B70',
-  textDark:  '#4A4A4E',
-  textDark2: '#808085',
-  accent:    '#FF135A',
-  accentMid: '#E0114E',
-  accentDim: 'rgba(255,19,90,0.15)',
-  accentBorder: 'rgba(255,19,90,0.35)',
+  textMid:   '#888888',
+  textDim:   '#444444',
+  textDark:  '#333333',
+  textDark2: '#666666',
+  accent:    '#FFFFFF',
+  accentMid: '#DDDDDD',
+  accentDim: 'rgba(255,255,255,0.08)',
+  accentBorder: 'rgba(255,255,255,0.25)',
   warn:      '#FF8C00',
-  warnDim:   'rgba(255,140,0,0.14)',
+  warnDim:   'rgba(255,140,0,0.10)',
   amber:     '#FF8C00',
   amberLt:   '#FFA033',
   danger:    '#FF3B30',
-  dangerDim: 'rgba(255,59,48,0.12)',
-  blue:      '#5AC8FA',
-  blueDim:   'rgba(90,200,250,0.14)',
-  strength:  '#BF5AF2',
-  purple:    '#BF5AF2',
-  purpleLt:  '#DA8FFF',
-  pink:      '#FF2D78',
-  fuchsia:   '#BF5AF2',
-  cyan:      '#64D2FF',
-  teal:      '#30D158',
-  cardio:    '#FF9500',
-  gold:      '#FFD60A',
+  dangerDim: 'rgba(255,59,48,0.10)',
+  blue:      '#888888',
+  blueDim:   'rgba(255,255,255,0.06)',
+  strength:  '#FFFFFF',
+  purple:    '#AAAAAA',
+  purpleLt:  '#CCCCCC',
+  pink:      '#DDDDDD',
+  fuchsia:   '#AAAAAA',
+  cyan:      '#BBBBBB',
+  teal:      '#999999',
+  cardio:    '#CCCCCC',
+  gold:      '#DDDDDD',
 };
 
 // ============================================================
@@ -4500,7 +4670,7 @@ function renderWeightChart() {
   ctx.lineTo(pad.left, h - pad.bottom);
   ctx.closePath();
   const gradient = ctx.createLinearGradient(0, 0, 0, h);
-  gradient.addColorStop(0, 'rgba(255, 19, 90, 0.3)'); // accent RGB gradient
+  gradient.addColorStop(0, 'rgba(255,255,255,0.25)'); // accent RGB gradient
   gradient.addColorStop(1, 'rgba(94, 234, 212, 0)');
   ctx.fillStyle = gradient;
   ctx.fill();
@@ -6457,8 +6627,8 @@ function runDevTests() {
   const rootStyle = getComputedStyle(document.documentElement);
   const accentVar = rootStyle.getPropertyValue('--accent').trim();
   results.push({
-    test: 'A4: CSS --accent resolves to #FF135A',
-    pass: accentVar === '#FF135A',
+    test: 'A4: CSS --accent resolves to #FFFFFF',
+    pass: accentVar === '#FFFFFF',
     got: accentVar || '(empty -- var() references may use en-dash instead of double-hyphen)'
   });
 
