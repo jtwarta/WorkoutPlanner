@@ -3522,11 +3522,13 @@ async function sendSessionToHevy() {
       // If reps is a range (e.g. "8-10" for exercises with no history), use the low end
       var prescribedReps = parseInt(repParts[0], 10) || 8;
 
-      // Round weight to nearest 5 lbs, then convert to kg with enough precision
-      // that Hevy's lbs display (kg * 2.20462, rounded to 2dp) lands on the exact target.
-      // 2 decimal places fails for 115, 135, 185 lbs etc. 3 decimal places is clean for all.
+      // Round weight to nearest 5 lbs, then convert to kg.
+      // Hevy displays lbs as floor(kg * 2.20462, 2dp) — truncation, not rounding.
+      // So we ceil the kg to 3dp to ensure the back-conversion lands on or above target.
+      // e.g. 140 lbs: round gives 63.503 kg -> floor(139.999) = 139.99. WRONG.
+      //               ceil  gives 63.504 kg -> floor(140.002) = 140.00. CORRECT.
       var weightLbsRounded = p.weightLbs > 0 ? Math.ceil(p.weightLbs / 5) * 5 : 0;
-      var weightKg = weightLbsRounded > 0 ? Math.round((weightLbsRounded / 2.20462) * 1000) / 1000 : null;
+      var weightKg = weightLbsRounded > 0 ? Math.ceil((weightLbsRounded / 2.20462) * 1000) / 1000 : null;
 
       // Build sets array
       var sets = [];
