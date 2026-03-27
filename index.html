@@ -1,7 +1,11 @@
 <!DOCTYPE html>
 
 <!--
-  LiftScript v1.17
+  LiftScript v1.18
+  Changes from v1.17:
+  1.  Boosted structural importance: foundation lifts (bench, squat, back, shoulders) now meaningfully outrank accessories
+  2.  Demand-ordered exercise list: heavy compounds first, small accessories last (both on-screen and in Hevy export)
+  3.  Lift reroll button: cycles exercise selection within each muscle group for variety
   Changes from v1.16:
   1.  PR Board: personal records with sparkline history, delta from previous PR
   2.  Progressive overload: 30-day trend arrows on each lift in SI detail
@@ -1457,6 +1461,22 @@ function rankExercisesForMuscle(muscleKey) {
   }
 
   scored.sort((a, b) => b.score - a.score);
+  // Apply reroll rotation: shift top picks to create variety
+  if (_liftRerollOffset > 0 && scored.length > 1) {
+    // Keep compound anchor in position 0 if present, rotate the rest
+    var anchorName = COMPOUND_ANCHORS[muscleKey];
+    var anchorIdx = -1;
+    for (var ri = 0; ri < scored.length; ri++) {
+      if (scored[ri].name === anchorName) { anchorIdx = ri; break; }
+    }
+    var anchor = anchorIdx >= 0 ? scored.splice(anchorIdx, 1)[0] : null;
+    // Rotate remaining by offset
+    if (scored.length > 1) {
+      var rot = _liftRerollOffset % scored.length;
+      scored = scored.slice(rot).concat(scored.slice(0, rot));
+    }
+    if (anchor) scored.unshift(anchor);
+  }
   return scored.map(s => s.name);
 }
 
@@ -2726,6 +2746,12 @@ function toggleCardioBreakdown() {
 }
 
 let _cardioRerollOffset = 0;
+let _liftRerollOffset = 0;
+
+function rerollLifts() {
+  _liftRerollOffset++;
+  if (LAST_RECS) renderTimedSession(LAST_RECS);
+}
 
 function rerollCardio() {
   _cardioRerollOffset++;
@@ -2994,10 +3020,10 @@ function generateRecommendations(muscleStats) {
   }
   var weeklyFreq = liftDays14d / 2;
   // Scale: 5+/wk -> 0.03, 3-4/wk -> 0.08, 1-2/wk -> 0.15, 0/wk -> 0.20
-  var structuralW = weeklyFreq >= 5 ? 0.03
-                  : weeklyFreq >= 3 ? 0.08
-                  : weeklyFreq >= 1 ? 0.15
-                  : 0.20;
+  var structuralW = weeklyFreq >= 5 ? 0.08
+                  : weeklyFreq >= 3 ? 0.16
+                  : weeklyFreq >= 1 ? 0.25
+                  : 0.35;
   var tierBonus = { 1: 1.0, 2: 0.5, 3: 0.0 };
 
   for (const [key, stat] of Object.entries(muscleStats)) {
@@ -3255,6 +3281,11 @@ function buildTimedSession(recs, prefs) {
       totalSec += isoCandidate.timeSec;
     }
   }
+
+  // Sort by demand: heavy compounds first, small accessories last
+  session.sort(function(a, b) {
+    return getExerciseDemandRank(a.name) - getExerciseDemandRank(b.name);
+  });
 
   return { exercises: session, totalSec };
 }
@@ -3563,7 +3594,7 @@ async function sendSessionToHevy() {
       var prescribedReps = parseInt(repParts[0], 10) || 8;
 
       // Round weight to nearest 5 lbs, then convert to kg.
-      // Hevy displays lbs as floor(kg * 2.20462, 2dp) — truncation, not rounding.
+      // Hevy displays lbs as floor(kg * 2.20462, 2dp) -- truncation, not rounding.
       // So we ceil the kg to 3dp to ensure the back-conversion lands on or above target.
       // e.g. 140 lbs: round gives 63.503 kg -> floor(139.999) = 139.99. WRONG.
       //               ceil  gives 63.504 kg -> floor(140.002) = 140.00. CORRECT.
@@ -3712,6 +3743,30 @@ async function sendSessionToHevy() {
 // B2: Sort mode state for Today tab -- 'urgency' (default) or 'anatomy'
 const ANATOMY_ORDER = ['chest', 'back', 'shoulders', 'quads', 'hamstrings', 'glutes', 'biceps', 'triceps', 'calves', 'core', 'neck', 'forearms'];
 
+// Demand rank for exercise ordering: lower = more demanding = listed first
+// Tier 1 compounds (bench, squat, deadlift, OHP, rows) -> 1
+// Tier 2 compounds (dumbbell presses, leg press, RDL, hip thrust) -> 2
+// Tier 3 isolation large muscle (flies, curls, extensions, leg curl) -> 3
+// Tier 4 small muscle / accessory (calves, core, neck, forearms) -> 4
+function getExerciseDemandRank(exName) {
+  var db = EXERCISE_DB[exName];
+  var isCompound = db ? db.type === 'compound' : isLikelyCompound(exName);
+  var muscle = db ? db.muscle : null;
+  // Also check if it's a small accessory muscle
+  var smallMuscles = { calves: 1, core: 1, neck: 1, forearms: 1 };
+
+  if (isCompound) {
+    // Heavy barbell compounds get rank 1
+    var heavyPattern = /barbell|squat|deadlift|bench press|overhead press|barbell row|pendlay/i;
+    if (heavyPattern.test(exName)) return 1;
+    return 2;
+  }
+  // Isolation on small muscles
+  if (muscle && smallMuscles[muscle]) return 4;
+  // Isolation on large muscles
+  return 3;
+}
+
 function toggleTodayChips() {
   const wrapper = document.getElementById('today-chips-wrapper');
   const row = document.getElementById('today-chips-row');
@@ -3786,6 +3841,7 @@ function renderTimedSession(recs) {
   const wrapper = document.getElementById('today-chips-wrapper');
   wrapper.innerHTML = `
     <div style="display:flex;align-items:center;justify-content:flex-end;gap:8px;margin-bottom:${chipsVisible ? '10' : '14'}px;padding-bottom:12px;border-bottom:1px solid ${C.border};">
+      <button onclick="rerollLifts()" style="display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:6px;background:${C.surface2};border:1px solid ${C.border};color:${C.textMid};font-size:11px;font-weight:600;font-family:'JetBrains Mono',monospace;cursor:pointer;-webkit-tap-highlight-color:transparent;white-space:nowrap;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>Reroll</button>
       <button id="send-to-hevy-btn" onclick="sendSessionToHevy()" style="display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:6px;background:${C.surface2};border:1px solid ${C.border};color:${C.textMid};font-size:11px;font-weight:600;font-family:'JetBrains Mono',monospace;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:all 0.2s ease;white-space:nowrap;">
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
         Hevy
@@ -6285,6 +6341,7 @@ document.addEventListener('click', function(e) {
 
 function renderDashboard(workouts) {
   _cardioRerollOffset = 0;
+  _liftRerollOffset = 0;
 
   // One-time cache bust on v1.17 upgrade to force fresh fuzzy matching
   if (!Storage.get('v117_cache_cleared')) {
