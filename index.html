@@ -137,13 +137,26 @@ text-transform: uppercase;
 /* Cards */
 .card {
 background: var(--surface);
-background-image: radial-gradient(rgba(255,255,255,0.04) 1px, transparent 1px);
-background-size: 20px 20px;
 border: 1px solid var(--border);
-border-radius: 8px;
+border-radius: 10px;
 padding: 20px;
 margin-bottom: 14px;
 box-shadow: none;
+position: relative;
+overflow: hidden;
+}
+.card::before {
+content: '';
+position: absolute;
+inset: 0;
+background-image: url("data:image/svg+xml,%3Csvg width='200' height='200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+border-radius: 10px;
+pointer-events: none;
+z-index: 0;
+}
+.card > * {
+position: relative;
+z-index: 1;
 }
 .card-title {
 font-size: 10px;
@@ -670,8 +683,9 @@ body {
 
   <!-- Main Dashboard -->
 
-  <div id="dashboard" class="hidden">
-    <div class="header">
+  <div id="dashboard" class="hidden" style="position:relative;">
+    <div id="canopy-light" style="position:absolute;top:0;left:0;right:0;height:250px;pointer-events:none;z-index:0;"></div>
+    <div class="header" style="position:relative;z-index:1;">
       <div style="display:flex;align-items:center;gap:10px;">
         <h1>LiftScript</h1>
         <div class="subtitle" id="last-updated">v1.19</div>
@@ -697,7 +711,7 @@ body {
 <!-- Today Tab -->
 
 <div id="tab-today">
-  <div class="card" style="border:1px solid rgba(180,197,219,0.16);">
+  <div class="card" style="border:1px solid rgba(180,160,120,0.14);">
     <div id="today-hero"></div>
     <div id="today-chips-wrapper"></div>
     <div id="suggested-exercises"></div>
@@ -902,6 +916,86 @@ const C = {
   cardio:    '#D4983B',
   gold:      '#E8C44A',
 };
+
+
+// ============================================================
+// REDWOOD AESTHETIC UTILITIES (v1.19)
+// ============================================================
+
+// SVG noise filter for bark texture overlay (inline data URI)
+const BARK_TEXTURE_SVG = 'url("data:image/svg+xml,%3Csvg width=\'200\' height=\'200\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'n\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.65\' numOctaves=\'4\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'200\' height=\'200\' filter=\'url(%23n)\' opacity=\'0.03\'/%3E%3C/svg%3E")';
+
+// Branch divider SVG (organic wavy line with offshoots)
+function branchDividerHTML() {
+  return '<svg width="100%" height="12" viewBox="0 0 300 12" preserveAspectRatio="none" style="display:block;margin:10px 0;opacity:0.18;"><path d="M0,6 Q30,4 60,6 T120,5 T180,7 T240,5 T300,6" fill="none" stroke="' + C.textDim + '" stroke-width="1"/><path d="M80,5.5 Q85,2 92,1" fill="none" stroke="' + C.textDim + '" stroke-width="0.7"/><path d="M200,6.5 Q206,9.5 213,10.5" fill="none" stroke="' + C.textDim + '" stroke-width="0.7"/></svg>';
+}
+
+// Moss progress bar (soft-edged gradient fill)
+function mossBarHTML(value, max, color, height) {
+  height = height || 5;
+  var pct = Math.min(100, Math.round((value / max) * 100));
+  return '<div style="height:' + height + 'px;border-radius:' + height + 'px;background:' + C.surface3 + ';overflow:hidden;position:relative;">' +
+    '<div style="width:' + pct + '%;height:100%;border-radius:' + height + 'px;background:linear-gradient(90deg,' + color + '77,' + color + ');position:relative;transition:width 0.4s ease;">' +
+    '<div style="position:absolute;right:-2px;top:-1px;width:8px;height:' + (height + 2) + 'px;background:radial-gradient(ellipse at left,' + color + '55,transparent);border-radius:0 ' + height + 'px ' + height + 'px 0;"></div>' +
+    '</div></div>';
+}
+
+// Cross-section ring SVG for muscle grid (organic concentric rings)
+function crossSectionRingSvg(daysSince, idealDays, arcColor) {
+  var size = 28;
+  var cx = size / 2;
+  var cy = size / 2;
+  var ringCount = 4;
+  var remaining;
+  if (daysSince === Infinity) { remaining = 0; }
+  else { remaining = Math.max(0, 1 - (daysSince / idealDays)); }
+  var filled = Math.round(remaining * ringCount);
+  var label = daysSince === Infinity ? '?' : daysSince;
+  var fontSize = String(label).length > 1 ? 8 : 9;
+  var svg = '<svg width="' + size + '" height="' + size + '" viewBox="0 0 ' + size + ' ' + size + '" style="flex-shrink:0;">';
+  for (var i = 0; i < ringCount; i++) {
+    var r = 4 + i * 3;
+    var isFilled = i < filled;
+    var pts = [];
+    for (var j = 0; j < 36; j++) {
+      var angle = (j / 36) * Math.PI * 2;
+      var noise = Math.sin(angle * 3 + i * 2.1) * 0.6 + Math.cos(angle * 5 + i * 1.3) * 0.3;
+      var rx = cx + (r + noise) * Math.cos(angle);
+      var ry = cy + (r + noise) * Math.sin(angle);
+      pts.push((j === 0 ? 'M' : 'L') + rx.toFixed(1) + ',' + ry.toFixed(1));
+    }
+    pts.push('Z');
+    var opacity = isFilled ? (0.45 + (i / ringCount) * 0.55).toFixed(2) : '0.2';
+    var strokeW = isFilled ? '1.3' : '0.8';
+    svg += '<path d="' + pts.join(' ') + '" fill="none" stroke="' + (isFilled ? arcColor : C.surface3) + '" stroke-width="' + strokeW + '" opacity="' + opacity + '"/>';
+  }
+  svg += '<text x="' + cx + '" y="' + cy + '" text-anchor="middle" dominant-baseline="central" fill="' + arcColor + '" font-family="JetBrains Mono,monospace" font-size="' + fontSize + '" font-weight="600">' + label + '</text>';
+  svg += '</svg>';
+  return svg;
+}
+
+// Time-of-day canopy light gradient
+function getCanopyGradient() {
+  var h = new Date().getHours();
+  if (h >= 5 && h < 11) {
+    // Morning: warm golden canopy light
+    return 'radial-gradient(ellipse 80% 50% at 70% 0%, rgba(200,180,100,0.07), transparent), radial-gradient(ellipse 60% 40% at 30% 0%, rgba(180,160,80,0.04), transparent)';
+  } else if (h >= 11 && h < 17) {
+    // Afternoon: bright filtered green
+    return 'radial-gradient(ellipse 80% 50% at 60% 0%, rgba(120,180,90,0.05), transparent), radial-gradient(ellipse 50% 35% at 40% 0%, rgba(160,200,100,0.04), transparent)';
+  } else if (h >= 17 && h < 21) {
+    // Evening: dusky warm amber
+    return 'radial-gradient(ellipse 80% 50% at 50% 0%, rgba(180,120,60,0.06), transparent), radial-gradient(ellipse 60% 40% at 70% 0%, rgba(140,100,60,0.04), transparent)';
+  } else {
+    // Night: faint cool moonlight
+    return 'radial-gradient(ellipse 70% 45% at 55% 0%, rgba(120,130,160,0.04), transparent)';
+  }
+}
+
+function updateCanopyLight() {
+  var el = document.getElementById('canopy-light');
+  if (el) el.style.background = getCanopyGradient();
+}
 
 // ============================================================
 // STRENGTH STANDARDS (Pillar 2)
@@ -2812,16 +2906,15 @@ function renderCardioPlan(dayCardioMap) {
   const barColor = donePct >= 100 ? C.accent : donePct >= 50 ? C.blue : C.warn;
 
   let html = `
-    <div style="margin-top:20px;padding-top:18px;border-top:1px solid ${C.border};">
+    <div style="margin-top:12px;padding-top:0;">
+      ${branchDividerHTML()}
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
         <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:1.2px;color:${C.textDim};">Cardio Plan</div>
         ${result.weekComplete ? '' : '<button onclick="rerollCardio()" style="display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:5px;background:' + C.surface2 + ';border:1px solid ' + C.border + ';color:' + C.textMid + ';font-size:10px;font-weight:600;font-family:JetBrains Mono,monospace;cursor:pointer;-webkit-tap-highlight-color:transparent;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>Reroll</button>'}
       </div>
       <div onclick="toggleCardioBreakdown()" style="cursor:pointer;display:flex;align-items:center;gap:10px;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid ${C.border};">
         <div style="font-family:'JetBrains Mono',monospace;font-size:14px;color:${C.accent};font-weight:600;white-space:nowrap;">${Math.round(doneMin)}/${result.targetMin}m</div>
-        <div style="flex:1;height:5px;border-radius:3px;background:${C.surface3};overflow:hidden;">
-          <div style="height:100%;border-radius:3px;background:${barColor};width:${donePct}%;transition:width 0.4s ease;"></div>
-        </div>
+        <div style="flex:1;">${mossBarHTML(donePct, 100, barColor, 5)}</div>
         <div style="font-family:'JetBrains Mono',monospace;font-size:12px;color:${C.textDim};white-space:nowrap;">this week \u25BE</div>
       </div>
       <div id="cardio-breakdown" style="display:none;margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid ${C.border};">
@@ -3985,43 +4078,16 @@ function renderMuscleGrid(muscleStats, recs) {
     return scoreB - scoreA;
   });
 
-  // SVG arc helper for recency ring
+  // Cross-section ring indicator for recency (Redwood aesthetic)
   function recencyRingSvg(daysSince, idealDays) {
-    const size = 28;
-    const r = 10;
-    const cx = size / 2;
-    const cy = size / 2;
-    const stroke = 3;
-    const circumference = 2 * Math.PI * r;
-
-    // How much time remains: 1.0 = just trained, 0.0 = at/past ideal
-    let remaining;
-    if (daysSince === Infinity) {
-      remaining = 0;
-    } else {
-      remaining = Math.max(0, 1 - (daysSince / idealDays));
-    }
-    const arcLen = remaining * circumference;
-    const gapLen = circumference - arcLen;
-
-    // Color based on remaining
-    let arcColor;
+    var remaining;
+    if (daysSince === Infinity) remaining = 0;
+    else remaining = Math.max(0, 1 - (daysSince / idealDays));
+    var arcColor;
     if (remaining >= 0.6) arcColor = C.accent;
     else if (remaining >= 0.2) arcColor = C.warn;
     else arcColor = C.danger;
-
-    // Day label
-    const label = daysSince === Infinity ? '?' : daysSince;
-    const fontSize = String(label).length > 1 ? 9 : 10;
-
-    return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" style="flex-shrink:0;">
-      <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${C.surface3}" stroke-width="${stroke}"/>
-      <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${arcColor}" stroke-width="${stroke}"
-        stroke-dasharray="${arcLen} ${gapLen}" stroke-linecap="round"
-        transform="rotate(-90 ${cx} ${cy})" style="transition:stroke-dasharray 0.4s ease;"/>
-      <text x="${cx}" y="${cy}" text-anchor="middle" dominant-baseline="central"
-        fill="${arcColor}" font-family="JetBrains Mono,monospace" font-size="${fontSize}" font-weight="600">${label}</text>
-    </svg>`;
+    return crossSectionRingSvg(daysSince, idealDays, arcColor);
   }
 
   grid.innerHTML = entries.map(([key, stat]) => {
@@ -4055,9 +4121,7 @@ function renderMuscleGrid(muscleStats, recs) {
           ${ring}
         </div>
         <div style="display:flex;align-items:center;gap:8px;">
-          <div style="flex:1;height:4px;border-radius:2px;background:${C.surface3};overflow:hidden;">
-            <div style="height:100%;width:${volPct}%;border-radius:2px;background:${volColor};opacity:0.8;transition:width 0.4s ease;"></div>
-          </div>
+          <div style="flex:1;">${mossBarHTML(volPct, 100, volColor, 4)}</div>
           <div style="font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:600;color:${volColor};white-space:nowrap;">${volLabel}</div>
         </div>
       </div>`;
@@ -4924,7 +4988,7 @@ function renderPRBoard() {
       '</svg>';
   }
 
-  var html = '<div style="margin-top:16px;padding-top:14px;border-top:1px solid ' + C.border + ';">' +
+  var html = '<div style="margin-top:10px;padding-top:0;">' + branchDividerHTML() +
     '<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:' + C.textDim + ';font-family:JetBrains Mono,monospace;margin-bottom:10px;">Personal Records</div>';
 
   var hasAny = false;
@@ -4943,7 +5007,7 @@ function renderPRBoard() {
       ? '<span style="font-size:9px;font-weight:600;color:' + C.accent + ';padding:1px 5px;border-radius:3px;background:' + C.accentDim + ';font-family:JetBrains Mono,monospace;letter-spacing:0.5px;margin-left:6px;">CURRENT</span>'
       : '<span style="font-size:10px;color:' + C.textDim + ';font-family:JetBrains Mono,monospace;margin-left:6px;">' + Math.round((pr.current / pr.allTimePR) * 100) + '% of PR</span>';
 
-    html += '<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid ' + C.surface2 + ';">' +
+    html += '<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:none;">' +
       '<div style="width:58px;font-size:13px;font-weight:600;color:' + C.text + ';font-family:JetBrains Mono,monospace;flex-shrink:0;">' + liftLabels[k] + '</div>' +
       '<div style="flex:1;min-width:0;">' +
         '<div style="display:flex;align-items:baseline;gap:4px;">' +
@@ -4956,7 +5020,7 @@ function renderPRBoard() {
         '</div>' +
       '</div>' +
       '<div style="flex-shrink:0;">' + prSparkline(pr.history) + '</div>' +
-    '</div>';
+    '</div>' + (ki < liftKeys.length - 1 ? branchDividerHTML() : '');
   }
 
   if (!hasAny) {
@@ -6107,6 +6171,7 @@ function showScreen(screen) {
   ['loading-screen', 'dashboard'].forEach(id => {
     document.getElementById(id).classList.toggle('hidden', id !== screen);
   });
+  if (screen === 'dashboard') updateCanopyLight();
 }
 
 function updateLoading(text) {
@@ -6319,9 +6384,7 @@ function togglePowerScoreDetail() {
         <span style="font-size:12px;font-weight:600;color:${C.text};">${c.label} <span style="font-size:10px;font-weight:400;color:${C.textDim};">${weightPct}%</span></span>
         <span style="font-size:11px;color:${C.textDim};">${c.detail} <span style="font-weight:600;color:${barColor};">${c.value}</span></span>
       </div>
-      <div style="height:4px;border-radius:2px;background:${C.surface3};overflow:hidden;">
-        <div style="height:100%;width:${c.value}%;border-radius:2px;background:${barColor};transition:width 0.4s ease;"></div>
-      </div>
+      ${mossBarHTML(c.value, 100, barColor, 4)}
     </div>`;
   }
 
