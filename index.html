@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 
 <!--
-  LiftScript v1.18
+  LiftScript v1.19
   Changes from v1.17:
   1.  Boosted structural importance: foundation lifts (bench, squat, back, shoulders) now meaningfully outrank accessories
   2.  Demand-ordered exercise list: heavy compounds first, small accessories last (both on-screen and in Hevy export)
@@ -56,41 +56,41 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="theme-color" content="#060606">
+<meta name="theme-color" content="#1E1C18">
 <title>LiftScript</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&display=swap" rel="stylesheet">
 <style>
 :root {
-  --bg: #060606;
-  --surface: #0E0E10;
-  --surface2: #16161A;
-  --surface3: #1E1E22;
-  --border: rgba(255,255,255,0.08);
-  --border-light: rgba(255,255,255,0.12);
-  --text: #FFFFFF;
-  --text-mid: #A0A0A5;
-  --text-dim: #6B6B70;
-  --accent: #FF135A;
-  --accent-dim: rgba(255, 19, 90, 0.15);
-  --warn: #FF8C00;
-  --warn-dim: rgba(255, 140, 0, 0.14);
-  --danger: #FF3B30;
-  --danger-dim: rgba(255, 59, 48, 0.12);
-  --blue: #5AC8FA;
-  --blue-dim: rgba(90, 200, 250, 0.14);
-  --purple: #BF5AF2;
-  --purple-dim: rgba(191, 90, 242, 0.14);
-  --strength: #BF5AF2;
-  --strength-dim: rgba(191, 90, 242, 0.14);
+  --bg: #1E1C18;
+  --surface: #2A2720;
+  --surface2: #35312A;
+  --surface3: #403B33;
+  --border: rgba(180,160,120,0.10);
+  --border-light: rgba(180,160,120,0.15);
+  --text: #E8E0D0;
+  --text-mid: #A89E88;
+  --text-dim: #7A7262;
+  --accent: #5FA052;
+  --accent-dim: rgba(95, 160, 82, 0.14);
+  --warn: #D4983B;
+  --warn-dim: rgba(212, 152, 59, 0.14);
+  --danger: #CC4433;
+  --danger-dim: rgba(204, 68, 51, 0.12);
+  --blue: #7CBAD4;
+  --blue-dim: rgba(124, 186, 212, 0.14);
+  --purple: #C084FC;
+  --purple-dim: rgba(192, 132, 252, 0.14);
+  --strength: #C084FC;
+  --strength-dim: rgba(192, 132, 252, 0.14);
   color-scheme: dark;
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
 html, body {
-background: #060606;
-background-color: #060606;
+background: #1E1C18;
+background-color: #1E1C18;
 color-scheme: dark;
 overscroll-behavior-y: none;
 }
@@ -109,7 +109,7 @@ max-width: 480px;
 margin: 0 auto;
 padding: 20px 18px;
 padding-bottom: 120px;
-background: #060606;
+background: #1E1C18;
 }
 
 /* Header */
@@ -182,9 +182,9 @@ font-family: 'JetBrains Mono', monospace;
 -webkit-tap-highlight-color: transparent;
 }
 .tab.active {
-background: rgba(255, 19, 90, 0.12);
-color: #FF135A;
-box-shadow: 0 0 0 1px rgba(255, 19, 90, 0.25);
+background: rgba(95, 160, 82, 0.12);
+color: #5FA052;
+box-shadow: 0 0 0 1px rgba(95, 160, 82, 0.25);
 }
 
 /* Expandable explainer */
@@ -517,7 +517,7 @@ gap: 18px;
 .spinner {
 width: 28px; height: 28px;
 border: 2.5px solid var(--border);
-border-top-color: #FF135A;
+border-top-color: #5FA052;
 border-radius: 50%;
 animation: spin 0.75s linear infinite;
 }
@@ -674,7 +674,7 @@ body {
     <div class="header">
       <div style="display:flex;align-items:center;gap:10px;">
         <h1>LiftScript</h1>
-        <div class="subtitle" id="last-updated">v1.18</div>
+        <div class="subtitle" id="last-updated">v1.19</div>
         <div id="power-score-wrap" style="margin-left:auto;display:flex;align-items:center;gap:6px;cursor:pointer;-webkit-tap-highlight-color:transparent;" onclick="togglePowerScoreDetail()">
           <div id="power-score-ring"></div>
         </div>
@@ -823,7 +823,7 @@ window.addEventListener('unhandledrejection', function(e) {
 </script>
 <script>
 // ============================================================
-// LIFTSCRIPT v1.18
+// LIFTSCRIPT v1.19
 // ============================================================
 // SCIENTIFIC FOUNDATION
 // PILLAR 1: Volume-Hypertrophy Targets
@@ -870,37 +870,37 @@ function localDateStr(d) {
 // Hex values here match the CSS custom properties in <style>.
 // ============================================================
 const C = {
-  bg:        '#060606',
-  surface:   '#0E0E10',
-  surface2:  '#16161A',
-  surface3:  '#1E1E22',
-  border:    'rgba(255,255,255,0.08)',
-  text:      '#FFFFFF',
-  textMid:   '#A0A0A5',
-  textDim:   '#6B6B70',
-  textDark:  '#4A4A4E',
-  textDark2: '#808085',
-  accent:    '#FF135A',
-  accentMid: '#E0114E',
-  accentDim: 'rgba(255,19,90,0.15)',
-  accentBorder: 'rgba(255,19,90,0.35)',
-  warn:      '#FF8C00',
-  warnDim:   'rgba(255,140,0,0.14)',
-  amber:     '#FF8C00',
-  amberLt:   '#FFA033',
-  danger:    '#FF3B30',
-  dangerDim: 'rgba(255,59,48,0.12)',
-  blue:      '#5AC8FA',
-  blueDim:   'rgba(90,200,250,0.14)',
-  strength:  '#BF5AF2',
-  purple:    '#BF5AF2',
-  purpleLt:  '#DA8FFF',
-  pink:      '#FF2D78',
-  fuchsia:   '#BF5AF2',
-  cyan:      '#64D2FF',
-  teal:      '#30D158',
-  cardio:    '#FF9500',
-  gold:      '#FFD60A',
+  bg:        '#1E1C18',
+  surface:   '#2A2720',
+  surface2:  '#35312A',
+  surface3:  '#403B33',
+  border:    'rgba(180,160,120,0.10)',
+  text:      '#E8E0D0',
+  textMid:   '#A89E88',
+  textDim:   '#7A7262',
+  textDark:  '#5C5448',
+  textDark2: '#8C8470',
+  accent:    '#5FA052',
+  accentMid: '#4E8A43',
+  accentDim: 'rgba(95,160,82,0.14)',
+  accentBorder: 'rgba(95,160,82,0.28)',
+  warn:      '#D4983B',
+  warnDim:   'rgba(212,152,59,0.14)',
+  amber:     '#D4983B',
+  amberLt:   '#E0A84D',
+  danger:    '#CC4433',
+  dangerDim: 'rgba(204,68,51,0.12)',
+  blue:      '#7CBAD4',
+  blueDim:   'rgba(124,186,212,0.14)',
+  strength:  '#C084FC',
+  purple:    '#C084FC',
+  purpleLt:  '#D4A8FF',
+  pink:      '#D45A7A',
+  fuchsia:   '#C084FC',
+  cyan:      '#7AC4D4',
+  teal:      '#6DBF7B',
+  cardio:    '#D4983B',
+  gold:      '#E8C44A',
 };
 
 // ============================================================
@@ -6385,7 +6385,7 @@ function renderDashboard(workouts) {
   const syncColor = (hevyStatus === 'error' || healthStatus === 'missing') ? C.textDim
     : (healthStatus === 'stale') ? C.warn : C.accent;
   document.getElementById('last-updated').innerHTML =
-    `v1.18 \u00b7${now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })} <span id="sync-dot" style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${syncColor};margin-left:5px;vertical-align:middle;position:relative;top:-1px;"></span>`;
+    `v1.19 \u00b7${now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })} <span id="sync-dot" style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${syncColor};margin-left:5px;vertical-align:middle;position:relative;top:-1px;"></span>`;
 
   // Populate globals BEFORE renderTimedSession so lifted-today detection works
   heatmapDayWorkouts = pp.heatmapDayWorkouts || {};
@@ -6514,8 +6514,8 @@ function runDevTests() {
   const rootStyle = getComputedStyle(document.documentElement);
   const accentVar = rootStyle.getPropertyValue('--accent').trim();
   results.push({
-    test: 'A4: CSS --accent resolves to #FF135A',
-    pass: accentVar === '#FF135A',
+    test: 'A4: CSS --accent resolves to #5FA052',
+    pass: accentVar === '#5FA052',
     got: accentVar || '(empty -- var() references may use en-dash instead of double-hyphen)'
   });
 
