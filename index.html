@@ -1415,7 +1415,7 @@ function rankExercisesForMuscle(muscleKey) {
 
   const now = new Date();
   const todayStr = localDateStr(now);
-  const scored = [];
+  let scored = [];
 
   for (const exName of pool) {
     const hist = exerciseHistory[exName];
