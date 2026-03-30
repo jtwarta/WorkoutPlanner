@@ -561,7 +561,6 @@ line-height: 1.4;
 display: grid;
 grid-template-columns: 1fr 1fr;
 gap: 10px;
-margin-top: 14px;
 }
 .vital-cell {
 padding: 12px;
@@ -599,58 +598,7 @@ color: var(--text-dim);
 margin-top: 4px;
 }
 
-/* Cardio Fitness Score */
-.cardio-score-row {
-margin-bottom: 14px;
-padding-bottom: 14px;
-border-bottom: 1px solid var(--border);
-}
-.cardio-score-header {
-display: flex;
-align-items: baseline;
-justify-content: space-between;
-margin-bottom: 10px;
-}
-.cardio-score-left {
-display: flex;
-align-items: baseline;
-gap: 6px;
-}
-.cardio-score-value {
-font-family: 'JetBrains Mono', monospace;
-font-size: 28px;
-font-weight: 500;
-color: var(--accent);
-}
-.cardio-score-unit {
-font-size: 12px;
-color: var(--text-dim);
-}
-.cardio-score-label {
-font-family: 'JetBrains Mono', monospace;
-font-size: 14px;
-font-weight: 600;
-}
-.cardio-score-bar-wrap {
-height: 6px;
-border-radius: 3px;
-background: var(--surface3);
-overflow: hidden;
-position: relative;
-}
-.cardio-score-bar {
-height: 100%;
-border-radius: 3px;
-transition: width 0.6s ease;
-}
-.cardio-score-scale {
-display: flex;
-justify-content: space-between;
-margin-top: 4px;
-font-size: 10px;
-font-family: 'JetBrains Mono', monospace;
-color: var(--text-dim);
-}
+
 
 .hidden { display: none; }
 
@@ -787,22 +735,6 @@ body {
       <span>Health Vitals</span>
       <span class="health-sync-time" id="health-sync-time" style="font-size:11px;font-family:'JetBrains Mono',monospace;color:#6B6B70;text-transform:none;letter-spacing:0;"></span>
     </div>
-    <!-- Cardio Fitness Score -->
-    <div class="cardio-score-row" id="cardio-score-row">
-      <div class="cardio-score-header">
-        <div class="cardio-score-left">
-          <span class="cardio-score-value" id="cardio-score-value">--</span>
-          <span class="cardio-score-unit">mL/kg/min</span>
-        </div>
-        <div class="cardio-score-label" id="cardio-score-label">--</div>
-      </div>
-      <div class="cardio-score-bar-wrap">
-        <div class="cardio-score-bar" id="cardio-score-bar"></div>
-      </div>
-      <div class="cardio-score-scale">
-        <span>Low</span><span>Fair</span><span>Good</span><span>Great</span><span>Elite</span>
-      </div>
-    </div>
     <!-- Vitals Grid -->
     <div class="vitals-grid" id="vitals-grid"></div>
   </div>
@@ -810,17 +742,16 @@ body {
   <!-- Body Measurements Card (v1.7) -->
 
   <div class="card" id="measurements-card">
-    <div class="card-title" style="display:flex;align-items:center;justify-content:space-between;">
-      <span>Body Measurements</span>
-      <div style="display:flex;gap:6px;">
-        <button class="btn-log-weight" onclick="exportEmbeddableData()" style="background:rgba(142,142,152,0.12);color:#6B6B70;font-size:11px;padding:4px 8px;">Export</button>
-        <button class="btn-log-weight" onclick="document.getElementById('hevy-csv-input').click()" style="background:rgba(90,200,250,0.14);color:#5AC8FA;border-color:rgba(90,200,250,0.30);">Import Hevy</button>
-      </div>
+    <div class="card-title">Body Measurements</div>
+    <div id="proportions-display"></div>
+    <div id="body-comp-display" style="margin-top:14px;"></div>
+    <div id="measurements-display" style="margin-top:14px;"></div>
+    <div style="display:flex;gap:6px;justify-content:flex-end;margin-top:12px;">
+      <button class="btn-log-weight" onclick="exportEmbeddableData()" style="background:rgba(142,142,152,0.12);color:#6B6B70;font-size:11px;padding:4px 8px;">Export</button>
+      <button class="btn-log-weight" onclick="document.getElementById('hevy-csv-input').click()" style="background:rgba(90,200,250,0.14);color:#5AC8FA;border-color:rgba(90,200,250,0.30);">Import Hevy</button>
     </div>
     <input type="file" id="hevy-csv-input" accept=".csv" style="display:none;" onchange="importHevyCSV(this)">
-    <div id="hevy-import-status" style="display:none;padding:10px 12px;border-radius:8px;margin-bottom:12px;font-size:13px;font-family:'JetBrains Mono',monospace;"></div>
-    <div id="measurements-display"></div>
-    <div id="proportions-display" style="margin-top:14px;"></div>
+    <div id="hevy-import-status" style="display:none;padding:10px 12px;border-radius:8px;margin-top:8px;font-size:13px;font-family:'JetBrains Mono',monospace;"></div>
   </div>
 </div>
 
@@ -5783,9 +5714,61 @@ function renderProportionsDisplay() {
 }
 
 
+function renderBodyCompDisplay() {
+  const container = document.getElementById('body-comp-display');
+  if (!container) return;
+  if (!healthData || healthStatus === 'missing') { container.innerHTML = ''; return; }
+
+  let hasAny = false;
+  let html = '<div style="padding-top:12px;border-top:1px solid ' + C.border + ';">' +
+    '<div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:1.2px;color:' + C.textDim + ';margin-bottom:10px;font-family:JetBrains Mono,monospace;">Body Composition</div>' +
+    '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">';
+
+  // Body Fat %
+  var bf = healthData.body_fat_pct;
+  if (bf && bf > 0) {
+    var bfCat = bf <= 10 ? { label: 'Elite', color: C.gold }
+      : bf <= 15 ? { label: 'Great', color: C.accent }
+      : bf <= 20 ? { label: 'Good', color: C.blue }
+      : bf <= 25 ? { label: 'Fair', color: C.warn }
+      : { label: 'Low', color: C.danger };
+    html += '<div style="padding:10px;border-radius:8px;border:1px solid ' + C.border + ';background:' + C.surface2 + ';">' +
+      '<div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:' + C.textDim + ';font-family:JetBrains Mono,monospace;margin-bottom:4px;">Body Fat</div>' +
+      '<div style="font-family:JetBrains Mono,monospace;font-size:20px;font-weight:700;color:' + C.text + ';line-height:1.2;">' + bf.toFixed(1) + '<span style="font-size:11px;font-weight:400;color:' + C.textDim + ';margin-left:2px;">%</span></div>' +
+      '<div style="font-size:10px;font-family:JetBrains Mono,monospace;color:' + bfCat.color + ';margin-top:2px;">' + bfCat.label + '</div></div>';
+    hasAny = true;
+  }
+
+  // Lean Body Mass
+  var lbm = healthData.lean_body_mass_lbs;
+  if (lbm && lbm > 0) {
+    html += '<div style="padding:10px;border-radius:8px;border:1px solid ' + C.border + ';background:' + C.surface2 + ';">' +
+      '<div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:' + C.textDim + ';font-family:JetBrains Mono,monospace;margin-bottom:4px;">Lean Mass</div>' +
+      '<div style="font-family:JetBrains Mono,monospace;font-size:20px;font-weight:700;color:' + C.text + ';line-height:1.2;">' + Math.round(lbm) + '<span style="font-size:11px;font-weight:400;color:' + C.textDim + ';margin-left:2px;">lbs</span></div>' +
+      '<div style="font-size:10px;font-family:JetBrains Mono,monospace;color:' + C.textDim + ';margin-top:2px;">Apple Health</div></div>';
+    hasAny = true;
+  }
+
+  // Waist
+  var waistAH = healthData.waist_circumference_in;
+  if (waistAH && waistAH > 0) {
+    var waistTarget = PROFILE.heightIn * 0.45;
+    var waistStatus = waistAH <= waistTarget ? { label: 'On target', color: C.accent } : { label: '+' + (waistAH - waistTarget).toFixed(1) + ' in', color: C.warn };
+    html += '<div style="padding:10px;border-radius:8px;border:1px solid ' + C.border + ';background:' + C.surface2 + ';">' +
+      '<div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:' + C.textDim + ';font-family:JetBrains Mono,monospace;margin-bottom:4px;">Waist</div>' +
+      '<div style="font-family:JetBrains Mono,monospace;font-size:20px;font-weight:700;color:' + C.text + ';line-height:1.2;">' + waistAH.toFixed(1) + '<span style="font-size:11px;font-weight:400;color:' + C.textDim + ';margin-left:2px;">in</span></div>' +
+      '<div style="font-size:10px;font-family:JetBrains Mono,monospace;color:' + waistStatus.color + ';margin-top:2px;">' + waistStatus.label + '</div></div>';
+    hasAny = true;
+  }
+
+  html += '</div></div>';
+  container.innerHTML = hasAny ? html : '';
+}
+
 function renderMeasurementsCard() {
-  renderMeasurementsDisplay();
   renderProportionsDisplay();
+  renderBodyCompDisplay();
+  renderMeasurementsDisplay();
 }
 
 // ============================================================
@@ -5934,30 +5917,12 @@ function renderHealthVitals() {
     syncEl.style.color = healthStatus === 'ok' ? C.accent : C.warn;
   }
 
-  // Cardio Fitness Score (VO2 Max)
-  const vo2 = healthData.cardio_fitness;
-  if (vo2 && vo2 > 0) {
-    const pctile = estimateVO2Percentile(vo2, PROFILE.age);
-    const cat = getVO2Category(pctile);
-    const barPct = Math.min(Math.max(pctile, 3), 97);
-
-    document.getElementById('cardio-score-value').textContent = vo2.toFixed(1);
-    const labelEl = document.getElementById('cardio-score-label');
-    labelEl.innerHTML = `<span style="display:inline-flex;align-items:center;gap:4px;">${pctile}th %ile \u00b7 ${tierBadge(cat.label, cat.color)}</span>`;
-    labelEl.style.color = cat.color;
-
-    const bar = document.getElementById('cardio-score-bar');
-    bar.style.width = barPct + '%';
-    bar.style.background = cat.color;
-
-    document.getElementById('cardio-score-row').style.display = 'block';
-  } else {
-    document.getElementById('cardio-score-row').style.display = 'none';
-  }
-
   // Vitals Grid
   const grid = document.getElementById('vitals-grid');
   let html = '';
+
+  // Sub-header: Cardiac
+  html += `<div style="grid-column:1/-1;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:1.2px;color:${C.textDim};font-family:'JetBrains Mono',monospace;padding:2px 0;">Cardiac</div>`;
 
   // Helper: build mini SVG sparkline from points array [{label, value}]
   // lowerBetter: true for RHR/walking HR (lower = good), false for recovery/VO2 (higher = good)
@@ -6077,6 +6042,9 @@ function renderHealthVitals() {
       trend);
   }
 
+  // Sub-header: Activity
+  html += `<div style="grid-column:1/-1;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:1.2px;color:${C.textDim};font-family:'JetBrains Mono',monospace;padding:2px 0;margin-top:4px;">Activity</div>`;
+
   // Steps (7-day avg)
   const steps = healthData.steps;
   if (steps && steps > 0) {
@@ -6110,43 +6078,6 @@ function renderHealthVitals() {
     html += vitalCell('Walking HR',
       `${Math.round(whr)}<span class="vital-unit">bpm</span>`,
       `<span style="color:${whrCat.color};display:flex;align-items:center;">${tierBadge(whrCat.label, whrCat.color)}</span>`, '');
-  }
-
-  // Body Fat % (from Hevy -> Apple Health)
-  const bf = healthData.body_fat_pct;
-  if (bf && bf > 0) {
-    const bfCat = bf <= 10 ? { label: 'Elite', color: C.gold }
-      : bf <= 15 ? { label: 'Great', color: C.accent }
-      : bf <= 20 ? { label: 'Good', color: C.blue }
-      : bf <= 25 ? { label: 'Fair', color: C.warn }
-      : { label: 'Low', color: C.danger };
-    html += `<div class="vital-cell">
-      <div class="vital-label">Body Fat</div>
-      <div class="vital-value">${bf.toFixed(1)}<span class="vital-unit">%</span></div>
-      <div class="vital-context" style="color:${bfCat.color};display:flex;align-items:center;">${tierBadge(bfCat.label, bfCat.color)}</div>
-    </div>`;
-  }
-
-  // Lean Body Mass (from Hevy -> Apple Health)
-  const lbm = healthData.lean_body_mass_lbs;
-  if (lbm && lbm > 0) {
-    html += `<div class="vital-cell">
-      <div class="vital-label">Lean Mass</div>
-      <div class="vital-value">${Math.round(lbm)}<span class="vital-unit">lbs</span></div>
-      <div class="vital-context">via Apple Health</div>
-    </div>`;
-  }
-
-  // Waist (from Hevy -> Apple Health)
-  const waistAH = healthData.waist_circumference_in;
-  if (waistAH && waistAH > 0) {
-    const waistDate = healthData.waist_date || '';
-    const waistCtx = waistDate ? waistDate : 'via Apple Health';
-    html += `<div class="vital-cell">
-      <div class="vital-label">Waist</div>
-      <div class="vital-value">${waistAH.toFixed(1)}<span class="vital-unit">in</span></div>
-      <div class="vital-context">${waistCtx}</div>
-    </div>`;
   }
 
   grid.innerHTML = html;
