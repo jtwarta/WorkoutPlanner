@@ -903,7 +903,8 @@ function crossSectionRingSvg(daysSince, idealDays, arcColor) {
     var strokeW = isFilled ? '1.8' : '0.7';
     svg += '<path d="' + pts.join(' ') + '" fill="none" stroke="' + (isFilled ? arcColor : C.surface3) + '" stroke-width="' + strokeW + '" opacity="' + opacity + '"/>';
   }
-  svg += '<text x="' + cx + '" y="' + cy + '" text-anchor="middle" dominant-baseline="central" fill="' + arcColor + '" font-family="JetBrains Mono,monospace" font-size="' + fontSize + '" font-weight="600">' + label + '</text>';
+  svg += '<circle cx="' + cx + '" cy="' + cy + '" r="8" fill="' + C.bg + '" opacity="0.85"/>';
+  svg += '<text x="' + cx + '" y="' + cy + '" text-anchor="middle" dominant-baseline="central" fill="' + C.text + '" font-family="JetBrains Mono,monospace" font-size="' + fontSize + '" font-weight="700">' + label + '</text>';
   svg += '</svg>';
   return svg;
 }
@@ -4942,8 +4943,8 @@ function renderPRBoard() {
       ? '<span style="font-size:9px;font-weight:600;color:' + C.accent + ';padding:1px 5px;border-radius:3px;background:' + C.accentDim + ';font-family:JetBrains Mono,monospace;letter-spacing:0.5px;margin-left:6px;">CURRENT</span>'
       : '<span style="font-size:10px;color:' + C.textDim + ';font-family:JetBrains Mono,monospace;margin-left:6px;">' + Math.round((pr.current / pr.allTimePR) * 100) + '% of PR</span>';
 
-    html += '<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:none;">' +
-      '<div style="width:58px;font-size:13px;font-weight:600;color:' + C.text + ';font-family:JetBrains Mono,monospace;flex-shrink:0;">' + liftLabels[k] + '</div>' +
+    html += '<div style="display:flex;align-items:center;gap:10px;padding:12px 0;border-bottom:none;">' +
+      '<div style="width:80px;font-size:13px;font-weight:600;color:' + C.text + ';font-family:JetBrains Mono,monospace;flex-shrink:0;">' + liftLabels[k] + '</div>' +
       '<div style="flex:1;min-width:0;">' +
         '<div style="display:flex;align-items:baseline;gap:4px;">' +
           '<span style="font-family:JetBrains Mono,monospace;font-size:16px;font-weight:700;color:' + (isAtPR ? C.accent : C.text) + ';">' + pr.allTimePR + '</span>' +
@@ -5177,7 +5178,7 @@ function populateStrengthDetail() {
 
   // Column labels
   html += `<div style="display:flex;align-items:center;gap:10px;padding:0 0 6px 0;">
-    <div style="width:58px;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:${C.textDim};font-family:'JetBrains Mono',monospace;flex-shrink:0;">Lift</div>
+    <div style="width:80px;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:${C.textDim};font-family:'JetBrains Mono',monospace;flex-shrink:0;">Lift</div>
     <div style="flex:1;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:${C.textDim};font-family:'JetBrains Mono',monospace;text-align:center;">Percentile</div>
     <div style="width:72px;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:${C.textDim};font-family:'JetBrains Mono',monospace;text-align:right;flex-shrink:0;">Est 1RM</div>
   </div>`;
@@ -5225,15 +5226,15 @@ function populateStrengthDetail() {
       const s = lift.src;
       const srcDate = new Date(s.date + 'T12:00:00');
       const srcDateStr = srcDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-      srcHtml = `<div data-si-src style="max-height:0;overflow:hidden;opacity:0;transition:max-height 0.25s ease,opacity 0.2s ease;padding-left:58px;">
+      srcHtml = `<div data-si-src style="max-height:0;overflow:hidden;opacity:0;transition:max-height 0.25s ease,opacity 0.2s ease;padding-left:80px;">
         <div style="padding:4px 0 2px;font-family:'JetBrains Mono',monospace;font-size:11px;color:${C.textDim};">via ${s.ex} \u00b7 ${s.reps}@${s.wt}lbs \u00b7 ${srcDateStr}</div>
       </div>`;
     }
 
     html += `<div style="border-bottom:1px solid ${C.surface2};cursor:pointer;-webkit-tap-highlight-color:transparent;" onclick="toggleSISrc(this)">
       <div style="display:flex;align-items:center;gap:10px;padding:9px 0;">
-        <div style="width:58px;flex-shrink:0;">
-          <div style="font-size:16px;font-weight:600;color:${C.text};">${info.label}</div>
+        <div style="width:80px;flex-shrink:0;">
+          <div style="font-size:14px;font-weight:600;color:${C.text};">${info.label}</div>
           ${(() => { const tr = _trends[key]; if (!tr || tr.diff === 0) return ''; const arrow = tr.diff > 0 ? '\u2191' : '\u2193'; const tColor = tr.diff > 0 ? C.accent : C.danger; return '<div style="font-family:JetBrains Mono,monospace;font-size:10px;font-weight:600;color:' + tColor + ';">' + arrow + (tr.diff > 0 ? '+' : '') + tr.diff + '<span style="font-weight:500;color:' + C.textDim + ';font-size:9px;"> 30d</span></div>'; })()}</div>
         <div data-str-bar style="flex:1;height:14px;border-radius:3px;background:${C.surface3};position:relative;overflow:visible;" onclick="event.stopPropagation();showStrengthPctile(this)">
           <div style="position:absolute;top:4px;left:0;right:0;height:6px;border-radius:3px;background:linear-gradient(90deg,${C.danger} 0%,${C.warn} 40%,${C.accent} 100%);opacity:0.3;"></div>
@@ -6303,7 +6304,8 @@ function renderPowerScore() {
     var rOpacity = isFilled ? (0.4 + (ri / ringCount) * 0.6).toFixed(2) : '0.15';
     ringSvg += `<path d="${ringPts.join(' ')}" fill="none" stroke="${isFilled ? scoreColor : C.surface3}" stroke-width="${isFilled ? '1.5' : '0.6'}" opacity="${rOpacity}"/>`;
   }
-  ringSvg += `<text x="${cx}" y="${cy}" text-anchor="middle" dominant-baseline="central" fill="${scoreColor}" font-family="JetBrains Mono,monospace" font-size="11" font-weight="700">${ps.score}</text></svg>`;
+  ringSvg += `<circle cx="${cx}" cy="${cy}" r="7" fill="${C.bg}" opacity="0.85"/>`;
+  ringSvg += `<text x="${cx}" y="${cy}" text-anchor="middle" dominant-baseline="central" fill="${C.text}" font-family="JetBrains Mono,monospace" font-size="11" font-weight="700">${ps.score}</text></svg>`;
   ring.innerHTML = ringSvg;
 }
 
