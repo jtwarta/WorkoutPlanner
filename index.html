@@ -2935,9 +2935,12 @@ function estimateWeightFromPeers(name) {
   var avgRatio = ratios.reduce(function(a, b) { return a + b; }, 0) / ratios.length;
 
   // If the exercise IS in EXERCISE_DB (has benchmark but no history), scale the benchmark
+  // Cap at 1.5x benchmark for isolation to prevent cross-exercise ratio inflation
+  // (e.g. heavy Reverse Curl ratio inflating Wrist Curl prescription)
   var db = EXERCISE_DB[name];
   if (db && db.benchmarkLbs > 0) {
-    return Math.round(db.benchmarkLbs * avgRatio / 5) * 5;
+    var cappedRatio = (db.type === 'isolation') ? Math.min(avgRatio, 1.5) : Math.min(avgRatio, 2.0);
+    return Math.round(db.benchmarkLbs * cappedRatio / 5) * 5;
   }
 
   // Exercise not in EXERCISE_DB: use median weight of same-type exercises, scaled conservatively
@@ -4222,7 +4225,7 @@ function renderWeeklySummary(dayWorkoutsMap, dayMuscleMap, dayCardioMap, workout
       <div style="flex:1;height:5px;border-radius:3px;background:${C.surface3};overflow:hidden;">
         <div style="height:100%;border-radius:3px;background:${cardioBarColor};width:${cardioPct}%;transition:width 0.4s ease;"></div>
       </div>
-      <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:${C.textDim};white-space:nowrap;">cardio${delta(Math.round(thisWeek.cardioMin), Math.round(lastWeek.cardioMin))}</div>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:${C.textDim};white-space:nowrap;">cardio</div>
     </div>`;
 }
 
@@ -5139,7 +5142,6 @@ function populateStrengthDetail() {
       <div style="display:flex;align-items:center;">${segHtml}</div>
       <div style="display:flex;align-items:center;margin-top:4px;">${labelHtml}</div>
       <div id="si-tier-tooltip" style="display:none;margin-top:8px;padding:8px 12px;border-radius:8px;background:${C.surface2};border:1px solid ${C.border};font-family:'JetBrains Mono',monospace;transition:opacity 0.2s ease;"></div>
-      <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:${siColor};margin-top:6px;text-align:center;">${xpLabel}</div>
     </div>` : ''}
   </div>`;
 
