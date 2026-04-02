@@ -1,5 +1,5 @@
 {"updated":"
-2026-04-02T12:47:29-07:00
+2026-04-02T15:19:46-07:00
 ","resting_heart_rate":
 66
 ,"cardio_fitness":
@@ -7,12 +7,21 @@
 ,"cardio_recovery":
 35.14008698021495
 ,"steps":
-15594.25
+16599.875
 ,"active_energy_kcal":
-649.156
+649.664142857143
 ,"walking_heart_rate_avg":
 90
-,"workouts":[{"type":"Hiking
+,"workouts":[{"type":"Traditional Strength Training
+
+","start":"Apr 2, 2026 at 3:18 PM
+
+","duration_min":0.9
+
+,"calories":4 kcal
+
+}
+{"type":"Hiking
 
 ","start":"Apr 2, 2026 at 9:36 AM
 
@@ -451,15 +460,6 @@
 ","duration_min":30.3
 
 ,"calories":82 kcal
-
-}
-{"type":"Stair Climbing
-
-","start":"Feb 19, 2026 at 8:31 PM
-
-","duration_min":12.1
-
-,"calories":102 kcal
 
 }]
 ,"weight_entries": [{"date":"2026-03-29","lbs":167.4001990807872}
