@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 
 <!--
-  LiftScript v1.19
+  LiftScript v1.19a
   Changes from v1.17:
   1.  Boosted structural importance: foundation lifts (bench, squat, back, shoulders) now meaningfully outrank accessories
   2.  Demand-ordered exercise list: heavy compounds first, small accessories last (both on-screen and in Hevy export)
@@ -639,7 +639,7 @@ body {
     <div class="header" style="position:relative;z-index:1;">
       <div style="display:flex;align-items:center;gap:10px;">
         <h1>LiftScript</h1>
-        <div class="subtitle" id="last-updated">v1.19</div>
+        <div class="subtitle" id="last-updated">v1.19a</div>
         <div id="power-score-wrap" style="margin-left:auto;display:flex;align-items:center;gap:6px;cursor:pointer;-webkit-tap-highlight-color:transparent;" onclick="togglePowerScoreDetail()">
           <div id="power-score-ring"></div>
         </div>
@@ -771,7 +771,7 @@ window.addEventListener('unhandledrejection', function(e) {
 </script>
 <script>
 // ============================================================
-// LIFTSCRIPT v1.19
+// LIFTSCRIPT v1.19a
 // ============================================================
 // SCIENTIFIC FOUNDATION
 // PILLAR 1: Volume-Hypertrophy Targets
@@ -3136,6 +3136,17 @@ function generateRecommendations(muscleStats) {
       weeklyActual: parseFloat(weeklyActual),
       weeklyIdeal,
     });
+  }
+
+  // Recovery guard: muscles trained today (daysSincePrimary === 0) need at least
+  // 1 rest day before being recommended again. Suppress their score so they fall
+  // to the bottom of the list regardless of volume/imbalance/proportion signals.
+  for (const r of recs) {
+    if (r.daysSince === 0) {
+      r.score = -1;
+      r.urgency = 'low';
+      r.explainer = 'Trained today \u2014 rest at least 1 day before hitting this muscle again.';
+    }
   }
 
   recs.sort((a, b) => b.score - a.score);
@@ -6385,7 +6396,7 @@ function renderDashboard(workouts) {
   const syncColor = (hevyStatus === 'error' || healthStatus === 'missing') ? C.textDim
     : (healthStatus === 'stale') ? C.warn : C.accent;
   document.getElementById('last-updated').innerHTML =
-    `v1.19 \u00b7${now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })} <span id="sync-dot" style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${syncColor};margin-left:5px;vertical-align:middle;position:relative;top:-1px;"></span>`;
+    `v1.19a \u00b7${now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })} <span id="sync-dot" style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${syncColor};margin-left:5px;vertical-align:middle;position:relative;top:-1px;"></span>`;
 
   // Populate globals BEFORE renderTimedSession so lifted-today detection works
   heatmapDayWorkouts = pp.heatmapDayWorkouts || {};
