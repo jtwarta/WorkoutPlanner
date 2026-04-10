@@ -2613,7 +2613,7 @@ function generateCardioRecommendations(dayCardioMap, rerollOffset) {
 
   // If target met for the week
   if (remainingSessions <= 0 && remainingMin <= 0) {
-    return { zones, history, prescriptions: [], weekComplete: true, remainingMin: 0, targetMin };
+    return { zones, history, prescriptions: [], weekComplete: true, remainingMin: 0, targetMin, completedMin: Math.round(history.estimatedMinutes7d) };
   }
 
   const prescriptions = [];
@@ -2750,7 +2750,7 @@ function generateCardioRecommendations(dayCardioMap, rerollOffset) {
     });
   }
 
-  return { zones, history, prescriptions, weekComplete: false, remainingMin, targetMin, hiitBlockReason };
+  return { zones, history, prescriptions, weekComplete: false, remainingMin, targetMin, completedMin: Math.round(history.estimatedMinutes7d), hiitBlockReason };
 }
 
 // ============================================================
@@ -2824,8 +2824,8 @@ function renderCardioPlan(dayCardioMap) {
   if (!sectionEl) return;
 
   // Week progress bar
-  const donePct = Math.min(100, Math.round(((result.targetMin - result.remainingMin) / result.targetMin) * 100));
-  const doneMin = result.targetMin - result.remainingMin;
+  const donePct = Math.min(100, Math.round((result.completedMin / result.targetMin) * 100));
+  const doneMin = result.completedMin;
   const barColor = donePct >= 100 ? C.accent : donePct >= 50 ? C.blue : C.warn;
 
   let html = `
