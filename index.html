@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 
 <!--
-  LiftScript v1.19a
+  LiftScript v1.20
   Changes from v1.17:
   1.  Boosted structural importance: foundation lifts (bench, squat, back, shoulders) now meaningfully outrank accessories
   2.  Demand-ordered exercise list: heavy compounds first, small accessories last (both on-screen and in Hevy export)
@@ -639,7 +639,7 @@ body {
     <div class="header" style="position:relative;z-index:1;">
       <div style="display:flex;align-items:center;gap:10px;">
         <h1>LiftScript</h1>
-        <div class="subtitle" id="last-updated">v1.19a</div>
+        <div class="subtitle" id="last-updated">v1.20</div>
         <div id="power-score-wrap" style="margin-left:auto;display:flex;align-items:center;gap:6px;cursor:pointer;-webkit-tap-highlight-color:transparent;" onclick="togglePowerScoreDetail()">
           <div id="power-score-ring"></div>
         </div>
@@ -771,7 +771,7 @@ window.addEventListener('unhandledrejection', function(e) {
 </script>
 <script>
 // ============================================================
-// LIFTSCRIPT v1.19a
+// LIFTSCRIPT v1.20
 // ============================================================
 // SCIENTIFIC FOUNDATION
 // PILLAR 1: Volume-Hypertrophy Targets
@@ -6487,7 +6487,7 @@ function renderDashboard(workouts) {
   const syncColor = (hevyStatus === 'error' || healthStatus === 'missing') ? C.textDim
     : (healthStatus === 'stale') ? C.warn : C.accent;
   document.getElementById('last-updated').innerHTML =
-    `v1.19a \u00b7${now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })} <span id="sync-dot" style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${syncColor};margin-left:5px;vertical-align:middle;position:relative;top:-1px;"></span>`;
+    `v1.20 \u00b7${now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })} <span id="sync-dot" style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${syncColor};margin-left:5px;vertical-align:middle;position:relative;top:-1px;"></span>`;
 
   // Populate globals BEFORE renderTimedSession so lifted-today detection works
   heatmapDayWorkouts = pp.heatmapDayWorkouts || {};
