@@ -1770,6 +1770,7 @@ const PREFS_KEY = 'wa_prefs_v1_1';
 const PREFS_DEFAULTS = {
   sessionCapMin: 60,
   equipment: 'gym',
+  focusMode: 'auto',
 };
 
 function loadPrefs() {
@@ -1788,6 +1789,7 @@ const GYM_ONLY_REGEX = /(Machine|Cable|Smith|Leg Press|Hack Squat|Pec Deck)/i;
 const CHIP_DEFS = [
   { key: 'sessionCapMin', label: v => `${v}m`, values: [30, 45, 60] },
   { key: 'equipment', label: v => v === 'gym' ? 'Gym' : 'Home', values: ['gym', 'home'] },
+  { key: 'focusMode', label: v => v === 'auto' ? 'Auto' : v === 'foundation' ? 'Foundation' : 'Neglect', values: ['auto', 'foundation', 'neglect'] },
 ];
 
 function cycleChip(key) {
@@ -1798,7 +1800,8 @@ function cycleChip(key) {
   const next = def.values[(idx + 1) % def.values.length];
   sessionPrefs[key] = next;
   savePrefs(sessionPrefs);
-  if (LAST_RECS) renderTimedSession(LAST_RECS);
+  var activeRecs = _customSessionActive && _customSessionRecs ? _customSessionRecs : LAST_RECS;
+  if (activeRecs) renderTimedSession(activeRecs);
   if (workoutCache) renderCardioPlan(heatmapDayCardio);
 }
 
@@ -2765,14 +2768,81 @@ function toggleCardioBreakdown() {
 let _cardioRerollOffset = 0;
 let _liftRerollOffset = 0;
 
+// Custom muscle session state
+let _customSessionActive = false;
+let _customSessionRecs = null;
+let _muscleSelectMode = false;
+let _selectedMuscles = new Set();
+
 function rerollLifts() {
   _liftRerollOffset++;
-  if (LAST_RECS) renderTimedSession(LAST_RECS);
+  var activeRecs = _customSessionActive && _customSessionRecs ? _customSessionRecs : LAST_RECS;
+  if (activeRecs) renderTimedSession(activeRecs);
 }
 
 function rerollCardio() {
   _cardioRerollOffset++;
   renderCardioPlan(heatmapDayCardio);
+}
+
+function resetToAutoSession() {
+  _customSessionActive = false;
+  _customSessionRecs = null;
+  _liftRerollOffset = 0;
+  if (LAST_RECS) renderTimedSession(LAST_RECS);
+}
+
+function toggleMuscleSelectMode() {
+  _muscleSelectMode = !_muscleSelectMode;
+  _selectedMuscles.clear();
+  if (muscleAnalysis && LAST_RECS) {
+    renderMuscleGrid(muscleAnalysis, LAST_RECS);
+  }
+}
+
+function toggleMuscleSelection(key, evt) {
+  if (evt) evt.stopPropagation();
+  if (_selectedMuscles.has(key)) {
+    _selectedMuscles.delete(key);
+  } else {
+    _selectedMuscles.add(key);
+  }
+  // Re-render grid to update selection highlights
+  if (muscleAnalysis && LAST_RECS) {
+    renderMuscleGrid(muscleAnalysis, LAST_RECS);
+  }
+}
+
+function buildCustomSession() {
+  if (_selectedMuscles.size === 0 || !LAST_RECS || !muscleAnalysis) return;
+  // Build synthetic recs: selected muscles scored highest (in selection order),
+  // then remaining muscles at their normal scores
+  var selected = Array.from(_selectedMuscles);
+  var customRecs = [];
+  var maxScore = 10; // Ensure selected muscles rank above all others
+  for (var i = 0; i < selected.length; i++) {
+    var origRec = LAST_RECS.find(function(r) { return r.key === selected[i]; });
+    if (origRec) {
+      var clone = Object.assign({}, origRec);
+      clone.score = maxScore - i; // Descending priority
+      customRecs.push(clone);
+    }
+  }
+  // Add remaining muscles at their original scores (won't be in top N)
+  for (var j = 0; j < LAST_RECS.length; j++) {
+    if (!_selectedMuscles.has(LAST_RECS[j].key)) {
+      customRecs.push(Object.assign({}, LAST_RECS[j]));
+    }
+  }
+  _customSessionActive = true;
+  _customSessionRecs = customRecs;
+  _liftRerollOffset = 0;
+  _muscleSelectMode = false;
+  _selectedMuscles.clear();
+  renderTimedSession(customRecs);
+  // Re-render muscle grid to exit select mode
+  if (muscleAnalysis) renderMuscleGrid(muscleAnalysis, LAST_RECS);
+  switchTab('today');
 }
 
 function toggleCardioInstr(id) {
@@ -3116,7 +3186,7 @@ function generateRecommendations(muscleStats) {
     }
 
     recs.push({
-      key, name: stat.name, score, urgency,
+      key, name: stat.name, score, urgency, structBonus, tier: muscleTier,
       daysSince: stat.daysSincePrimary,
       daysSinceAny: stat.daysSinceAny,
       sets30d: stat.totalSets30d,
@@ -3212,7 +3282,21 @@ function getRestSeconds(name) {
 
 function buildTimedSession(recs, prefs) {
   prefs = prefs || sessionPrefs;
-  const topKeys = recs.slice(0, 3).map(r => r.key);
+  var focusMode = prefs.focusMode || 'auto';
+  // Custom session overrides focus mode
+  if (_customSessionActive) focusMode = 'auto';
+  var filteredRecs = recs;
+  if (focusMode === 'foundation') {
+    filteredRecs = recs.filter(function(r) { return r.tier && r.tier <= 2; });
+    if (filteredRecs.length < 2) filteredRecs = recs; // fallback if not enough
+  } else if (focusMode === 'neglect') {
+    filteredRecs = recs.slice().sort(function(a, b) {
+      var aScore = a.score >= 0 ? a.score - (a.structBonus || 0) : a.score;
+      var bScore = b.score >= 0 ? b.score - (b.structBonus || 0) : b.score;
+      return bScore - aScore;
+    });
+  }
+  const topKeys = filteredRecs.slice(0, 3).map(r => r.key);
   const recScores = {};
   recs.forEach(r => { recScores[r.key] = r.score; });
 
@@ -3804,7 +3888,8 @@ function renderTimedSession(recs) {
   // Detect if user already lifted today
   const todayStr = localDateStr(new Date());
   const liftedToday = heatmapDayWorkouts[todayStr] && heatmapDayWorkouts[todayStr].length > 0;
-  const sessionLabel = liftedToday ? 'Tomorrow\u2019s Session' : 'Today\u2019s Session';
+  var baseLabel = liftedToday ? 'Tomorrow\u2019s Session' : 'Today\u2019s Session';
+  const sessionLabel = _customSessionActive ? baseLabel + ' <span style="font-size:9px;padding:2px 5px;border-radius:3px;background:' + C.accentDim + ';color:' + C.accent + ';border:1px solid ' + C.accentBorder + ';margin-left:6px;vertical-align:middle;letter-spacing:0.5px;">CUSTOM</span>' : baseLabel;
 
   // Completed banner (subtle inline)
   let completedBanner = '';
@@ -3849,6 +3934,7 @@ function renderTimedSession(recs) {
   wrapper.innerHTML = `
     <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid ${C.border};flex-wrap:wrap;">
       <button onclick="rerollLifts()" style="display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:6px;background:${C.surface2};border:1px solid ${C.border};color:${C.textMid};font-size:11px;font-weight:600;font-family:'JetBrains Mono',monospace;cursor:pointer;-webkit-tap-highlight-color:transparent;white-space:nowrap;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>Reroll</button>
+      ${_customSessionActive ? '<button onclick="resetToAutoSession()" style="display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:6px;background:' + C.dangerDim + ';border:1px solid ' + C.danger + '30;color:' + C.danger + ';font-size:11px;font-weight:600;font-family:JetBrains Mono,monospace;cursor:pointer;-webkit-tap-highlight-color:transparent;white-space:nowrap;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>Reset</button>' : ''}
       <button id="send-to-hevy-btn" onclick="sendSessionToHevy()" style="display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:6px;background:${C.surface2};border:1px solid ${C.border};color:${C.textMid};font-size:11px;font-weight:600;font-family:'JetBrains Mono',monospace;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:all 0.2s ease;white-space:nowrap;">
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
         Hevy
@@ -4025,9 +4111,9 @@ function renderMuscleGrid(muscleStats, recs) {
     const uColor = urgencyColors[urgency] || C.accent;
 
     return `
-      <div class="muscle-cell" style="background:${C.surface2};border-color:${C.border};border-left:3px solid ${uColor}" onclick="toggleMuscleDetail('${key}')">
+      <div class="muscle-cell" style="background:${_muscleSelectMode && _selectedMuscles.has(key) ? C.accentDim : C.surface2};border-color:${_muscleSelectMode && _selectedMuscles.has(key) ? C.accentBorder : C.border};border-left:3px solid ${uColor};${_muscleSelectMode && _selectedMuscles.has(key) ? 'outline:2px solid ' + C.accent + ';outline-offset:-2px;' : ''}" onclick="${_muscleSelectMode ? 'toggleMuscleSelection(\'' + key + '\',event)' : 'toggleMuscleDetail(\'' + key + '\')'}">
         <div class="muscle-cell-header">
-          <div class="muscle-name" style="color:${C.text}">${stat.name}</div>
+          <div class="muscle-name" style="color:${C.text}">${stat.name}${_muscleSelectMode && _selectedMuscles.has(key) ? ' <span style="font-size:10px;color:' + C.accent + ';">\u2713</span>' : ''}</div>
           ${ring}
         </div>
         <div style="display:flex;align-items:center;gap:8px;">
@@ -4052,6 +4138,31 @@ function renderMuscleGrid(muscleStats, recs) {
   // Store recs for detail panel
   _muscleRecMap = recMap;
 
+  // Render select mode controls
+  var selectControls = document.getElementById('muscle-select-controls');
+  if (selectControls) {
+    var btnLabel = _muscleSelectMode ? 'Cancel' : 'Build Custom';
+    var btnBg = _muscleSelectMode ? C.dangerDim : C.surface2;
+    var btnBorder = _muscleSelectMode ? C.danger + '30' : C.border;
+    var btnColor = _muscleSelectMode ? C.danger : C.textMid;
+    selectControls.innerHTML = '<button onclick="toggleMuscleSelectMode()" style="display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:6px;background:' + btnBg + ';border:1px solid ' + btnBorder + ';color:' + btnColor + ';font-size:11px;font-weight:600;font-family:JetBrains Mono,monospace;cursor:pointer;-webkit-tap-highlight-color:transparent;white-space:nowrap;">'
+      + (_muscleSelectMode ? '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>' : '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>')
+      + btnLabel + '</button>'
+      + (_muscleSelectMode ? '<span style="font-size:10px;color:' + C.textDim + ';font-family:JetBrains Mono,monospace;">Tap muscles to select</span>' : '');
+  }
+
+  // Render floating build button
+  var fab = document.getElementById('muscle-build-fab');
+  if (fab) {
+    if (_muscleSelectMode && _selectedMuscles.size > 0) {
+      fab.style.display = 'block';
+      fab.innerHTML = '<button onclick="buildCustomSession()" style="display:inline-flex;align-items:center;gap:6px;padding:8px 18px;border-radius:8px;background:' + C.accent + ';border:1px solid ' + C.accentBorder + ';color:' + C.text + ';font-size:13px;font-weight:700;font-family:JetBrains Mono,monospace;cursor:pointer;-webkit-tap-highlight-color:transparent;white-space:nowrap;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="13 17 18 12 13 7"/><polyline points="6 17 11 12 6 7"/></svg>Build Session (' + _selectedMuscles.size + ')</button>';
+    } else {
+      fab.style.display = 'none';
+      fab.innerHTML = '';
+    }
+  }
+
   // Click outside any cell to deselect (attach once)
   if (!grid.dataset.clickOutside) {
     grid.dataset.clickOutside = '1';
@@ -4074,6 +4185,7 @@ let selectedMuscleKey = null;
 let _muscleRecMap = {};
 
 function toggleMuscleDetail(key) {
+  if (_muscleSelectMode) return; // Suppress detail panel in select mode
   const detailEl = document.getElementById('muscle-detail');
   const innerEl = document.getElementById('muscle-detail-inner');
 
@@ -6328,6 +6440,10 @@ document.addEventListener('click', function(e) {
 function renderDashboard(workouts) {
   _cardioRerollOffset = 0;
   _liftRerollOffset = 0;
+  _customSessionActive = false;
+  _customSessionRecs = null;
+  _muscleSelectMode = false;
+  _selectedMuscles.clear();
 
   // One-time cache bust on v1.17 upgrade to force fresh fuzzy matching
   if (!Storage.get('v117_cache_cleared')) {
