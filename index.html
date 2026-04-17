@@ -3298,93 +3298,97 @@ function buildTimedSession(recs, prefs) {
       return bScore - aScore;
     });
   }
-  const topKeys = filteredRecs.slice(0, 3).map(r => r.key);
+  // Dynamic muscle count: start with 3, expand if time budget allows
+  var startCount = 3;
+  var maxCount = Math.min(filteredRecs.length, 6);
+  var topKeys = filteredRecs.slice(0, startCount).map(r => r.key);
   const recScores = {};
   recs.forEach(r => { recScores[r.key] = r.score; });
 
-  const muscleCaps = {};
-  topKeys.forEach((key, idx) => { muscleCaps[key] = MUSCLE_EXERCISE_CAP.caps[idx] || 2; });
-
-  // Build candidates
-  const candidates = [];
-  for (const key of topKeys) {
-    const picks = rankExercisesForMuscle(key);
-    const cappedPicks = picks.slice(0, muscleCaps[key]);
-    const groupPriority = recScores[key] || 0;
-
-    for (let i = 0; i < cappedPicks.length; i++) {
-      const exName = cappedPicks[i];
-
-      // Equipment filter: exclude gym-only exercises in home mode
-      if (prefs.equipment === 'home' && GYM_ONLY_REGEX.test(exName)) continue;
-
-      const db = EXERCISE_DB[exName];
-      const p = prescribeExercise(exName);
-      const mp = getMovementPattern(exName);
-
-      const compound = db ? db.type === 'compound' : isLikelyCompound(exName);
-      const isolation = db ? db.type === 'isolation' : !isLikelyCompound(exName);
-      const typeBonus = compound ? 1.5 : 1.0;
-      let deficitBonus = 1.0;
-      if (db && db.benchmarkLbs > 0 && p.weightLbs > 0) {
-        deficitBonus = (p.weightLbs / db.benchmarkLbs) < 0.85 ? 1.3 : 1.0;
-      }
-      const orderBonus = 1 - (i * 0.1);
-      const importance = groupPriority * typeBonus * deficitBonus * orderBonus;
-      const timeSec = calculateExerciseTime(exName, p.sets);
-
-      candidates.push({
-        name: exName, muscle: key, prescription: p,
-        importance, timeSec,
-        isCompound: compound,
-        isIsolation: isolation,
-        movementPattern: mp,
-      });
-    }
-  }
-
-  candidates.sort((a, b) => b.importance - a.importance);
-
-  // Time cap from prefs
   const capSec = (prefs.sessionCapMin || TIME_CONSTANTS.sessionCapMin) * 60;
-  const session = [];
-  let totalSec = 0;
-  const usedPatterns = new Set();
-  const muscleCompoundCount = {};
 
-  const topMuscle = topKeys[0];
-  let topMuscleHasIsolation = false;
-
-  for (const c of candidates) {
-    if (totalSec + c.timeSec > capSec) continue;
-
-    // Movement pattern uniqueness: avoid duplicate compound patterns
-    if (c.isCompound && c.movementPattern) {
-      if (usedPatterns.has(c.movementPattern)) continue;
+  function buildCandidatesForKeys(keys) {
+    var muscleCaps = {};
+    keys.forEach(function(key, idx) { muscleCaps[key] = MUSCLE_EXERCISE_CAP.caps[idx] || 2; });
+    var cands = [];
+    for (var ki = 0; ki < keys.length; ki++) {
+      var key = keys[ki];
+      var picks = rankExercisesForMuscle(key);
+      var cappedPicks = picks.slice(0, muscleCaps[key]);
+      var groupPriority = recScores[key] || 0;
+      for (var ei = 0; ei < cappedPicks.length; ei++) {
+        var exName = cappedPicks[ei];
+        if (prefs.equipment === 'home' && GYM_ONLY_REGEX.test(exName)) continue;
+        var db = EXERCISE_DB[exName];
+        var p = prescribeExercise(exName);
+        var mp = getMovementPattern(exName);
+        var compound = db ? db.type === 'compound' : isLikelyCompound(exName);
+        var isolation = db ? db.type === 'isolation' : !isLikelyCompound(exName);
+        var typeBonus = compound ? 1.5 : 1.0;
+        var deficitBonus = 1.0;
+        if (db && db.benchmarkLbs > 0 && p.weightLbs > 0) {
+          deficitBonus = (p.weightLbs / db.benchmarkLbs) < 0.85 ? 1.3 : 1.0;
+        }
+        var orderBonus = 1 - (ei * 0.1);
+        var importance = groupPriority * typeBonus * deficitBonus * orderBonus;
+        var timeSec = calculateExerciseTime(exName, p.sets);
+        cands.push({
+          name: exName, muscle: key, prescription: p,
+          importance: importance, timeSec: timeSec,
+          isCompound: compound, isIsolation: isolation,
+          movementPattern: mp,
+        });
+      }
     }
-
-    // Max 1 compound per muscle (relax if session under 70% full)
-    if (c.isCompound && (muscleCompoundCount[c.muscle] || 0) >= 1) {
-      if (totalSec >= capSec * 0.7) continue;
-    }
-
-    session.push(c);
-    totalSec += c.timeSec;
-    if (c.isCompound && c.movementPattern) usedPatterns.add(c.movementPattern);
-    if (c.isCompound) muscleCompoundCount[c.muscle] = (muscleCompoundCount[c.muscle] || 0) + 1;
-    if (c.muscle === topMuscle && c.isIsolation) topMuscleHasIsolation = true;
+    cands.sort(function(a, b) { return b.importance - a.importance; });
+    return cands;
   }
 
-  // Ensure #1 priority has at least one isolation if possible
-  if (!topMuscleHasIsolation && session.length > 0) {
-    const isoCandidate = candidates.find(c =>
-      c.muscle === topMuscle && c.isIsolation && !session.includes(c) &&
-      totalSec + c.timeSec <= capSec
-    );
-    if (isoCandidate) {
-      session.push(isoCandidate);
-      totalSec += isoCandidate.timeSec;
+  function fitCandidates(cands, keys) {
+    var sess = [];
+    var total = 0;
+    var usedPat = new Set();
+    var muscCompCount = {};
+    var topM = keys[0];
+    var topMHasIso = false;
+    for (var ci = 0; ci < cands.length; ci++) {
+      var c = cands[ci];
+      if (total + c.timeSec > capSec) continue;
+      if (c.isCompound && c.movementPattern) {
+        if (usedPat.has(c.movementPattern)) continue;
+      }
+      if (c.isCompound && (muscCompCount[c.muscle] || 0) >= 1) {
+        if (total >= capSec * 0.7) continue;
+      }
+      sess.push(c);
+      total += c.timeSec;
+      if (c.isCompound && c.movementPattern) usedPat.add(c.movementPattern);
+      if (c.isCompound) muscCompCount[c.muscle] = (muscCompCount[c.muscle] || 0) + 1;
+      if (c.muscle === topM && c.isIsolation) topMHasIso = true;
     }
+    if (!topMHasIso && sess.length > 0) {
+      var isoC = cands.find(function(c) {
+        return c.muscle === topM && c.isIsolation && sess.indexOf(c) === -1 && total + c.timeSec <= capSec;
+      });
+      if (isoC) { sess.push(isoC); total += isoC.timeSec; }
+    }
+    return { session: sess, totalSec: total };
+  }
+
+  // Build initial session with 3 muscles, then expand if >25% time remaining
+  var candidates = buildCandidatesForKeys(topKeys);
+  var result = fitCandidates(candidates, topKeys);
+  var session = result.session;
+  var totalSec = result.totalSec;
+
+  while (totalSec < capSec * 0.75 && topKeys.length < maxCount) {
+    var nextRec = filteredRecs[topKeys.length];
+    if (!nextRec || nextRec.score < 0) break; // skip suppressed muscles
+    topKeys.push(nextRec.key);
+    candidates = buildCandidatesForKeys(topKeys);
+    result = fitCandidates(candidates, topKeys);
+    session = result.session;
+    totalSec = result.totalSec;
   }
 
   // Sort by demand: heavy compounds first, small accessories last
