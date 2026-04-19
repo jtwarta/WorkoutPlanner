@@ -1,7 +1,12 @@
 <!DOCTYPE html>
 
 <!--
-  LiftScript v1.22
+  LiftScript v1.23
+  Changes from v1.22 (Aesthetics Pass - Sequence C: PWA polish):
+  1.  Added manifest.json for PWA installability metadata
+  2.  Apple touch icon + favicon PNG set: 180/192/512 concentric tree-ring mark on bark
+  3.  Safe-area inset handling via env() on .app padding (notch + home-indicator clearance)
+  4.  Viewport meta: removed user-scalable=no + added viewport-fit=cover for iOS Dynamic Type support and edge-to-edge
   Changes from v1.21 (Aesthetics Pass - Sequence B: typography system):
   1.  Dual-font system: JetBrains Mono for labels/data, SF Pro (system) for prose
   2.  Body flips from mono 11px uppercase to sans 14px sentence case
@@ -72,10 +77,14 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#1E1C18">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
 <title>LiftScript</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&display=swap" rel="stylesheet">
@@ -130,8 +139,7 @@ line-height: 1.5;
 .app {
 max-width: 480px;
 margin: 0 auto;
-padding: 20px 18px;
-padding-bottom: 120px;
+padding: max(20px, env(safe-area-inset-top)) max(18px, env(safe-area-inset-right)) calc(120px + env(safe-area-inset-bottom)) max(18px, env(safe-area-inset-left));
 background: #1E1C18;
 }
 
@@ -690,7 +698,7 @@ margin-top: 4px;
     <div class="header" style="position:relative;z-index:1;">
       <div style="display:flex;align-items:center;gap:10px;">
         <h1>LiftScript</h1>
-        <div class="subtitle" id="last-updated">v1.22</div>
+        <div class="subtitle" id="last-updated">v1.23</div>
         <div id="power-score-wrap" style="margin-left:auto;display:flex;align-items:center;gap:6px;cursor:pointer;-webkit-tap-highlight-color:transparent;" onclick="togglePowerScoreDetail()">
           <div id="power-score-ring"></div>
         </div>
@@ -6544,7 +6552,7 @@ function renderDashboard(workouts) {
   const syncColor = (hevyStatus === 'error' || healthStatus === 'missing') ? C.textDim
     : (healthStatus === 'stale') ? C.warn : C.accent;
   document.getElementById('last-updated').innerHTML =
-    `v1.22 \u00b7${now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })} <span id="sync-dot" style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${syncColor};margin-left:5px;vertical-align:middle;position:relative;top:-1px;"></span>`;
+    `v1.23 \u00b7${now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })} <span id="sync-dot" style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${syncColor};margin-left:5px;vertical-align:middle;position:relative;top:-1px;"></span>`;
 
   // Populate globals BEFORE renderTimedSession so lifted-today detection works
   heatmapDayWorkouts = pp.heatmapDayWorkouts || {};
