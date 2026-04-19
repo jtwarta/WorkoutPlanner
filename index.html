@@ -1,7 +1,15 @@
 <!DOCTYPE html>
 
 <!--
-  LiftScript v1.26b
+  LiftScript v1.27
+  Changes from v1.26b (Aesthetics Pass - Sequence G: data-viz refinements):
+  1.  Chart defaults to Weight + one secondary line (persisted in localStorage.chart_secondary_v1, default si)
+  2.  Legend dot tap is now exclusive: tapping switches the single secondary, tapping the active secondary turns it off
+  3.  Weight line thickness 2.5 -> 3 for clearer primary hierarchy
+  4.  SI tier threshold dashed horizontal rules at SI=1.30 (ADV) and SI=1.80 (ELT) rendered when SI line is visible
+  5.  Legend dots: 12px filled with subtle halo (active) vs 12px outlined ring (inactive) for clear visual state
+  6.  Legend items: 28px min tap height (WCAG+)
+  7.  PR sparklines: dot at every historical PR point (small/dim for past, larger/accent for latest)
   Changes from v1.26a (haptic hotfix v2):
   1.  The real fix: WebKit BLOCKS programmatic haptics when clicking an <input type=checkbox switch> directly. Must click an associated <label> instead.
   2.  Rewrote haptic helper: wrap input inside a label, .click() the label (not the input).
@@ -839,7 +847,7 @@ margin-top: 4px;
     <div class="header" style="position:relative;z-index:1;">
       <div style="display:flex;align-items:center;gap:10px;">
         <h1>LiftScript</h1>
-        <div class="subtitle" id="last-updated">v1.26b</div>
+        <div class="subtitle" id="last-updated">v1.27</div>
         <div id="power-score-wrap" style="margin-left:auto;display:flex;align-items:center;gap:6px;cursor:pointer;-webkit-tap-highlight-color:transparent;" onclick="togglePowerScoreDetail()">
           <div id="power-score-ring"></div>
         </div>
@@ -4851,7 +4859,21 @@ document.addEventListener('click', function(e) {
 // ============================================================
 let _chartPoints = []; // [{x, y, date, weight, si, cs, ded}] for click interaction
 let _chartTooltipTimer = null;
-const _chartLineVisible = { weight: true, si: true, cardio: true, dedication: true, bodyComp: true };
+// v1.27: chart defaults to weight + one secondary line. Secondary is persisted in localStorage.
+var _chartSecondary = (function() {
+  try {
+    var s = localStorage.getItem('chart_secondary_v1');
+    if (s && ['si','cardio','dedication','bodyComp'].indexOf(s) !== -1) return s;
+  } catch(_) {}
+  return 'si';
+})();
+const _chartLineVisible = {
+  weight: true,
+  si:         _chartSecondary === 'si',
+  cardio:     _chartSecondary === 'cardio',
+  dedication: _chartSecondary === 'dedication',
+  bodyComp:   _chartSecondary === 'bodyComp',
+};
 let _chartPeriod = '1Y'; // '1M', '3M', '6M', '1Y', 'ALL'
 
 function showChartTooltip(canvas, pt) {
@@ -4967,11 +4989,11 @@ function renderWeightChart() {
   const wMax = Math.max(...wValues) + 2;
   const wXStep = chartW / Math.max(recent.length - 1, 1);
 
-  // Weight line (always visible - base layer)
+  // Weight line (always visible - base layer) - v1.27: thicker
   _chartPoints = []; // reset
   ctx.beginPath();
   ctx.strokeStyle = C.accent;
-  ctx.lineWidth = 2.5;
+  ctx.lineWidth = 3;
   ctx.lineJoin = 'round';
   ctx.lineCap = 'round';
 
@@ -5018,6 +5040,31 @@ function renderWeightChart() {
       const siMax = Math.max(...siValues) + 0.1;
 
       if (_chartLineVisible.si) {
+        // v1.27: tier threshold rules at SI=1.30 (Advanced) and SI=1.80 (Elite)
+        // Only draw if threshold is within the visible Y range
+        ctx.save();
+        ctx.strokeStyle = C.textDim;
+        ctx.globalAlpha = 0.45;
+        ctx.lineWidth = 1;
+        ctx.setLineDash([2, 4]);
+        [{ v: 1.30, label: 'ADV' }, { v: 1.80, label: 'ELT' }].forEach(function(t) {
+          if (t.v >= siMin && t.v <= siMax) {
+            var ty = pad.top + (1 - (t.v - siMin) / (siMax - siMin)) * chartH;
+            ctx.beginPath();
+            ctx.moveTo(pad.left, ty);
+            ctx.lineTo(pad.left + chartW, ty);
+            ctx.stroke();
+            ctx.setLineDash([]);
+            ctx.font = '9px ' + '-apple-system, BlinkMacSystemFont, sans-serif';
+            ctx.fillStyle = C.textDim;
+            ctx.globalAlpha = 0.6;
+            ctx.fillText(t.label, pad.left + 4, ty - 3);
+            ctx.globalAlpha = 0.45;
+            ctx.setLineDash([2, 4]);
+          }
+        });
+        ctx.restore();
+
         ctx.beginPath();
         ctx.strokeStyle = C.strength;
         ctx.lineWidth = 2;
@@ -5236,18 +5283,35 @@ function renderWeightChart() {
       { key: 'dedication', color: C.gold, label: 'Dedication' },
       { key: 'bodyComp', color: C.fuchsia, label: 'Body Comp' },
     ];
+    // v1.27: filled 12px circle when active, 2px ring when inactive
     legendEl.innerHTML = items.map(it => {
       const vis = it.alwaysOn || _chartLineVisible[it.key];
-      const opacity = vis ? '1' : '0.3';
+      const textOpacity = vis ? '1' : '0.55';
       const cursor = it.alwaysOn ? 'default' : 'pointer';
       const onclick = it.alwaysOn ? '' : ` onclick="toggleChartLine('${it.key}')"`;
-      return `<span style="opacity:${opacity};cursor:${cursor};-webkit-tap-highlight-color:transparent;"${onclick}><span class="legend-dot" style="background:${it.color}"></span>${it.label}</span>`;
+      // Active = filled circle with subtle ring halo. Inactive = outlined only.
+      const dotStyle = vis
+        ? `display:inline-block;width:12px;height:12px;border-radius:50%;background:${it.color};margin-right:6px;vertical-align:middle;box-shadow:0 0 0 2px ${it.color}22;`
+        : `display:inline-block;width:12px;height:12px;border-radius:50%;background:transparent;border:1.5px solid ${it.color};margin-right:6px;vertical-align:middle;box-sizing:border-box;`;
+      return `<span style="opacity:${textOpacity};cursor:${cursor};-webkit-tap-highlight-color:transparent;display:inline-flex;align-items:center;padding:6px 4px;min-height:28px;"${onclick}><span style="${dotStyle}"></span>${it.label}</span>`;
     }).join('');
   }
 }
 
 function toggleChartLine(key) {
-  _chartLineVisible[key] = !_chartLineVisible[key];
+  if (key === 'weight') return; // base layer stays on
+  // v1.27: exclusive single-secondary. Tapping the active one turns it off (weight-only).
+  if (_chartLineVisible[key]) {
+    _chartLineVisible[key] = false;
+    _chartSecondary = null;
+  } else {
+    // Turn off all others, turn on this one
+    ['si','cardio','dedication','bodyComp'].forEach(function(k) { _chartLineVisible[k] = false; });
+    _chartLineVisible[key] = true;
+    _chartSecondary = key;
+  }
+  try { localStorage.setItem('chart_secondary_v1', _chartSecondary || ''); } catch(_) {}
+  haptic(4);
   renderWeightChart();
 }
 
@@ -5362,9 +5426,16 @@ function renderPRBoard() {
     }
     var trending = vals[vals.length - 1] >= vals[Math.max(0, vals.length - 4)];
     var lineColor = trending ? C.accent : C.warn;
+    // v1.27: dot at every historical PR point (prior = small dim, latest = larger accent)
+    var histDots = '';
+    for (var di = 0; di < pts.length; di++) {
+      var p = pts[di].split(',');
+      var isLatest = di === pts.length - 1;
+      histDots += '<circle cx="' + p[0] + '" cy="' + p[1] + '" r="' + (isLatest ? '2.2' : '1.5') + '" fill="' + (isLatest ? lineColor : C.textDim) + '"/>';
+    }
     return '<svg width="' + w + '" height="' + h + '" viewBox="0 0 ' + w + ' ' + h + '" style="display:block;">' +
       '<polyline points="' + pts.join(' ') + '" fill="none" stroke="' + lineColor + '" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>' +
-      '<circle cx="' + pts[pts.length - 1].split(',')[0] + '" cy="' + pts[pts.length - 1].split(',')[1] + '" r="2" fill="' + lineColor + '"/>' +
+      histDots +
       '</svg>';
   }
 
@@ -6890,7 +6961,7 @@ function renderDashboard(workouts) {
   const syncColor = (hevyStatus === 'error' || healthStatus === 'missing') ? C.textDim
     : (healthStatus === 'stale') ? C.warn : C.accent;
   document.getElementById('last-updated').innerHTML =
-    `v1.26b \u00b7${now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })} <span id="sync-dot" style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${syncColor};margin-left:5px;vertical-align:middle;position:relative;top:-1px;"></span>`;
+    `v1.27 \u00b7${now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })} <span id="sync-dot" style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${syncColor};margin-left:5px;vertical-align:middle;position:relative;top:-1px;"></span>`;
 
   // Populate globals BEFORE renderTimedSession so lifted-today detection works
   heatmapDayWorkouts = pp.heatmapDayWorkouts || {};
