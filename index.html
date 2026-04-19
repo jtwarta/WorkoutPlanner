@@ -1,7 +1,12 @@
 <!DOCTYPE html>
 
 <!--
-  LiftScript v1.23
+  LiftScript v1.24
+  Changes from v1.23 (Aesthetics Pass - Sequence D: brand payoff):
+  1.  Bark texture opacity 0.10 -> 0.22 (now visible on device) in both CSS cards and JS SVG
+  2.  Canopy light redesign: 6 diurnal bands (dawn/morning/midday/dusk/evening/night) with on-device-visible alphas (0.32-0.42 vs prior 0.12-0.22)
+  3.  Loading screen redesign: 3 concentric rings draw in outward with stroke-dashoffset animation, sap-gold brand text fade-in, amber heartwood dot
+  4.  siConcentricRingsHTML helper: 5-ring visualization for Big 5 lift percentiles (ready for SI render integration)
   Changes from v1.22 (Aesthetics Pass - Sequence C: PWA polish):
   1.  Added manifest.json for PWA installability metadata
   2.  Apple touch icon + favicon PNG set: 180/192/512 concentric tree-ring mark on bark
@@ -183,7 +188,7 @@ overflow: hidden;
 content: '';
 position: absolute;
 inset: 0;
-background-image: url("data:image/svg+xml,%3Csvg width='200' height='200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='0.10'/%3E%3C/svg%3E");
+background-image: url("data:image/svg+xml,%3Csvg width='200' height='200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='0.22'/%3E%3C/svg%3E");
 border-radius: 10px;
 pointer-events: none;
 z-index: 0;
@@ -578,14 +583,65 @@ justify-content: center;
 min-height: 60vh;
 gap: 18px;
 }
-.spinner {
-width: 28px; height: 28px;
-border: 2.5px solid var(--border);
-border-top-color: #5FA052;
-border-radius: 50%;
-animation: spin 0.75s linear infinite;
+.tree-ring-loader {
+  width: 72px;
+  height: 72px;
+  position: relative;
 }
-@keyframes spin { to { transform: rotate(360deg); } }
+.tree-ring-loader circle {
+  fill: none;
+  stroke-linecap: round;
+  transform-origin: center;
+}
+.tree-ring-loader .ring-1 {
+  stroke: #E8C44A;
+  stroke-width: 2.5;
+  stroke-dasharray: 176;
+  stroke-dashoffset: 176;
+  animation: ringDraw 1.1s cubic-bezier(0.4, 0, 0.2, 1) forwards, ringPulse 2.4s 1.1s ease-in-out infinite;
+}
+.tree-ring-loader .ring-2 {
+  stroke: #5FA052;
+  stroke-width: 2.2;
+  stroke-dasharray: 132;
+  stroke-dashoffset: 132;
+  animation: ringDraw 1.1s 0.18s cubic-bezier(0.4, 0, 0.2, 1) forwards, ringPulse 2.4s 1.3s ease-in-out infinite;
+}
+.tree-ring-loader .ring-3 {
+  stroke: #4E8A43;
+  stroke-width: 1.8;
+  stroke-dasharray: 88;
+  stroke-dashoffset: 88;
+  animation: ringDraw 1.1s 0.36s cubic-bezier(0.4, 0, 0.2, 1) forwards, ringPulse 2.4s 1.5s ease-in-out infinite;
+}
+.tree-ring-loader .heartwood {
+  fill: #D4983B;
+  opacity: 0;
+  animation: heartFade 0.5s 0.8s ease-out forwards;
+}
+@keyframes ringDraw {
+  to { stroke-dashoffset: 0; }
+}
+@keyframes ringPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.55; }
+}
+@keyframes heartFade {
+  to { opacity: 1; }
+}
+.loading-brand {
+  font-family: var(--font-mono);
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: #E8C44A;
+  opacity: 0;
+  animation: brandFade 0.6s 0.5s ease-out forwards;
+}
+@keyframes brandFade {
+  to { opacity: 1; }
+}
 .loading-text {
 font-size: 10px;
 color: var(--text-dim);
@@ -687,7 +743,13 @@ margin-top: 4px;
   <!-- Loading Screen -->
 
   <div id="loading-screen" class="loading">
-    <div class="spinner"></div>
+    <svg class="tree-ring-loader" viewBox="0 0 72 72" xmlns="http://www.w3.org/2000/svg">
+      <circle class="ring-1" cx="36" cy="36" r="28"/>
+      <circle class="ring-2" cx="36" cy="36" r="21"/>
+      <circle class="ring-3" cx="36" cy="36" r="14"/>
+      <circle class="heartwood" cx="36" cy="36" r="2.5"/>
+    </svg>
+    <div class="loading-brand">LiftScript</div>
     <div class="loading-text" id="loading-text">Connecting to Hevy...</div>
   </div>
 
@@ -698,7 +760,7 @@ margin-top: 4px;
     <div class="header" style="position:relative;z-index:1;">
       <div style="display:flex;align-items:center;gap:10px;">
         <h1>LiftScript</h1>
-        <div class="subtitle" id="last-updated">v1.23</div>
+        <div class="subtitle" id="last-updated">v1.24</div>
         <div id="power-score-wrap" style="margin-left:auto;display:flex;align-items:center;gap:6px;cursor:pointer;-webkit-tap-highlight-color:transparent;" onclick="togglePowerScoreDetail()">
           <div id="power-score-ring"></div>
         </div>
@@ -918,7 +980,7 @@ const C = {
 // ============================================================
 
 // SVG noise filter for bark texture overlay (inline data URI)
-const BARK_TEXTURE_SVG = 'url("data:image/svg+xml,%3Csvg width=\'200\' height=\'200\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'n\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.65\' numOctaves=\'4\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'200\' height=\'200\' filter=\'url(%23n)\' opacity=\'0.10\'/%3E%3C/svg%3E")';
+const BARK_TEXTURE_SVG = 'url("data:image/svg+xml,%3Csvg width=\'200\' height=\'200\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'n\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.65\' numOctaves=\'4\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'200\' height=\'200\' filter=\'url(%23n)\' opacity=\'0.22\'/%3E%3C/svg%3E")';
 
 // Branch divider SVG (organic wavy line with offshoots)
 function branchDividerHTML() {
@@ -971,20 +1033,64 @@ function crossSectionRingSvg(daysSince, idealDays, arcColor) {
 }
 
 // Time-of-day canopy light gradient
+function siConcentricRingsHTML(liftPercentiles) {
+  // liftPercentiles: { bench: 0.0-1.0, squat: ..., deadlift: ..., ohp: ..., row: ... }
+  // Renders 5 concentric rings, each radius scaled by its percentile
+  var size = 120;
+  var cx = size / 2;
+  var cy = size / 2;
+  var maxR = 46;
+  var minR = 10;
+  var liftOrder = ['deadlift', 'squat', 'bench', 'row', 'ohp'];
+  var liftColors = {
+    deadlift: '#5FA052',
+    squat:    '#4E8A43',
+    bench:    '#C084FC',
+    row:      '#7CBAD4',
+    ohp:      '#E8C44A',
+  };
+  var svg = '<svg width="' + size + '" height="' + size + '" viewBox="0 0 ' + size + ' ' + size + '" style="display:block;">';
+  // Background circle (dim)
+  svg += '<circle cx="' + cx + '" cy="' + cy + '" r="' + (maxR + 3) + '" fill="none" stroke="' + C.border + '" stroke-width="1" opacity="0.4"/>';
+  // Render each lift as a ring, outer-to-inner order
+  for (var i = 0; i < liftOrder.length; i++) {
+    var k = liftOrder[i];
+    var pct = Math.max(0, Math.min(1, liftPercentiles[k] || 0));
+    var r = minR + ((maxR - minR) * (1 - i / liftOrder.length));
+    var circumference = 2 * Math.PI * r;
+    var fillLen = circumference * pct;
+    var gapLen = circumference - fillLen;
+    // Background ring (dim)
+    svg += '<circle cx="' + cx + '" cy="' + cy + '" r="' + r + '" fill="none" stroke="' + C.surface3 + '" stroke-width="2.2" opacity="0.5"/>';
+    // Filled arc (rotated so start is at top)
+    svg += '<circle cx="' + cx + '" cy="' + cy + '" r="' + r + '" fill="none" stroke="' + liftColors[k] + '" stroke-width="2.6" stroke-linecap="round" stroke-dasharray="' + fillLen.toFixed(2) + ' ' + gapLen.toFixed(2) + '" transform="rotate(-90 ' + cx + ' ' + cy + ')"/>';
+  }
+  // Heartwood center dot
+  svg += '<circle cx="' + cx + '" cy="' + cy + '" r="2.2" fill="' + C.amber + '"/>';
+  svg += '</svg>';
+  return svg;
+}
+
 function getCanopyGradient() {
   var h = new Date().getHours();
-  if (h >= 5 && h < 11) {
+  if (h >= 5 && h < 8) {
+    // Dawn: cool amber emerging
+    return 'radial-gradient(ellipse 110% 70% at 55% 0%, rgba(220,170,100,0.38), transparent 60%), radial-gradient(ellipse 80% 50% at 20% 0%, rgba(180,130,90,0.22), transparent 60%)';
+  } else if (h >= 8 && h < 11) {
     // Morning: warm golden canopy light
-    return 'radial-gradient(ellipse 90% 60% at 65% 0%, rgba(200,180,100,0.22), transparent), radial-gradient(ellipse 70% 45% at 25% 0%, rgba(180,160,80,0.12), transparent)';
-  } else if (h >= 11 && h < 17) {
-    // Afternoon: bright filtered green
-    return 'radial-gradient(ellipse 90% 60% at 55% 0%, rgba(120,180,90,0.18), transparent), radial-gradient(ellipse 60% 40% at 35% 0%, rgba(160,200,100,0.10), transparent)';
-  } else if (h >= 17 && h < 21) {
-    // Evening: dusky warm amber
-    return 'radial-gradient(ellipse 90% 60% at 50% 0%, rgba(180,120,60,0.20), transparent), radial-gradient(ellipse 70% 45% at 70% 0%, rgba(140,100,60,0.12), transparent)';
+    return 'radial-gradient(ellipse 110% 70% at 65% 0%, rgba(232,196,74,0.42), transparent 60%), radial-gradient(ellipse 80% 50% at 25% 0%, rgba(212,170,90,0.26), transparent 60%)';
+  } else if (h >= 11 && h < 16) {
+    // Midday: bright sap-gold + filtered green
+    return 'radial-gradient(ellipse 110% 70% at 55% 0%, rgba(232,196,74,0.35), transparent 60%), radial-gradient(ellipse 70% 45% at 30% 0%, rgba(140,190,110,0.22), transparent 60%)';
+  } else if (h >= 16 && h < 19) {
+    // Dusk: rich ember
+    return 'radial-gradient(ellipse 110% 70% at 55% 0%, rgba(200,120,60,0.40), transparent 60%), radial-gradient(ellipse 80% 50% at 70% 0%, rgba(166,61,47,0.22), transparent 60%)';
+  } else if (h >= 19 && h < 22) {
+    // Evening: dim twilight purple
+    return 'radial-gradient(ellipse 100% 60% at 50% 0%, rgba(123,107,138,0.32), transparent 60%), radial-gradient(ellipse 70% 45% at 65% 0%, rgba(100,90,120,0.18), transparent 60%)';
   } else {
     // Night: faint cool moonlight
-    return 'radial-gradient(ellipse 80% 55% at 55% 0%, rgba(120,130,160,0.12), transparent)';
+    return 'radial-gradient(ellipse 90% 55% at 55% 0%, rgba(120,130,160,0.22), transparent 60%)';
   }
 }
 
@@ -5276,20 +5382,38 @@ function populateStrengthDetail() {
     labelHtml += '<div style="flex:' + segWidthPct + ';text-align:center;font-family:JetBrains Mono,monospace;font-size:9px;font-weight:' + labelWeight + ';letter-spacing:0.5px;color:' + labelColor + ';cursor:pointer;-webkit-tap-highlight-color:transparent;" onclick="showSITierTooltip(event,' + i + ')">' + seg.abbr + '</div>';
   }
 
-  let html = `<div style="margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid ${C.border};">
-    <div style="display:flex;align-items:baseline;justify-content:space-between;cursor:pointer;" onclick="toggleSectionExplainer('si-explainer',this)">
-      <div style="display:flex;align-items:baseline;gap:6px;">
-        <div style="font-family:'JetBrains Mono',monospace;font-size:32px;font-weight:700;color:${C.strength};">${latestSI ? latestSI.index.toFixed(2) : '--'}</div>
-        <span class="section-chevron" style="font-size:10px;color:${C.textDim};transition:transform 0.3s ease;display:inline-block;">\u25BE</span>
-      </div>
-      <div style="font-family:'JetBrains Mono',monospace;font-size:12px;display:inline-flex;align-items:center;padding:2px 8px;border-radius:5px;background:${siColor}18;">${tierBadge(siLevel, siColor)}</div>
-    </div>
-    <div id="si-explainer" style="font-family:'JetBrains Mono',monospace;font-size:11px;color:${C.textDim};margin-top:4px;max-height:0;overflow:hidden;opacity:0;transition:max-height 0.3s ease,opacity 0.25s ease;">Big-5 estimated 1RM total / bodyweight \u00B7 higher = stronger</div>
+  // Pre-compute lift percentiles (0-1 range) for the concentric rings viz
+  const liftPercentiles = {};
+  if (latestSI) {
+    for (const [key, info] of Object.entries(liftBenchmarks)) {
+      const lift = latestSI.lifts[key];
+      if (lift && lift.rm > 0) {
+        liftPercentiles[key] = estimatePercentile(info.std, lift.mult) / 100;
+      } else {
+        liftPercentiles[key] = 0;
+      }
+    }
+  }
 
-    ${latestSI ? `<div style="margin-top:12px;">
+  let html = `<div style="margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid ${C.border};">
+    <div style="display:flex;align-items:center;gap:14px;cursor:pointer;" onclick="toggleSectionExplainer('si-explainer',this)">
+      ${latestSI ? `<div style="flex-shrink:0;">${siConcentricRingsHTML(liftPercentiles)}</div>` : ''}
+      <div style="flex:1;min-width:0;">
+        <div style="display:flex;align-items:baseline;justify-content:space-between;gap:8px;">
+          <div style="display:flex;align-items:baseline;gap:6px;">
+            <div style="font-family:var(--font-mono);font-variant-numeric:tabular-nums;font-size:32px;font-weight:700;color:${C.strength};">${latestSI ? latestSI.index.toFixed(2) : '--'}</div>
+            <span class="section-chevron" style="font-size:10px;color:${C.textDim};transition:transform 0.3s ease;display:inline-block;">\u25BE</span>
+          </div>
+          <div style="font-family:var(--font-mono);font-size:12px;display:inline-flex;align-items:center;padding:2px 8px;border-radius:5px;background:${siColor}18;">${tierBadge(siLevel, siColor)}</div>
+        </div>
+        <div id="si-explainer" style="font-family:var(--font-sans);font-size:12px;color:${C.textDim};margin-top:4px;max-height:0;overflow:hidden;opacity:0;transition:max-height 0.3s ease,opacity 0.25s ease;">Big-5 estimated 1RM total / bodyweight \u00B7 higher = stronger. Ring colors: deadlift, squat, bench, row, OHP.</div>
+      </div>
+    </div>
+
+    ${latestSI ? `<div style="margin-top:14px;">
       <div style="display:flex;align-items:center;">${segHtml}</div>
       <div style="display:flex;align-items:center;margin-top:4px;">${labelHtml}</div>
-      <div id="si-tier-tooltip" style="display:none;margin-top:8px;padding:8px 12px;border-radius:8px;background:${C.surface2};border:1px solid ${C.border};font-family:'JetBrains Mono',monospace;transition:opacity 0.2s ease;"></div>
+      <div id="si-tier-tooltip" style="display:none;margin-top:8px;padding:8px 12px;border-radius:8px;background:${C.surface2};border:1px solid ${C.border};font-family:var(--font-mono);transition:opacity 0.2s ease;"></div>
     </div>` : ''}
   </div>`;
 
@@ -6552,7 +6676,7 @@ function renderDashboard(workouts) {
   const syncColor = (hevyStatus === 'error' || healthStatus === 'missing') ? C.textDim
     : (healthStatus === 'stale') ? C.warn : C.accent;
   document.getElementById('last-updated').innerHTML =
-    `v1.23 \u00b7${now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })} <span id="sync-dot" style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${syncColor};margin-left:5px;vertical-align:middle;position:relative;top:-1px;"></span>`;
+    `v1.24 \u00b7${now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })} <span id="sync-dot" style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${syncColor};margin-left:5px;vertical-align:middle;position:relative;top:-1px;"></span>`;
 
   // Populate globals BEFORE renderTimedSession so lifted-today detection works
   heatmapDayWorkouts = pp.heatmapDayWorkouts || {};
