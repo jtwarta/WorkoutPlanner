@@ -1,7 +1,10 @@
 <!DOCTYPE html>
 
 <!--
-  LiftScript v1.26a
+  LiftScript v1.26b
+  Changes from v1.26a (haptic hotfix v2):
+  1.  The real fix: WebKit BLOCKS programmatic haptics when clicking an <input type=checkbox switch> directly. Must click an associated <label> instead.
+  2.  Rewrote haptic helper: wrap input inside a label, .click() the label (not the input).
   Changes from v1.26 (haptic hotfix):
   1.  iOS Safari does not support navigator.vibrate(). Swapped in checkbox-switch workaround using <input type=checkbox switch> (iOS 17.4+) which triggers native iPhone haptic when toggled.
   2.  Android/Chrome still use native navigator.vibrate when available (falls through to switch only if that fails).
@@ -836,7 +839,7 @@ margin-top: 4px;
     <div class="header" style="position:relative;z-index:1;">
       <div style="display:flex;align-items:center;gap:10px;">
         <h1>LiftScript</h1>
-        <div class="subtitle" id="last-updated">v1.26a</div>
+        <div class="subtitle" id="last-updated">v1.26b</div>
         <div id="power-score-wrap" style="margin-left:auto;display:flex;align-items:center;gap:6px;cursor:pointer;-webkit-tap-highlight-color:transparent;" onclick="togglePowerScoreDetail()">
           <div id="power-score-ring"></div>
         </div>
@@ -1052,43 +1055,46 @@ const C = {
 
 
 // ============================================================
-// MICROINTERACTIONS (v1.26 / v1.26a haptic fix)
+// MICROINTERACTIONS (v1.26 / v1.26b haptic fix)
 // ============================================================
 // iOS Safari does not support navigator.vibrate(). Workaround: toggling an
-// <input type="checkbox" switch> (iOS 17.4+) triggers native haptic feedback.
-// We create the switch once lazily, then .click() it on each haptic() call.
+// <input type="checkbox" switch> (iOS 17.4+) triggers a native iPhone haptic.
+// CRITICAL: You cannot click the input directly - WebKit blocks programmatic
+// haptics on the input itself. You have to click an associated <label>.
 // Android/Chrome fall through to navigator.vibrate() which works natively.
-var _hapticSwitch = null;
-function _ensureHapticSwitch() {
-  if (_hapticSwitch) return _hapticSwitch;
+var _hapticPair = null;
+function _ensureHapticPair() {
+  if (_hapticPair) return _hapticPair;
   try {
-    var s = document.createElement('input');
-    s.type = 'checkbox';
-    // The 'switch' attribute is what triggers iOS haptic on state change
-    s.setAttribute('switch', '');
-    s.setAttribute('aria-hidden', 'true');
-    s.tabIndex = -1;
-    s.style.cssText = 'position:absolute;left:-9999px;top:-9999px;opacity:0;width:1px;height:1px;pointer-events:none;';
-    document.body.appendChild(s);
-    _hapticSwitch = s;
+    var wrap = document.createElement('label');
+    wrap.setAttribute('aria-hidden', 'true');
+    wrap.style.cssText = 'position:absolute;left:-9999px;top:-9999px;width:1px;height:1px;opacity:0;overflow:hidden;pointer-events:none;';
+    var input = document.createElement('input');
+    input.type = 'checkbox';
+    // The 'switch' attribute (iOS 17.4+) is what enables haptic on state change
+    input.setAttribute('switch', '');
+    input.tabIndex = -1;
+    wrap.appendChild(input);
+    document.body.appendChild(wrap);
+    _hapticPair = { label: wrap, input: input };
   } catch(_) {}
-  return _hapticSwitch;
+  return _hapticPair;
 }
 
 function haptic(ms) {
   // Android / Chrome: native Vibration API
+  var vibrated = false;
   if (typeof navigator !== 'undefined' && navigator.vibrate) {
     try {
-      if (navigator.vibrate(ms || 8)) return;
+      vibrated = !!navigator.vibrate(ms || 8);
     } catch(_) {}
   }
-  // iOS Safari workaround: toggle a switch-style checkbox to trigger native haptic
+  if (vibrated) return;
+  // iOS Safari workaround: click the LABEL (not the input) to fire native haptic
   try {
-    var s = _ensureHapticSwitch();
-    if (s) {
-      s.checked = !s.checked;
-      // Also dispatch click for broader browser coverage
-      s.click();
+    var p = _ensureHapticPair();
+    if (p && p.label) {
+      p.label.click();
     }
   } catch(_) {}
 }
@@ -6884,7 +6890,7 @@ function renderDashboard(workouts) {
   const syncColor = (hevyStatus === 'error' || healthStatus === 'missing') ? C.textDim
     : (healthStatus === 'stale') ? C.warn : C.accent;
   document.getElementById('last-updated').innerHTML =
-    `v1.26a \u00b7${now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })} <span id="sync-dot" style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${syncColor};margin-left:5px;vertical-align:middle;position:relative;top:-1px;"></span>`;
+    `v1.26b \u00b7${now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })} <span id="sync-dot" style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${syncColor};margin-left:5px;vertical-align:middle;position:relative;top:-1px;"></span>`;
 
   // Populate globals BEFORE renderTimedSession so lifted-today detection works
   heatmapDayWorkouts = pp.heatmapDayWorkouts || {};
