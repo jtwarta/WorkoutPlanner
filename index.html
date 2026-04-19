@@ -1,7 +1,17 @@
 <!DOCTYPE html>
 
 <!--
-  LiftScript v1.20
+  LiftScript v1.21
+  Changes from v1.20 (Aesthetics Pass - Sequence A: palette cleanup):
+  1.  Removed HUD-era hot-pink text-shadow on .header h1 (sap-gold glow instead)
+  2.  Removed #power-score-ring hue-rotate filter (was warping Redwood green to pink)
+  3.  Constraint chip active border: hot-pink -> fern
+  4.  btn-log-weight border: teal -> fern
+  5.  Normalized inline #6B6B70 grays to var(--text-dim) / #7A7262
+  6.  Import Hevy button re-skinned: iOS cyan -> sap-gold tertiary
+  7.  Weight chart canvas gradient: hot-pink+teal -> Redwood fern
+  8.  Heatmap cell fill: teal -> fern (matches --accent)
+  9.  Import status toast success state: teal -> fern
   Changes from v1.17:
   1.  Boosted structural importance: foundation lifts (bench, squat, back, shoulders) now meaningfully outrank accessories
   2.  Demand-ordered exercise list: heavy compounds first, small accessories last (both on-screen and in Hevy export)
@@ -125,7 +135,7 @@ font-weight: 700;
 letter-spacing: 0.15em;
 text-transform: uppercase;
 color: var(--accent);
-text-shadow: 0 0 30px rgba(255, 19, 90, 0.3);
+text-shadow: 0 0 24px rgba(232, 196, 74, 0.18);
 }
 .header .subtitle {
 font-size: 10px;
@@ -392,7 +402,7 @@ transform: scale(0.96);
 }
 .constraint-chip.active {
 color: var(--accent);
-border-color: rgba(255, 19, 90, 0.4);
+border-color: rgba(95,160,82,0.35);
 background: var(--accent-dim);
 }
 .chart-legend {
@@ -419,7 +429,7 @@ font-size: 13px;
 font-weight: 600;
 background: var(--accent-dim);
 color: var(--accent);
-border: 1px solid rgba(94, 234, 212, 0.35);
+border: 1px solid rgba(95,160,82,0.28);
 border-radius: 7px;
 cursor: pointer;
 font-family: 'JetBrains Mono', monospace;
@@ -615,10 +625,6 @@ body {
 .divider, .header {
   border-image: none;
 }
-/* Power score ring accent */
-#power-score-ring {
-  filter: hue-rotate(330deg) saturate(1.5);
-}
 </style>
 
 </head>
@@ -639,13 +645,13 @@ body {
     <div class="header" style="position:relative;z-index:1;">
       <div style="display:flex;align-items:center;gap:10px;">
         <h1>LiftScript</h1>
-        <div class="subtitle" id="last-updated">v1.20</div>
+        <div class="subtitle" id="last-updated">v1.21</div>
         <div id="power-score-wrap" style="margin-left:auto;display:flex;align-items:center;gap:6px;cursor:pointer;-webkit-tap-highlight-color:transparent;" onclick="togglePowerScoreDetail()">
           <div id="power-score-ring"></div>
         </div>
         <button id="header-refresh-btn" onclick="refreshData()" title="Refresh data" style="background:none;border:none;cursor:pointer;padding:2px 4px;position:relative;top:1px;line-height:1;-webkit-tap-highlight-color:transparent;">
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style="display:block;">
-            <path d="M13.65 2.35A7.96 7.96 0 008 0C3.58 0 .01 3.58.01 8S3.58 16 8 16c3.73 0 6.84-2.55 7.73-6h-2.08A5.99 5.99 0 018 14 6 6 0 012 8a6 6 0 016-6c1.66 0 3.14.69 4.22 1.78L9 7h7V0l-2.35 2.35z" fill="#6B6B70"/>
+            <path d="M13.65 2.35A7.96 7.96 0 008 0C3.58 0 .01 3.58.01 8S3.58 16 8 16c3.73 0 6.84-2.55 7.73-6h-2.08A5.99 5.99 0 018 14 6 6 0 012 8a6 6 0 016-6c1.66 0 3.14.69 4.22 1.78L9 7h7V0l-2.35 2.35z" fill="#7A7262"/>
           </svg>
         </button>
       </div>
@@ -676,7 +682,7 @@ body {
   <div class="card">
     <div class="card-title" style="cursor:pointer;display:flex;align-items:center;justify-content:space-between;" onclick="toggleSectionExplainer('muscle-grid-legend',this)">
       <span>Muscle Group Status</span>
-      <span class="section-chevron" style="font-size:10px;color:#6B6B70;transition:transform 0.3s ease;display:inline-block;">&#9662;</span>
+      <span class="section-chevron" style="font-size:10px;color:var(--text-dim);transition:transform 0.3s ease;display:inline-block;">&#9662;</span>
     </div>
     <div id="muscle-select-controls" style="display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap;"></div>
     <div id="muscle-grid" class="muscle-grid"></div>
@@ -735,7 +741,7 @@ body {
   <div class="card" id="health-vitals-card" style="display:none;">
     <div class="card-title" style="display:flex;align-items:center;justify-content:space-between;">
       <span>Health Vitals</span>
-      <span class="health-sync-time" id="health-sync-time" style="font-size:11px;font-family:'JetBrains Mono',monospace;color:#6B6B70;text-transform:none;letter-spacing:0;"></span>
+      <span class="health-sync-time" id="health-sync-time" style="font-size:11px;font-family:'JetBrains Mono',monospace;color:var(--text-dim);text-transform:none;letter-spacing:0;"></span>
     </div>
     <!-- Vitals Grid -->
     <div class="vitals-grid" id="vitals-grid"></div>
@@ -749,8 +755,8 @@ body {
     <div id="body-comp-display" style="margin-top:14px;"></div>
     <div id="measurements-display" style="margin-top:14px;"></div>
     <div style="display:flex;gap:6px;justify-content:flex-end;margin-top:12px;">
-      <button class="btn-log-weight" onclick="exportEmbeddableData()" style="background:rgba(142,142,152,0.12);color:#6B6B70;font-size:11px;padding:4px 8px;">Export</button>
-      <button class="btn-log-weight" onclick="document.getElementById('hevy-csv-input').click()" style="background:rgba(90,200,250,0.14);color:#5AC8FA;border-color:rgba(90,200,250,0.30);">Import Hevy</button>
+      <button class="btn-log-weight" onclick="exportEmbeddableData()" style="background:rgba(122,114,98,0.14);color:var(--text-dim);font-size:11px;padding:4px 8px;">Export</button>
+      <button class="btn-log-weight" onclick="document.getElementById('hevy-csv-input').click()" style="background:rgba(212,152,59,0.14);color:#D4983B;border-color:rgba(212,152,59,0.32);">Import Hevy</button>
     </div>
     <input type="file" id="hevy-csv-input" accept=".csv" style="display:none;" onchange="importHevyCSV(this)">
     <div id="hevy-import-status" style="display:none;padding:10px 12px;border-radius:8px;margin-top:8px;font-size:13px;font-family:'JetBrains Mono',monospace;"></div>
@@ -4402,7 +4408,7 @@ function renderHeatmap(dayMuscleMap, dayWorkoutsMap, dayCardioMap) {
     for (const day of days) {
       const sets = (dayMuscleMap[day] && dayMuscleMap[day][mKey]) || 0;
       const opacity = sets > 0 ? Math.max(0.25, Math.min(sets / maxSets, 1)) : 0;
-      const bgColor = sets > 0 ? `rgba(94, 234, 212, ${opacity})` : C.surface2; // accent RGB with dynamic opacity
+      const bgColor = sets > 0 ? `rgba(95, 160, 82, ${opacity})` : C.surface2; // Redwood accent with dynamic opacity
       html += `<div class="heatmap-cell" style="background:${bgColor}" data-day="${day}" onclick="selectHeatmapDay('${day}')" title="${day}: ${formatSets(sets)} sets"></div>`;
     }
   }
@@ -4648,8 +4654,8 @@ function renderWeightChart() {
   ctx.lineTo(pad.left, h - pad.bottom);
   ctx.closePath();
   const gradient = ctx.createLinearGradient(0, 0, 0, h);
-  gradient.addColorStop(0, 'rgba(255, 19, 90, 0.3)'); // accent RGB gradient
-  gradient.addColorStop(1, 'rgba(94, 234, 212, 0)');
+  gradient.addColorStop(0, 'rgba(95,160,82,0.28)'); // Redwood accent gradient
+  gradient.addColorStop(1, 'rgba(95,160,82,0)');
   ctx.fillStyle = gradient;
   ctx.fill();
 
@@ -5356,9 +5362,9 @@ function importHevyCSV(fileInput) {
   const statusEl = document.getElementById('hevy-import-status');
   const showStatus = (msg, isError) => {
     statusEl.style.display = 'block';
-    statusEl.style.background = isError ? 'rgba(248,113,113,0.12)' : 'rgba(94,234,212,0.12)';
+    statusEl.style.background = isError ? 'rgba(248,113,113,0.12)' : 'rgba(95,160,82,0.12)';
     statusEl.style.color = isError ? C.danger : C.accent;
-    statusEl.style.border = `1px solid ${isError ? 'rgba(248,113,113,0.2)' : 'rgba(94,234,212,0.2)'}`;
+    statusEl.style.border = `1px solid ${isError ? 'rgba(248,113,113,0.2)' : 'rgba(95,160,82,0.28)'}`;
     statusEl.textContent = msg;
     setTimeout(() => { statusEl.style.display = 'none'; }, 5000);
   };
