@@ -1,7 +1,16 @@
 <!DOCTYPE html>
 
 <!--
-  LiftScript v1.21
+  LiftScript v1.22
+  Changes from v1.21 (Aesthetics Pass - Sequence B: typography system):
+  1.  Dual-font system: JetBrains Mono for labels/data, SF Pro (system) for prose
+  2.  Body flips from mono 11px uppercase to sans 14px sentence case
+  3.  Removed HUD-era body-level forced uppercase and letter-spacing
+  4.  Explicit mono locks on label elements that were inheriting (brand, exercise names, group titles, vitals, card titles, muscle grid)
+  5.  Prose locks on expandable detail containers: rec-explainer, muscle-detail-inner, heatmap-day-detail-inner, error-msg
+  6.  Tabular figures (font-variant-numeric) on weight-current, weight-delta, vital-value, ex-prescription
+  7.  New utility classes: .num-display-md (28px hero tier), .prose (future prose containers)
+  8.  New CSS variables --font-mono and --font-sans for system-wide consistency
   Changes from v1.20 (Aesthetics Pass - Sequence A: palette cleanup):
   1.  Removed HUD-era hot-pink text-shadow on .header h1 (sap-gold glow instead)
   2.  Removed #power-score-ring hue-rotate filter (was warping Redwood green to pink)
@@ -93,6 +102,8 @@
   --purple-dim: rgba(192, 132, 252, 0.14);
   --strength: #C084FC;
   --strength-dim: rgba(192, 132, 252, 0.14);
+  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
+  --font-sans: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'SF Pro Display', system-ui, 'Helvetica Neue', sans-serif;
   color-scheme: dark;
 }
 
@@ -106,10 +117,12 @@ overscroll-behavior-y: none;
 }
 
 body {
-font-family: 'JetBrains Mono', monospace;
+font-family: var(--font-sans);
+font-size: 14px;
 color: var(--text);
 min-height: 100vh;
 -webkit-font-smoothing: antialiased;
+-moz-osx-font-smoothing: grayscale;
 line-height: 1.5;
 }
 
@@ -130,6 +143,7 @@ border-bottom: 1px solid rgba(95,160,82,0.15);
 border-bottom: 1px dashed rgba(255,255,255,0.10);
 }
 .header h1 {
+font-family: var(--font-mono);
 font-size: 22px;
 font-weight: 700;
 letter-spacing: 0.15em;
@@ -171,6 +185,7 @@ position: relative;
 z-index: 1;
 }
 .card-title {
+font-family: var(--font-mono);
 font-size: 10px;
 font-weight: 500;
 text-transform: uppercase;
@@ -204,7 +219,7 @@ color: var(--text-dim);
 transition: all 0.25s ease;
 border: none;
 background: none;
-font-family: 'JetBrains Mono', monospace;
+font-family: var(--font-mono);
 -webkit-tap-highlight-color: transparent;
 }
 .tab.active {
@@ -224,6 +239,9 @@ opacity: 0;
 opacity: 1;
 }
 .rec-explainer {
+font-family: var(--font-sans);
+text-transform: none;
+letter-spacing: normal;
 padding: 0 2px 14px 40px;
 font-size: 14px;
 color: var(--text-mid);
@@ -249,6 +267,7 @@ border-left: 2px solid var(--accent);
 }
 .ex-group:last-child { margin-bottom: 0; }
 .ex-group-title {
+font-family: var(--font-mono);
 font-size: 11px;
 font-weight: 500;
 padding: 10px 14px;
@@ -264,6 +283,7 @@ border-top: 1px solid var(--border);
 gap: 8px;
 }
 .ex-name {
+font-family: var(--font-mono);
 font-size: 11px;
 font-weight: 400;
 flex: 1;
@@ -274,7 +294,8 @@ text-transform: uppercase;
 letter-spacing: 0.06em;
 }
 .ex-prescription {
-font-family: 'JetBrains Mono', monospace;
+font-family: var(--font-mono);
+font-variant-numeric: tabular-nums;
 font-size: 12px;
 font-weight: 500;
 color: var(--accent);
@@ -309,6 +330,7 @@ justify-content: space-between;
 margin-bottom: 8px;
 }
 .muscle-name {
+font-family: var(--font-mono);
 font-size: 12px;
 font-weight: 500;
 letter-spacing: 0.08em;
@@ -325,6 +347,9 @@ grid-column: 1 / -1;
 opacity: 1;
 }
 .muscle-detail-inner {
+font-family: var(--font-sans);
+text-transform: none;
+letter-spacing: normal;
 padding: 14px;
 background: var(--surface2);
 border-radius: 6px;
@@ -359,14 +384,16 @@ position: relative;
 }
 .weight-chart canvas { width: 100%; height: 100%; }
 .weight-current {
-font-family: 'JetBrains Mono', monospace;
+font-family: var(--font-mono);
+font-variant-numeric: tabular-nums;
 font-size: 34px;
 font-weight: 700;
 letter-spacing: -1px;
 color: var(--accent);
 }
 .weight-delta {
-font-family: 'JetBrains Mono', monospace;
+font-family: var(--font-mono);
+font-variant-numeric: tabular-nums;
 font-size: 14px;
 }
 .weight-unit {
@@ -497,6 +524,9 @@ opacity: 1;
 margin-top: 12px;
 }
 .heatmap-day-detail-inner {
+font-family: var(--font-sans);
+text-transform: none;
+letter-spacing: normal;
 padding: 14px;
 background: var(--surface2);
 border-radius: 6px;
@@ -556,6 +586,9 @@ text-transform: uppercase;
 letter-spacing: 0.12em;
 }
 .error-msg {
+font-family: var(--font-sans);
+text-transform: none;
+letter-spacing: normal;
 background: var(--danger-dim);
 border: 1px solid rgba(248,113,113,0.2);
 border-radius: 6px;
@@ -581,6 +614,7 @@ min-width: 0;
 overflow: hidden;
 }
 .vital-label {
+font-family: var(--font-mono);
 font-size: 11px;
 font-weight: 600;
 text-transform: uppercase;
@@ -589,7 +623,8 @@ color: var(--text-dim);
 margin-bottom: 6px;
 }
 .vital-value {
-font-family: 'JetBrains Mono', monospace;
+font-family: var(--font-mono);
+font-variant-numeric: tabular-nums;
 font-size: 22px;
 font-weight: 500;
 color: var(--accent);
@@ -612,18 +647,28 @@ margin-top: 4px;
 
 .hidden { display: none; }
 
-/* HUD Aesthetic additions */
-body {
-  font-size: 11px;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-}
+/* HUD Aesthetic additions (body-level type rules removed in v1.22) */
 .app {
   background-image: radial-gradient(rgba(255,255,255,0.025) 1px, transparent 1px);
   background-size: 20px 20px;
 }
 .divider, .header {
   border-image: none;
+}
+/* Typography utility classes (v1.22) */
+.num-display-md {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 28px;
+  font-weight: 600;
+  letter-spacing: -0.5px;
+  color: var(--accent);
+}
+.prose {
+  font-family: var(--font-sans);
+  text-transform: none;
+  letter-spacing: normal;
+  line-height: 1.55;
 }
 </style>
 
@@ -645,7 +690,7 @@ body {
     <div class="header" style="position:relative;z-index:1;">
       <div style="display:flex;align-items:center;gap:10px;">
         <h1>LiftScript</h1>
-        <div class="subtitle" id="last-updated">v1.21</div>
+        <div class="subtitle" id="last-updated">v1.22</div>
         <div id="power-score-wrap" style="margin-left:auto;display:flex;align-items:center;gap:6px;cursor:pointer;-webkit-tap-highlight-color:transparent;" onclick="togglePowerScoreDetail()">
           <div id="power-score-ring"></div>
         </div>
@@ -6499,7 +6544,7 @@ function renderDashboard(workouts) {
   const syncColor = (hevyStatus === 'error' || healthStatus === 'missing') ? C.textDim
     : (healthStatus === 'stale') ? C.warn : C.accent;
   document.getElementById('last-updated').innerHTML =
-    `v1.21 \u00b7${now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })} <span id="sync-dot" style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${syncColor};margin-left:5px;vertical-align:middle;position:relative;top:-1px;"></span>`;
+    `v1.22 \u00b7${now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })} <span id="sync-dot" style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${syncColor};margin-left:5px;vertical-align:middle;position:relative;top:-1px;"></span>`;
 
   // Populate globals BEFORE renderTimedSession so lifted-today detection works
   heatmapDayWorkouts = pp.heatmapDayWorkouts || {};
