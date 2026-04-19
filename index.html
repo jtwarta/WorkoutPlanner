@@ -1,7 +1,12 @@
 <!DOCTYPE html>
 
 <!--
-  LiftScript v1.29
+  LiftScript v1.30
+  Changes from v1.29 (Adaptive Big 5 cap):
+  1.  bigFiveCapForBudget is now volume-aware: when Foundation muscle volume delivery (actual weekly sets / ideal weekly sets, aggregated across chest/back/shoulders/quads/hamstrings/glutes) is below 0.60 of target, the 60-min cap relaxes from 2 to 3.
+  2.  Rationale: the 2-Big-5 cap is a recovery-economy safeguard that only matters when the user is at or near their volume ceiling. For consistently under-delivering users, the cap blocks useful compound work without protecting against anything real. The Squat+Deadlift block and Deadlift+Row caution still apply regardless (those are CNS/spinal safety rails, volume-independent).
+  3.  Added foundationVolumeDeliveryRatio() helper computing aggregated weekly volume vs target across Foundation muscles.
+  4.  Threshold 0.60 of target = ~39% of Schoenfeld optimal (master doc targets are already set at 65% of optimal). Users at 60%+ of target get the strict cap; users below get the relaxed cap.
   Changes from v1.28 (Session logic - Big 5 conflict resolution):
   1.  Added BIG_FIVE_PATTERNS and isBig5() classifier for session-level Big 5 detection
   2.  Added BIG_5_CONFLICTS table: Squat+Deadlift (block), Deadlift+Row (caution)
@@ -889,7 +894,7 @@ margin-top: 4px;
     <div class="header" style="position:relative;z-index:1;">
       <div style="display:flex;align-items:center;gap:10px;">
         <h1>LiftScript</h1>
-        <div class="subtitle" id="last-updated">v1.29</div>
+        <div class="subtitle" id="last-updated">v1.30</div>
         <div id="power-score-wrap" role="button" aria-label="Toggle Power Score details" tabindex="0" style="margin-left:auto;display:flex;align-items:center;gap:6px;cursor:pointer;-webkit-tap-highlight-color:transparent;min-height:32px;" onclick="togglePowerScoreDetail()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();togglePowerScoreDetail();}">
           <div id="power-score-ring"></div>
         </div>
@@ -1767,12 +1772,44 @@ function findBig5Conflict(newKey, existingKeys) {
   return null;
 }
 
-// Big 5 cap based on time budget. Research + tradition converge on 2 heavy
-// compounds being the sustainable ceiling for 45-75 min sessions.
+// Big 5 cap based on time budget AND volume-delivery ratio.
+// Research + tradition say 2 heavy compounds is the ceiling for 45-75 min
+// sessions *when volume is maxed*. v1.30: when the user is consistently
+// under-delivering Foundation volume, the cap relaxes to 3 since there's
+// no recovery economy to protect. The Squat+Deadlift block and Deadlift+Row
+// caution are independent of this - those are CNS/spinal safety rails that
+// apply regardless of volume loading.
+function foundationVolumeDeliveryRatio() {
+  if (!muscleAnalysis) return null;
+  var foundationKeys = ['chest', 'back', 'shoulders', 'quads', 'hamstrings', 'glutes'];
+  var totalActual = 0;
+  var totalTarget = 0;
+  for (var i = 0; i < foundationKeys.length; i++) {
+    var k = foundationKeys[i];
+    var stat = muscleAnalysis[k];
+    if (stat && stat.idealSetsPerWeek > 0) {
+      // 30-day actual sets divided by 4.3 weeks = average weekly sets
+      totalActual += (stat.totalSets30d || 0) / 4.3;
+      totalTarget += stat.idealSetsPerWeek;
+    }
+  }
+  if (totalTarget === 0) return null;
+  return totalActual / totalTarget;
+}
+
 function bigFiveCapForBudget(capSec) {
   var capMin = capSec / 60;
-  if (capMin <= 75) return 2;
-  return 3;
+  var baseCap = capMin <= 75 ? 2 : 3;
+  // Adaptive: if user is significantly under-delivering Foundation volume,
+  // relax the cap to 3. Threshold 0.60 of target = ~39% of Schoenfeld
+  // optimal (since targets are set at 65% of optimal per master doc).
+  // A user at 60%+ of target is consistent enough that cap=2 protects
+  // meaningful recovery; below 60% the cap is just getting in the way.
+  if (baseCap === 2) {
+    var ratio = foundationVolumeDeliveryRatio();
+    if (ratio !== null && ratio < 0.60) return 3;
+  }
+  return baseCap;
 }
 
 // Build the dynamic exercise pool from all known sources
@@ -7156,7 +7193,7 @@ function renderDashboard(workouts) {
   const syncColor = (hevyStatus === 'error' || healthStatus === 'missing') ? C.textDim
     : (healthStatus === 'stale') ? C.warn : C.accent;
   document.getElementById('last-updated').innerHTML =
-    `v1.29 \u00b7${now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })} <span id="sync-dot" style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${syncColor};margin-left:5px;vertical-align:middle;position:relative;top:-1px;"></span>`;
+    `v1.30 \u00b7${now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })} <span id="sync-dot" style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${syncColor};margin-left:5px;vertical-align:middle;position:relative;top:-1px;"></span>`;
 
   // Populate globals BEFORE renderTimedSession so lifted-today detection works
   heatmapDayWorkouts = pp.heatmapDayWorkouts || {};
