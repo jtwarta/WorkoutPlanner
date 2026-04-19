@@ -1,8 +1,12 @@
 <!DOCTYPE html>
 
 <!--
-  LiftScript v1.30
-  Changes from v1.29 (Adaptive Big 5 cap):
+  LiftScript v1.31
+  Changes from v1.30 (Today card branch dividers - deferred item from Aesthetics Pass Seq E):
+  1.  Added organic branch divider between the hero block ('Today's Session ~46m') and the chips row (Reroll/Hevy/60m/Gym/Auto).
+  2.  Replaced the straight border-bottom separator below the chips row with an organic branch divider, matching the treatment already used between exercises and cardio.
+  3.  Completes the Today card sub-section layout originally planned for Seq E v1.25 but dropped at time of implementation.
+  Changes from v1.30 (Adaptive Big 5 cap):
   1.  bigFiveCapForBudget is now volume-aware: when Foundation muscle volume delivery (actual weekly sets / ideal weekly sets, aggregated across chest/back/shoulders/quads/hamstrings/glutes) is below 0.60 of target, the 60-min cap relaxes from 2 to 3.
   2.  Rationale: the 2-Big-5 cap is a recovery-economy safeguard that only matters when the user is at or near their volume ceiling. For consistently under-delivering users, the cap blocks useful compound work without protecting against anything real. The Squat+Deadlift block and Deadlift+Row caution still apply regardless (those are CNS/spinal safety rails, volume-independent).
   3.  Added foundationVolumeDeliveryRatio() helper computing aggregated weekly volume vs target across Foundation muscles.
@@ -894,7 +898,7 @@ margin-top: 4px;
     <div class="header" style="position:relative;z-index:1;">
       <div style="display:flex;align-items:center;gap:10px;">
         <h1>LiftScript</h1>
-        <div class="subtitle" id="last-updated">v1.30</div>
+        <div class="subtitle" id="last-updated">v1.31</div>
         <div id="power-score-wrap" role="button" aria-label="Toggle Power Score details" tabindex="0" style="margin-left:auto;display:flex;align-items:center;gap:6px;cursor:pointer;-webkit-tap-highlight-color:transparent;min-height:32px;" onclick="togglePowerScoreDetail()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();togglePowerScoreDetail();}">
           <div id="power-score-ring"></div>
         </div>
@@ -4435,7 +4439,8 @@ function renderTimedSession(recs) {
 
   const wrapper = document.getElementById('today-chips-wrapper');
   wrapper.innerHTML = `
-    <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid ${C.border};flex-wrap:wrap;">
+    ${branchDividerHTML()}
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap;">
       <button onclick="rerollLifts()" style="display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:6px;background:${C.surface2};border:1px solid ${C.border};color:${C.textMid};font-size:11px;font-weight:600;font-family:'JetBrains Mono',monospace;cursor:pointer;-webkit-tap-highlight-color:transparent;white-space:nowrap;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>Reroll</button>
       ${_customSessionActive ? '<button onclick="resetToAutoSession()" style="display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:6px;background:' + C.dangerDim + ';border:1px solid ' + C.danger + '30;color:' + C.danger + ';font-size:11px;font-weight:600;font-family:JetBrains Mono,monospace;cursor:pointer;-webkit-tap-highlight-color:transparent;white-space:nowrap;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>Reset</button>' : ''}
       <button id="send-to-hevy-btn" onclick="sendSessionToHevy()" style="display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:6px;background:${C.surface2};border:1px solid ${C.border};color:${C.textMid};font-size:11px;font-weight:600;font-family:'JetBrains Mono',monospace;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:all 0.2s ease;white-space:nowrap;">
@@ -4443,7 +4448,8 @@ function renderTimedSession(recs) {
         Hevy
       </button>
       ${chipDefs}
-    </div>`;
+    </div>
+    ${branchDividerHTML()}`;
 
   // --- EXERCISE LIST ---
   const exContainer = document.getElementById('suggested-exercises');
@@ -7193,7 +7199,7 @@ function renderDashboard(workouts) {
   const syncColor = (hevyStatus === 'error' || healthStatus === 'missing') ? C.textDim
     : (healthStatus === 'stale') ? C.warn : C.accent;
   document.getElementById('last-updated').innerHTML =
-    `v1.30 \u00b7${now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })} <span id="sync-dot" style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${syncColor};margin-left:5px;vertical-align:middle;position:relative;top:-1px;"></span>`;
+    `v1.31 \u00b7${now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })} <span id="sync-dot" style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${syncColor};margin-left:5px;vertical-align:middle;position:relative;top:-1px;"></span>`;
 
   // Populate globals BEFORE renderTimedSession so lifted-today detection works
   heatmapDayWorkouts = pp.heatmapDayWorkouts || {};
