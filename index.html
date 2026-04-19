@@ -1,7 +1,14 @@
 <!DOCTYPE html>
 
 <!--
-  LiftScript v1.28
+  LiftScript v1.29
+  Changes from v1.28 (Session logic - Big 5 conflict resolution):
+  1.  Added BIG_FIVE_PATTERNS and isBig5() classifier for session-level Big 5 detection
+  2.  Added BIG_5_CONFLICTS table: Squat+Deadlift (block), Deadlift+Row (caution)
+  3.  Added bigFiveCapForBudget: 2 Big 5 for <=75 min sessions, 3 for longer
+  4.  fitCandidates: tracks Big 5 in session, enforces cap + conflicts, logs resolutions
+  5.  Conflict resolution strip in Today tab: collapsible 'Session Adjustments' card showing what was skipped and why, with appropriate severity styling
+  Research basis: Simao et al. 2012 (order effects on subsequent lift performance), Schoenfeld et al. 2017/2019 (volume/frequency for hypertrophy), and coaching convergence across 5/3/1, Starting Strength, Juggernaut, Renaissance Periodization programs (2 heavy compounds per session sustainable ceiling at intermediate+ load).
   Changes from v1.27 (Aesthetics Pass - Sequence H: accessibility):
   1.  --text-dim contrast bumped from #7A7262 (3.1:1 on surface) to #8B8270 (~3.7:1, passes WCAG AA for large text)
   2.  C.textDim JS palette raised to match (keeps dynamic styles consistent)
@@ -882,7 +889,7 @@ margin-top: 4px;
     <div class="header" style="position:relative;z-index:1;">
       <div style="display:flex;align-items:center;gap:10px;">
         <h1>LiftScript</h1>
-        <div class="subtitle" id="last-updated">v1.28</div>
+        <div class="subtitle" id="last-updated">v1.29</div>
         <div id="power-score-wrap" role="button" aria-label="Toggle Power Score details" tabindex="0" style="margin-left:auto;display:flex;align-items:center;gap:6px;cursor:pointer;-webkit-tap-highlight-color:transparent;min-height:32px;" onclick="togglePowerScoreDetail()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();togglePowerScoreDetail();}">
           <div id="power-score-ring"></div>
         </div>
@@ -1717,6 +1724,56 @@ const COMPOUND_ANCHORS = {
   hamstrings: 'Romanian Deadlift (Barbell)',
   glutes: 'Hip Thrust (Barbell)',
 };
+
+// v1.29: Big 5 classification for session-level conflict resolution.
+// Evidence: Simao et al. 2012 (order effects), Schoenfeld 2017 (volume/frequency),
+// plus coaching tradition consensus across 5/3/1, Starting Strength, Juggernaut, RP.
+// We match by regex so reroll variations and minor name differences still classify.
+var BIG_FIVE_PATTERNS = {
+  bench:    /^(bench press)\s*\(barbell\)/i,
+  squat:    /^(squat|back squat)\s*\(barbell\)/i,
+  deadlift: /^(deadlift|conventional deadlift)\s*\(barbell\)/i,
+  ohp:      /^(overhead press|military press|standing military press)\s*\(barbell\)/i,
+  row:      /^(bent over row|barbell row|pendlay row)\s*\(barbell\)/i,
+};
+function isBig5(exName) {
+  if (!exName) return null;
+  for (var k in BIG_FIVE_PATTERNS) {
+    if (BIG_FIVE_PATTERNS[k].test(exName)) return k;
+  }
+  return null;
+}
+
+// v1.29: Conflict pairs with severity and reason.
+// 'block': never allow both in same session (hard rule, skips second candidate)
+// 'caution': score-penalty, skip if already past 40% time budget (deprioritizes)
+// Additional same-movement-pattern conflicts are already handled upstream by
+// MOVEMENT_PATTERNS / usedPat - this table captures the CROSS-pattern cases.
+var BIG_5_CONFLICTS = [
+  { pair: ['squat', 'deadlift'], severity: 'block',
+    reason: 'Squat and Deadlift both maximally load the spine and CNS. Recovery risk compounds at intermediate+ loads.' },
+  { pair: ['deadlift', 'row'], severity: 'caution',
+    reason: 'Deadlift and heavy Row are both grip-limited and stress the spinal erectors. Form degrades late in the session.' },
+];
+
+function findBig5Conflict(newKey, existingKeys) {
+  for (var i = 0; i < BIG_5_CONFLICTS.length; i++) {
+    var c = BIG_5_CONFLICTS[i];
+    var a = c.pair[0], b = c.pair[1];
+    var hit = (newKey === a && existingKeys.indexOf(b) !== -1)
+           || (newKey === b && existingKeys.indexOf(a) !== -1);
+    if (hit) return c;
+  }
+  return null;
+}
+
+// Big 5 cap based on time budget. Research + tradition converge on 2 heavy
+// compounds being the sustainable ceiling for 45-75 min sessions.
+function bigFiveCapForBudget(capSec) {
+  var capMin = capSec / 60;
+  if (capMin <= 75) return 2;
+  return 3;
+}
 
 // Build the dynamic exercise pool from all known sources
 // Tier 1 (instant): EXERCISE_DB + workout history
@@ -3700,6 +3757,11 @@ function buildTimedSession(recs, prefs) {
     var muscCompCount = {};
     var topM = keys[0];
     var topMHasIso = false;
+    // v1.29: Big 5 conflict + cap tracking
+    var big5InSession = [];          // e.g. ['squat', 'bench']
+    var big5Cap = bigFiveCapForBudget(capSec);
+    var conflictLog = [];            // user-visible resolution reasons
+
     for (var ci = 0; ci < cands.length; ci++) {
       var c = cands[ci];
       if (total + c.timeSec > capSec) continue;
@@ -3709,11 +3771,53 @@ function buildTimedSession(recs, prefs) {
       if (c.isCompound && (muscCompCount[c.muscle] || 0) >= 1) {
         if (total >= capSec * 0.7) continue;
       }
+
+      // v1.29: Big 5 conflict + cap checks - run only on Big 5 lifts
+      var big5Key = isBig5(c.name);
+      if (big5Key) {
+        // Cap enforcement
+        if (big5InSession.length >= big5Cap) {
+          conflictLog.push({
+            type: 'cap',
+            skipped: c.name,
+            reason: 'Session cap of ' + big5Cap + ' heavy compounds for ' + Math.round(capSec / 60) + '-min sessions. Adding a ' + (big5Cap + 1) + 'rd would compromise recovery or rush accessories.'
+          });
+          continue;
+        }
+        // Conflict enforcement
+        var conflict = findBig5Conflict(big5Key, big5InSession);
+        if (conflict) {
+          if (conflict.severity === 'block') {
+            conflictLog.push({
+              type: 'block',
+              skipped: c.name,
+              pair: conflict.pair,
+              reason: conflict.reason
+            });
+            continue;
+          }
+          if (conflict.severity === 'caution') {
+            // Caution: skip only if we're already past 40% time budget
+            // (i.e. we have room for it early but not late in the session)
+            if (total >= capSec * 0.4) {
+              conflictLog.push({
+                type: 'caution',
+                skipped: c.name,
+                pair: conflict.pair,
+                reason: conflict.reason
+              });
+              continue;
+            }
+          }
+        }
+      }
+
       sess.push(c);
       total += c.timeSec;
       if (c.isCompound && c.movementPattern) usedPat.add(c.movementPattern);
       if (c.isCompound) muscCompCount[c.muscle] = (muscCompCount[c.muscle] || 0) + 1;
       if (c.muscle === topM && c.isIsolation) topMHasIso = true;
+      if (big5Key) big5InSession.push(big5Key);
     }
     if (!topMHasIso && sess.length > 0) {
       var isoC = cands.find(function(c) {
@@ -3721,7 +3825,7 @@ function buildTimedSession(recs, prefs) {
       });
       if (isoC) { sess.push(isoC); total += isoC.timeSec; }
     }
-    return { session: sess, totalSec: total };
+    return { session: sess, totalSec: total, conflictLog: conflictLog, big5InSession: big5InSession };
   }
 
   // Build initial session with 3 muscles, then expand if >25% time remaining
@@ -3745,7 +3849,8 @@ function buildTimedSession(recs, prefs) {
     return getExerciseDemandRank(a.name) - getExerciseDemandRank(b.name);
   });
 
-  return { exercises: session, totalSec };
+  // v1.29: surface conflict resolution log from final fit pass
+  return { exercises: session, totalSec: totalSec, conflictLog: (result && result.conflictLog) || [], big5InSession: (result && result.big5InSession) || [] };
 }
 
 // Store for Send to Hevy feature
@@ -4231,7 +4336,10 @@ function getExerciseDemandRank(exName) {
 // toggleTodayChips removed in v1.19b - filters are always visible
 
 function renderTimedSession(recs) {
-  const { exercises, totalSec } = buildTimedSessionAndStore(recs);
+  const built = buildTimedSessionAndStore(recs);
+  const exercises = built.exercises;
+  const totalSec = built.totalSec;
+  const conflictLog = built.conflictLog || [];
   const totalMin = Math.round(totalSec / 60);
 
   // Gather unique muscle groups in display order
@@ -4316,6 +4424,38 @@ function renderTimedSession(recs) {
   recs.forEach(r => { recMap[r.key] = r; });
 
   let exHtml = '';
+
+  // v1.29: Conflict resolution strip - surface algorithm decisions
+  if (conflictLog.length > 0) {
+    // Deduplicate reasons (multiple rerolls can produce same entry)
+    var seenReasons = {};
+    var uniqueLog = [];
+    for (var cli = 0; cli < conflictLog.length; cli++) {
+      var key_cl = conflictLog[cli].reason;
+      if (!seenReasons[key_cl]) { seenReasons[key_cl] = true; uniqueLog.push(conflictLog[cli]); }
+    }
+    var items = uniqueLog.map(function(e) {
+      var label = e.type === 'cap' ? 'Over cap' : (e.type === 'block' ? 'Conflict' : 'Caution');
+      var iconColor = e.type === 'cap' ? C.textMid : (e.type === 'block' ? C.warn : C.textDim);
+      return '<div style="display:flex;align-items:flex-start;gap:8px;padding:6px 0;">' +
+        '<div style="flex-shrink:0;width:14px;height:14px;border-radius:50%;background:' + iconColor + '22;border:1px solid ' + iconColor + ';display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:' + iconColor + ';font-family:var(--font-mono);margin-top:1px;">!</div>' +
+        '<div style="flex:1;min-width:0;">' +
+          '<div style="font-family:var(--font-mono);font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:' + iconColor + ';">' + label + (e.skipped ? ' \u00b7 ' + e.skipped + ' skipped' : '') + '</div>' +
+          '<div style="font-family:var(--font-sans);font-size:12px;color:' + C.textMid + ';line-height:1.45;margin-top:2px;">' + e.reason + '</div>' +
+        '</div>' +
+      '</div>';
+    }).join('');
+    exHtml += '<div id="session-conflict-strip" style="margin-bottom:14px;padding:10px 12px 8px;border-radius:8px;background:' + C.surface2 + ';border:1px solid ' + C.border + ';border-left:3px solid ' + C.warn + ';">'
+      + '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;cursor:pointer;" onclick="toggleConflictDetail()">'
+        + '<div style="font-family:var(--font-mono);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.12em;color:' + C.textDim + ';">Session Adjustments \u00b7 ' + uniqueLog.length + '</div>'
+        + '<span id="conflict-chevron" style="font-size:10px;color:' + C.textDim + ';transition:transform 0.3s ease;">\u25BE</span>'
+      + '</div>'
+      + '<div id="conflict-detail" style="max-height:0;overflow:hidden;opacity:0;transition:max-height 0.3s ease, opacity 0.25s ease;">'
+        + '<div style="padding-top:8px;">' + items + '</div>'
+      + '</div>'
+    + '</div>';
+  }
+
   for (const key of groupKeys) {
     const exes = grouped[key];
     const meta = MUSCLE_GROUPS[key];
@@ -4396,6 +4536,24 @@ function toggleSectionExplainer(id, triggerEl) {
       const chev = triggerEl.querySelector('.section-chevron');
       if (chev) chev.style.transform = 'rotate(180deg)';
     }
+  }
+}
+
+// v1.29: Toggle the conflict resolution detail strip
+function toggleConflictDetail() {
+  var el = document.getElementById('conflict-detail');
+  var chev = document.getElementById('conflict-chevron');
+  if (!el) return;
+  if (el.dataset.open === '1') {
+    el.style.maxHeight = '0';
+    el.style.opacity = '0';
+    el.dataset.open = '0';
+    if (chev) chev.style.transform = 'rotate(0deg)';
+  } else {
+    el.dataset.open = '1';
+    el.style.opacity = '1';
+    el.style.maxHeight = el.scrollHeight + 'px';
+    if (chev) chev.style.transform = 'rotate(180deg)';
   }
 }
 
@@ -6998,7 +7156,7 @@ function renderDashboard(workouts) {
   const syncColor = (hevyStatus === 'error' || healthStatus === 'missing') ? C.textDim
     : (healthStatus === 'stale') ? C.warn : C.accent;
   document.getElementById('last-updated').innerHTML =
-    `v1.28 \u00b7${now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })} <span id="sync-dot" style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${syncColor};margin-left:5px;vertical-align:middle;position:relative;top:-1px;"></span>`;
+    `v1.29 \u00b7${now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })} <span id="sync-dot" style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${syncColor};margin-left:5px;vertical-align:middle;position:relative;top:-1px;"></span>`;
 
   // Populate globals BEFORE renderTimedSession so lifted-today detection works
   heatmapDayWorkouts = pp.heatmapDayWorkouts || {};
