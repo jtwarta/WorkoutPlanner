@@ -1,7 +1,10 @@
 <!DOCTYPE html>
 
 <!--
-  LiftScript v1.26
+  LiftScript v1.26a
+  Changes from v1.26 (haptic hotfix):
+  1.  iOS Safari does not support navigator.vibrate(). Swapped in checkbox-switch workaround using <input type=checkbox switch> (iOS 17.4+) which triggers native iPhone haptic when toggled.
+  2.  Android/Chrome still use native navigator.vibrate when available (falls through to switch only if that fails).
   Changes from v1.25 (Aesthetics Pass - Sequence F: microinteractions):
   1.  haptic() helper wired to cycleChip (4ms), rerollLifts (12ms), rerollCardio (10ms), switchTab (6ms), sendSessionToHevy (15ms), setChartPeriod (5ms)
   2.  Universal tap feedback: button and [onclick] elements get scale(0.965) + opacity dim on :active
@@ -833,7 +836,7 @@ margin-top: 4px;
     <div class="header" style="position:relative;z-index:1;">
       <div style="display:flex;align-items:center;gap:10px;">
         <h1>LiftScript</h1>
-        <div class="subtitle" id="last-updated">v1.26</div>
+        <div class="subtitle" id="last-updated">v1.26a</div>
         <div id="power-score-wrap" style="margin-left:auto;display:flex;align-items:center;gap:6px;cursor:pointer;-webkit-tap-highlight-color:transparent;" onclick="togglePowerScoreDetail()">
           <div id="power-score-ring"></div>
         </div>
@@ -1049,12 +1052,45 @@ const C = {
 
 
 // ============================================================
-// MICROINTERACTIONS (v1.26)
+// MICROINTERACTIONS (v1.26 / v1.26a haptic fix)
 // ============================================================
+// iOS Safari does not support navigator.vibrate(). Workaround: toggling an
+// <input type="checkbox" switch> (iOS 17.4+) triggers native haptic feedback.
+// We create the switch once lazily, then .click() it on each haptic() call.
+// Android/Chrome fall through to navigator.vibrate() which works natively.
+var _hapticSwitch = null;
+function _ensureHapticSwitch() {
+  if (_hapticSwitch) return _hapticSwitch;
+  try {
+    var s = document.createElement('input');
+    s.type = 'checkbox';
+    // The 'switch' attribute is what triggers iOS haptic on state change
+    s.setAttribute('switch', '');
+    s.setAttribute('aria-hidden', 'true');
+    s.tabIndex = -1;
+    s.style.cssText = 'position:absolute;left:-9999px;top:-9999px;opacity:0;width:1px;height:1px;pointer-events:none;';
+    document.body.appendChild(s);
+    _hapticSwitch = s;
+  } catch(_) {}
+  return _hapticSwitch;
+}
+
 function haptic(ms) {
+  // Android / Chrome: native Vibration API
   if (typeof navigator !== 'undefined' && navigator.vibrate) {
-    try { navigator.vibrate(ms || 8); } catch(_) {}
+    try {
+      if (navigator.vibrate(ms || 8)) return;
+    } catch(_) {}
   }
+  // iOS Safari workaround: toggle a switch-style checkbox to trigger native haptic
+  try {
+    var s = _ensureHapticSwitch();
+    if (s) {
+      s.checked = !s.checked;
+      // Also dispatch click for broader browser coverage
+      s.click();
+    }
+  } catch(_) {}
 }
 
 // ============================================================
@@ -6848,7 +6884,7 @@ function renderDashboard(workouts) {
   const syncColor = (hevyStatus === 'error' || healthStatus === 'missing') ? C.textDim
     : (healthStatus === 'stale') ? C.warn : C.accent;
   document.getElementById('last-updated').innerHTML =
-    `v1.26 \u00b7${now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })} <span id="sync-dot" style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${syncColor};margin-left:5px;vertical-align:middle;position:relative;top:-1px;"></span>`;
+    `v1.26a \u00b7${now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })} <span id="sync-dot" style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${syncColor};margin-left:5px;vertical-align:middle;position:relative;top:-1px;"></span>`;
 
   // Populate globals BEFORE renderTimedSession so lifted-today detection works
   heatmapDayWorkouts = pp.heatmapDayWorkouts || {};
