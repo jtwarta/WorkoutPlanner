@@ -1,7 +1,13 @@
 <!DOCTYPE html>
 
 <!--
-  LiftScript v1.24
+  LiftScript v1.25
+  Changes from v1.24 (Aesthetics Pass - Sequence E: information hierarchy):
+  1.  Heatmap: 5-step graduated fill (clear volume tiers) + 18px cells + scale legend below grid
+  2.  Muscle grid: 'RESTED' sap-gold chip for muscles trained today + sap-gold left border, visual recovery-guard signal
+  3.  Muscle grid: softer 'low' urgency color (textDim instead of accent) so trained/on-track muscles recede visually
+  4.  Today exercise list: compound anchor promotion via U+25C9 fisheye glyph + stronger text color/weight
+  5.  New .card-hero class (thicker accent stripe + surface2 base + elevated shadow) applied to Today, Strength Index, Weight & Trends
   Changes from v1.23 (Aesthetics Pass - Sequence D: brand payoff):
   1.  Bark texture opacity 0.10 -> 0.22 (now visible on device) in both CSS cards and JS SVG
   2.  Canopy light redesign: 6 diurnal bands (dawn/morning/midday/dusk/evening/night) with on-device-visible alphas (0.32-0.42 vs prior 0.12-0.22)
@@ -196,6 +202,13 @@ z-index: 0;
 .card > * {
 position: relative;
 z-index: 1;
+}
+/* v1.25: card tier - hero cards (Today, SI, Weight & Trends) */
+.card-hero {
+  border-left-width: 4px;
+  border-left-color: rgba(95,160,82,0.45);
+  background: linear-gradient(135deg, var(--surface2) 0%, var(--surface) 100%);
+  box-shadow: 0 3px 16px rgba(0,0,0,0.32), inset 0 1px 0 rgba(180,160,120,0.08);
 }
 .card-title {
 font-family: var(--font-mono);
@@ -505,12 +518,12 @@ text-transform: uppercase;
 letter-spacing: 0.08em;
 }
 .heatmap-cell {
-width: 16px;
-height: 16px;
+width: 18px;
+height: 18px;
 border-radius: 3px;
 background: var(--surface2);
 cursor: pointer;
-transition: opacity 0.15s ease;
+transition: opacity 0.15s ease, transform 0.12s ease;
 }
 .heatmap-cell:active {
 opacity: 0.7;
@@ -760,7 +773,7 @@ margin-top: 4px;
     <div class="header" style="position:relative;z-index:1;">
       <div style="display:flex;align-items:center;gap:10px;">
         <h1>LiftScript</h1>
-        <div class="subtitle" id="last-updated">v1.24</div>
+        <div class="subtitle" id="last-updated">v1.25</div>
         <div id="power-score-wrap" style="margin-left:auto;display:flex;align-items:center;gap:6px;cursor:pointer;-webkit-tap-highlight-color:transparent;" onclick="togglePowerScoreDetail()">
           <div id="power-score-ring"></div>
         </div>
@@ -783,7 +796,7 @@ margin-top: 4px;
 <!-- Today Tab -->
 
 <div id="tab-today">
-  <div class="card" style="border:1px solid rgba(180,160,120,0.14);">
+  <div class="card card-hero" style="border:1px solid rgba(180,160,120,0.14);">
     <div id="today-hero"></div>
     <div id="today-chips-wrapper"></div>
     <div id="suggested-exercises"></div>
@@ -827,13 +840,13 @@ margin-top: 4px;
 <!-- Weight Tab -->
 
 <div id="tab-weight" class="hidden">
-  <div class="card">
+  <div class="card card-hero">
     <div class="card-title">Strength Index</div>
     <div id="strength-detail" style="margin-bottom:14px;"></div>
     <div id="pr-board"></div>
   </div>
 
-  <div class="card">
+  <div class="card card-hero">
     <div class="card-title" style="display:flex;align-items:center;justify-content:space-between;">
       <span>Weight & Trends</span>
     </div>
@@ -4171,9 +4184,16 @@ function renderTimedSession(recs) {
 
     for (const ex of exes) {
       const rx = formatPrescription(ex.prescription);
+      // v1.25: compound anchor promotion - U+25C9 fisheye glyph + stronger weight
+      const isAnchor = COMPOUND_ANCHORS[key] === ex.name;
+      const anchorPrefix = isAnchor
+        ? '<span style="color:' + C.gold + ';margin-right:6px;font-size:10px;vertical-align:middle;">\u25C9</span>'
+        : '';
+      const nameColor = isAnchor ? C.text : C.textMid;
+      const nameWeight = isAnchor ? '600' : '400';
       exHtml += `
         <div class="ex-row">
-          <div class="ex-name" style="color:${C.textMid}">${ex.name}</div>
+          <div class="ex-name" style="color:${nameColor};font-weight:${nameWeight};">${anchorPrefix}${ex.name}</div>
           <div class="ex-prescription" style="color:${C.accent}">${rx}</div>
         </div>`;
     }
@@ -4277,14 +4297,24 @@ function renderMuscleGrid(muscleStats, recs) {
     // Volume label
     const volLabel = `${weeklyVol % 1 === 0 ? weeklyVol.toFixed(0) : weeklyVol.toFixed(1)}/${stat.idealSetsPerWeek}`;
 
-    // Left border uses urgency color
-    const urgencyColors = { high: C.danger, med: C.warn, low: C.accent };
-    const uColor = urgencyColors[urgency] || C.accent;
+    // v1.25: recovery guard - muscles trained today get "RESTED" treatment
+    const isRested = stat.daysSincePrimary === 0;
+
+    // Left border uses urgency color (softer "low" tone in v1.25)
+    const urgencyColors = { high: C.danger, med: C.warn, low: C.textDim };
+    let uColor = urgencyColors[urgency] || C.textDim;
+    // Rested muscles get sap-gold border as a distinct visual channel
+    if (isRested) uColor = C.gold;
+
+    // Rested chip for the cell header
+    const restedChip = isRested
+      ? '<span style="display:inline-block;font-family:var(--font-mono);font-size:8px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:' + C.gold + ';background:rgba(232,196,74,0.14);border:1px solid rgba(232,196,74,0.32);padding:1px 5px;border-radius:3px;margin-left:6px;vertical-align:middle;">Rested</span>'
+      : '';
 
     return `
-      <div class="muscle-cell" style="background:${_muscleSelectMode && _selectedMuscles.has(key) ? C.accentDim : C.surface2};border-color:${_muscleSelectMode && _selectedMuscles.has(key) ? C.accentBorder : C.border};border-left:3px solid ${uColor};${_muscleSelectMode && _selectedMuscles.has(key) ? 'outline:2px solid ' + C.accent + ';outline-offset:-2px;' : ''}" onclick="${_muscleSelectMode ? 'toggleMuscleSelection(\'' + key + '\',event)' : 'toggleMuscleDetail(\'' + key + '\')'}">
+      <div class="muscle-cell" style="background:${_muscleSelectMode && _selectedMuscles.has(key) ? C.accentDim : C.surface2};border-color:${_muscleSelectMode && _selectedMuscles.has(key) ? C.accentBorder : C.border};border-left:3px solid ${uColor};${_muscleSelectMode && _selectedMuscles.has(key) ? 'outline:2px solid ' + C.accent + ';outline-offset:-2px;' : ''}${isRested ? 'opacity:0.82;' : ''}" onclick="${_muscleSelectMode ? 'toggleMuscleSelection(\'' + key + '\',event)' : 'toggleMuscleDetail(\'' + key + '\')'}">
         <div class="muscle-cell-header">
-          <div class="muscle-name" style="color:${C.text}">${stat.name}${_muscleSelectMode && _selectedMuscles.has(key) ? ' <span style="font-size:10px;color:' + C.accent + ';">\u2713</span>' : ''}</div>
+          <div class="muscle-name" style="color:${isRested ? C.textMid : C.text}">${stat.name}${_muscleSelectMode && _selectedMuscles.has(key) ? ' <span style="font-size:10px;color:' + C.accent + ';">\u2713</span>' : ''}${restedChip}</div>
           ${ring}
         </div>
         <div style="display:flex;align-items:center;gap:8px;">
@@ -4566,8 +4596,13 @@ function renderHeatmap(dayMuscleMap, dayWorkoutsMap, dayCardioMap) {
     html += `<div class="heatmap-label">${muscleLabels[m]}</div>`;
     for (const day of days) {
       const sets = (dayMuscleMap[day] && dayMuscleMap[day][mKey]) || 0;
-      const opacity = sets > 0 ? Math.max(0.25, Math.min(sets / maxSets, 1)) : 0;
-      const bgColor = sets > 0 ? `rgba(95, 160, 82, ${opacity})` : C.surface2; // Redwood accent with dynamic opacity
+      // v1.25: 5-step graduated fill - discrete levels read more clearly than continuous
+      let bgColor;
+      if (sets === 0) bgColor = C.surface2;
+      else if (sets <= 4) bgColor = 'rgba(95,160,82,0.22)';
+      else if (sets <= 9) bgColor = 'rgba(95,160,82,0.42)';
+      else if (sets <= 14) bgColor = 'rgba(95,160,82,0.65)';
+      else bgColor = 'rgba(95,160,82,0.88)';
       html += `<div class="heatmap-cell" style="background:${bgColor}" data-day="${day}" onclick="selectHeatmapDay('${day}')" title="${day}: ${formatSets(sets)} sets"></div>`;
     }
   }
@@ -4587,6 +4622,16 @@ function renderHeatmap(dayMuscleMap, dayWorkoutsMap, dayCardioMap) {
   }
 
   html += '</div>';
+  // v1.25: legend strip showing the 5-step volume scale
+  html += '<div style="display:flex;align-items:center;justify-content:center;gap:4px;margin-top:12px;font-family:var(--font-mono);font-size:9px;color:' + C.textDim + ';letter-spacing:0.08em;text-transform:uppercase;">'
+    + '<span style="margin-right:4px;">Less</span>'
+    + '<div style="width:12px;height:12px;border-radius:2px;background:' + C.surface2 + ';"></div>'
+    + '<div style="width:12px;height:12px;border-radius:2px;background:rgba(95,160,82,0.22);"></div>'
+    + '<div style="width:12px;height:12px;border-radius:2px;background:rgba(95,160,82,0.42);"></div>'
+    + '<div style="width:12px;height:12px;border-radius:2px;background:rgba(95,160,82,0.65);"></div>'
+    + '<div style="width:12px;height:12px;border-radius:2px;background:rgba(95,160,82,0.88);"></div>'
+    + '<span style="margin-left:4px;">More</span>'
+    + '</div>';
   container.innerHTML = html;
 
   // Click outside any cell to deselect (attach once)
@@ -6676,7 +6721,7 @@ function renderDashboard(workouts) {
   const syncColor = (hevyStatus === 'error' || healthStatus === 'missing') ? C.textDim
     : (healthStatus === 'stale') ? C.warn : C.accent;
   document.getElementById('last-updated').innerHTML =
-    `v1.24 \u00b7${now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })} <span id="sync-dot" style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${syncColor};margin-left:5px;vertical-align:middle;position:relative;top:-1px;"></span>`;
+    `v1.25 \u00b7${now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })} <span id="sync-dot" style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${syncColor};margin-left:5px;vertical-align:middle;position:relative;top:-1px;"></span>`;
 
   // Populate globals BEFORE renderTimedSession so lifted-today detection works
   heatmapDayWorkouts = pp.heatmapDayWorkouts || {};
