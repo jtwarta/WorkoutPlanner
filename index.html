@@ -1,7 +1,16 @@
 <!DOCTYPE html>
 
 <!--
-  LiftScript v1.25
+  LiftScript v1.26
+  Changes from v1.25 (Aesthetics Pass - Sequence F: microinteractions):
+  1.  haptic() helper wired to cycleChip (4ms), rerollLifts (12ms), rerollCardio (10ms), switchTab (6ms), sendSessionToHevy (15ms), setChartPeriod (5ms)
+  2.  Universal tap feedback: button and [onclick] elements get scale(0.965) + opacity dim on :active
+  3.  Tab transitions: current tab fades+slides out (140ms), next tab fades+slides in (entering animation)
+  4.  Lift reroll: non-anchor ex-rows animate in with 45ms stagger via rerollShuffle keyframe (anchor stays pinned)
+  5.  Chart period toggle: canvas fades out 140ms, redraws, fades in
+  6.  Send-to-Hevy success: 600ms green box-shadow pulse on the button alongside the existing Sent badge
+  7.  prefers-reduced-motion: honored globally - all animations collapse to 0.001ms when OS setting is on
+  8.  renderTimedSession: anchor rows get ex-row-anchor class for reroll skip targeting
   Changes from v1.24 (Aesthetics Pass - Sequence E: information hierarchy):
   1.  Heatmap: 5-step graduated fill (clear volume tiers) + 18px cells + scale legend below grid
   2.  Muscle grid: 'RESTED' sap-gold chip for muscles trained today + sap-gold left border, visual recovery-guard signal
@@ -202,6 +211,57 @@ z-index: 0;
 .card > * {
 position: relative;
 z-index: 1;
+}
+/* v1.26: microinteractions */
+button, [onclick] {
+  transition: transform 0.12s ease, opacity 0.15s ease, box-shadow 0.15s ease;
+}
+button:active, [onclick]:active {
+  transform: scale(0.965);
+  opacity: 0.88;
+}
+/* Tab-body fade+slide transitions */
+#tab-today, #tab-muscles, #tab-history, #tab-weight {
+  transition: opacity 0.18s ease, transform 0.22s ease;
+}
+.tab-leaving {
+  opacity: 0 !important;
+  transform: translateY(4px) !important;
+  pointer-events: none !important;
+}
+.tab-entering {
+  opacity: 0;
+  transform: translateY(-4px);
+}
+/* Reroll shuffle on non-anchor rows */
+@keyframes rerollShuffle {
+  0%   { opacity: 0; transform: translateX(-10px); }
+  55%  { opacity: 1; transform: translateX(2px); }
+  100% { opacity: 1; transform: translateX(0); }
+}
+.reroll-shuffle {
+  animation: rerollShuffle 0.42s ease;
+}
+/* Chart canvas fade */
+.weight-chart canvas {
+  transition: opacity 0.14s ease;
+}
+/* Send-to-Hevy success pulse */
+@keyframes sendPulse {
+  0%   { box-shadow: 0 0 0 0 rgba(95,160,82,0.55); }
+  60%  { box-shadow: 0 0 0 10px rgba(95,160,82,0); }
+  100% { box-shadow: 0 0 0 0 rgba(95,160,82,0); }
+}
+.send-pulse {
+  animation: sendPulse 0.55s ease-out;
+}
+/* Respect OS reduced-motion */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
 }
 /* v1.25: card tier - hero cards (Today, SI, Weight & Trends) */
 .card-hero {
@@ -773,7 +833,7 @@ margin-top: 4px;
     <div class="header" style="position:relative;z-index:1;">
       <div style="display:flex;align-items:center;gap:10px;">
         <h1>LiftScript</h1>
-        <div class="subtitle" id="last-updated">v1.25</div>
+        <div class="subtitle" id="last-updated">v1.26</div>
         <div id="power-score-wrap" style="margin-left:auto;display:flex;align-items:center;gap:6px;cursor:pointer;-webkit-tap-highlight-color:transparent;" onclick="togglePowerScoreDetail()">
           <div id="power-score-ring"></div>
         </div>
@@ -987,6 +1047,15 @@ const C = {
   gold:      '#E8C44A',
 };
 
+
+// ============================================================
+// MICROINTERACTIONS (v1.26)
+// ============================================================
+function haptic(ms) {
+  if (typeof navigator !== 'undefined' && navigator.vibrate) {
+    try { navigator.vibrate(ms || 8); } catch(_) {}
+  }
+}
 
 // ============================================================
 // REDWOOD AESTHETIC UTILITIES (v1.19)
@@ -1975,6 +2044,7 @@ const CHIP_DEFS = [
 function cycleChip(key) {
   const def = CHIP_DEFS.find(d => d.key === key);
   if (!def) return;
+  haptic(4);
   const current = sessionPrefs[key];
   const idx = def.values.indexOf(current);
   const next = def.values[(idx + 1) % def.values.length];
@@ -2956,12 +3026,28 @@ let _selectedMuscles = new Set();
 
 function rerollLifts() {
   _liftRerollOffset++;
+  haptic(12);
   var activeRecs = _customSessionActive && _customSessionRecs ? _customSessionRecs : LAST_RECS;
-  if (activeRecs) renderTimedSession(activeRecs);
+  if (activeRecs) {
+    renderTimedSession(activeRecs);
+    // v1.26: shuffle non-anchor rows into place with stagger
+    try {
+      var rows = document.querySelectorAll('#suggested-exercises .ex-row:not(.ex-row-anchor)');
+      rows.forEach(function(r, i) {
+        r.style.animationDelay = (i * 45) + 'ms';
+        r.classList.add('reroll-shuffle');
+        setTimeout(function() {
+          r.classList.remove('reroll-shuffle');
+          r.style.animationDelay = '';
+        }, 420 + (i * 45) + 60);
+      });
+    } catch(_) {}
+  }
 }
 
 function rerollCardio() {
   _cardioRerollOffset++;
+  haptic(10);
   renderCardioPlan(heatmapDayCardio);
 }
 
@@ -4002,9 +4088,12 @@ async function sendSessionToHevy() {
         : '';
       var verb = existingId ? 'updated' : 'created';
       showToast('\u2714 \"' + routineTitle + '\" ' + verb + ' in Hevy!' + skipMsg, false);
+      haptic(15);
       btn.innerHTML = '<span style="display:inline-flex;align-items:center;gap:5px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="' + C.accent + '" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> <span style="color:' + C.accent + ';">Sent!</span></span>';
       btn.style.opacity = '1';
       btn.disabled = true;
+      btn.classList.add('send-pulse');
+      setTimeout(function() { btn.classList.remove('send-pulse'); }, 600);
       setTimeout(function() {
         btn.innerHTML = origHTML;
         btn.disabled = false;
@@ -4192,7 +4281,7 @@ function renderTimedSession(recs) {
       const nameColor = isAnchor ? C.text : C.textMid;
       const nameWeight = isAnchor ? '600' : '400';
       exHtml += `
-        <div class="ex-row">
+        <div class="ex-row${isAnchor ? ' ex-row-anchor' : ''}">
           <div class="ex-name" style="color:${nameColor};font-weight:${nameWeight};">${anchorPrefix}${ex.name}</div>
           <div class="ex-prescription" style="color:${C.accent}">${rx}</div>
         </div>`;
@@ -5122,7 +5211,18 @@ function toggleChartLine(key) {
 
 function setChartPeriod(period) {
   _chartPeriod = period;
-  renderWeightChart();
+  haptic(5);
+  // v1.26: fade canvas out, redraw, fade back in
+  var canvas = document.getElementById('weight-canvas');
+  if (canvas) {
+    canvas.style.opacity = '0';
+    setTimeout(function() {
+      renderWeightChart();
+      canvas.style.opacity = '1';
+    }, 140);
+  } else {
+    renderWeightChart();
+  }
 }
 
 // ============================================================
@@ -6407,15 +6507,42 @@ function renderHealthVitals() {
 // TAB SWITCHING
 // ============================================================
 function switchTab(tab) {
-  document.querySelectorAll('[id^="tab-"]').forEach(el => el.classList.add('hidden'));
-  document.getElementById(`tab-${tab}`).classList.remove('hidden');
-  document.querySelectorAll('.tab').forEach(el => {
+  haptic(6);
+  // v1.26: fade+slide transition
+  var current = document.querySelector('[id^="tab-"]:not(.hidden)');
+  var next = document.getElementById('tab-' + tab);
+  if (!next) return;
+  if (current === next) return;
+
+  // Update tab chip active state immediately (visual feedback)
+  document.querySelectorAll('.tab').forEach(function(el) {
     el.classList.toggle('active', el.dataset.tab === tab);
   });
-  if (tab === 'weight') {
-    setTimeout(renderWeightChart, 50);
-    setTimeout(renderHealthVitals, 50);
-    setTimeout(renderMeasurementsCard, 50);
+
+  function doSwap() {
+    document.querySelectorAll('[id^="tab-"]').forEach(function(el) { el.classList.add('hidden'); });
+    next.classList.remove('hidden');
+    next.classList.add('tab-entering');
+    requestAnimationFrame(function() {
+      requestAnimationFrame(function() {
+        next.classList.remove('tab-entering');
+      });
+    });
+    if (tab === 'weight') {
+      setTimeout(renderWeightChart, 50);
+      setTimeout(renderHealthVitals, 50);
+      setTimeout(renderMeasurementsCard, 50);
+    }
+  }
+
+  if (current) {
+    current.classList.add('tab-leaving');
+    setTimeout(function() {
+      current.classList.remove('tab-leaving');
+      doSwap();
+    }, 140);
+  } else {
+    doSwap();
   }
 }
 
@@ -6721,7 +6848,7 @@ function renderDashboard(workouts) {
   const syncColor = (hevyStatus === 'error' || healthStatus === 'missing') ? C.textDim
     : (healthStatus === 'stale') ? C.warn : C.accent;
   document.getElementById('last-updated').innerHTML =
-    `v1.25 \u00b7${now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })} <span id="sync-dot" style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${syncColor};margin-left:5px;vertical-align:middle;position:relative;top:-1px;"></span>`;
+    `v1.26 \u00b7${now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })} <span id="sync-dot" style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${syncColor};margin-left:5px;vertical-align:middle;position:relative;top:-1px;"></span>`;
 
   // Populate globals BEFORE renderTimedSession so lifted-today detection works
   heatmapDayWorkouts = pp.heatmapDayWorkouts || {};
