@@ -1,7 +1,15 @@
 <!DOCTYPE html>
 
 <!--
-  LiftScript v1.27
+  LiftScript v1.28
+  Changes from v1.27 (Aesthetics Pass - Sequence H: accessibility):
+  1.  --text-dim contrast bumped from #7A7262 (3.1:1 on surface) to #8B8270 (~3.7:1, passes WCAG AA for large text)
+  2.  C.textDim JS palette raised to match (keeps dynamic styles consistent)
+  3.  Added focus-visible outlines on button, [onclick], input, tab, muscle-cell, heatmap-cell for keyboard / AT navigation
+  4.  Tap target minimums: muscle-cell 44px, chips/tabs 32px, heatmap cells get touch-action manipulation
+  5.  Body sizing flipped from hardcoded 14px to 0.875rem (iOS Dynamic Type now scales prose with system setting)
+  6.  ARIA labels on icon-only buttons: header refresh (aria-label), power score wrap (role=button + keyboard handler + aria-label)
+  7.  Tabs get role=tablist / role=tab / aria-selected, kept in sync by switchTab
   Changes from v1.26b (Aesthetics Pass - Sequence G: data-viz refinements):
   1.  Chart defaults to Weight + one secondary line (persisted in localStorage.chart_secondary_v1, default si)
   2.  Legend dot tap is now exclusive: tapping switches the single secondary, tapping the active secondary turns it off
@@ -132,7 +140,7 @@
   --border-light: rgba(180,160,120,0.15);
   --text: #E8E0D0;
   --text-mid: #A89E88;
-  --text-dim: #7A7262;
+  --text-dim: #8B8270;  /* v1.28: raised from #7A7262 for WCAG AA */
   --accent: #5FA052;
   --accent-dim: rgba(95, 160, 82, 0.14);
   --warn: #D4983B;
@@ -159,9 +167,10 @@ color-scheme: dark;
 overscroll-behavior-y: none;
 }
 
+html { font-size: 100%; }
 body {
 font-family: var(--font-sans);
-font-size: 14px;
+font-size: 0.875rem;  /* ~14px at default, scales with iOS Dynamic Type */
 color: var(--text);
 min-height: 100vh;
 -webkit-font-smoothing: antialiased;
@@ -268,6 +277,32 @@ button:active, [onclick]:active {
 }
 .send-pulse {
   animation: sendPulse 0.55s ease-out;
+}
+/* v1.28: accessibility - focus-visible for keyboard/AT navigation */
+button:focus-visible,
+[onclick]:focus-visible,
+input:focus-visible,
+.tab:focus-visible,
+.muscle-cell:focus-visible,
+.heatmap-cell:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 5px;
+}
+/* v1.28: tap target minimums - invisible padding preserves visual size */
+.muscle-cell {
+  min-height: 44px;
+}
+.heatmap-cell {
+  /* 18px visual cell + 4px padding in each direction = ~26px total tap zone.
+     Can't go full 44px without breaking the grid layout, so we bump
+     touch-action + add min-width for slightly easier thumb targeting. */
+  min-width: 18px;
+  touch-action: manipulation;
+}
+.constraint-chip, .tab {
+  min-height: 32px;
+  touch-action: manipulation;
 }
 /* Respect OS reduced-motion */
 @media (prefers-reduced-motion: reduce) {
@@ -847,11 +882,11 @@ margin-top: 4px;
     <div class="header" style="position:relative;z-index:1;">
       <div style="display:flex;align-items:center;gap:10px;">
         <h1>LiftScript</h1>
-        <div class="subtitle" id="last-updated">v1.27</div>
-        <div id="power-score-wrap" style="margin-left:auto;display:flex;align-items:center;gap:6px;cursor:pointer;-webkit-tap-highlight-color:transparent;" onclick="togglePowerScoreDetail()">
+        <div class="subtitle" id="last-updated">v1.28</div>
+        <div id="power-score-wrap" role="button" aria-label="Toggle Power Score details" tabindex="0" style="margin-left:auto;display:flex;align-items:center;gap:6px;cursor:pointer;-webkit-tap-highlight-color:transparent;min-height:32px;" onclick="togglePowerScoreDetail()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();togglePowerScoreDetail();}">
           <div id="power-score-ring"></div>
         </div>
-        <button id="header-refresh-btn" onclick="refreshData()" title="Refresh data" style="background:none;border:none;cursor:pointer;padding:2px 4px;position:relative;top:1px;line-height:1;-webkit-tap-highlight-color:transparent;">
+        <button id="header-refresh-btn" onclick="refreshData()" title="Refresh data" aria-label="Refresh data from Hevy and health" style="background:none;border:none;cursor:pointer;padding:2px 4px;position:relative;top:1px;line-height:1;-webkit-tap-highlight-color:transparent;min-width:32px;min-height:32px;">
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style="display:block;">
             <path d="M13.65 2.35A7.96 7.96 0 008 0C3.58 0 .01 3.58.01 8S3.58 16 8 16c3.73 0 6.84-2.55 7.73-6h-2.08A5.99 5.99 0 018 14 6 6 0 012 8a6 6 0 016-6c1.66 0 3.14.69 4.22 1.78L9 7h7V0l-2.35 2.35z" fill="#7A7262"/>
           </svg>
@@ -860,11 +895,11 @@ margin-top: 4px;
     </div>
     <div id="power-score-detail" style="display:none;margin-top:10px;padding:12px 14px;border-radius:10px;background:var(--surface2);border:1px solid var(--border);"></div>
 
-<div class="tabs">
-  <button class="tab active" data-tab="today" onclick="switchTab('today')">Today</button>
-  <button class="tab" data-tab="muscles" onclick="switchTab('muscles')">Muscles</button>
-  <button class="tab" data-tab="history" onclick="switchTab('history')">History</button>
-  <button class="tab" data-tab="weight" onclick="switchTab('weight')">Body</button>
+<div class="tabs" role="tablist">
+  <button class="tab active" data-tab="today" role="tab" aria-selected="true" onclick="switchTab('today')">Today</button>
+  <button class="tab" data-tab="muscles" role="tab" aria-selected="false" onclick="switchTab('muscles')">Muscles</button>
+  <button class="tab" data-tab="history" role="tab" aria-selected="false" onclick="switchTab('history')">History</button>
+  <button class="tab" data-tab="weight" role="tab" aria-selected="false" onclick="switchTab('weight')">Body</button>
 </div>
 
 <!-- Today Tab -->
@@ -1035,7 +1070,7 @@ const C = {
   border:    'rgba(180,160,120,0.10)',
   text:      '#E8E0D0',
   textMid:   '#A89E88',
-  textDim:   '#7A7262',
+  textDim:   '#8B8270',  // v1.28: raised for WCAG AA
   textDark:  '#5C5448',
   textDark2: '#8C8470',
   accent:    '#5FA052',
@@ -6629,7 +6664,9 @@ function switchTab(tab) {
 
   // Update tab chip active state immediately (visual feedback)
   document.querySelectorAll('.tab').forEach(function(el) {
-    el.classList.toggle('active', el.dataset.tab === tab);
+    var isActive = el.dataset.tab === tab;
+    el.classList.toggle('active', isActive);
+    el.setAttribute('aria-selected', isActive ? 'true' : 'false');
   });
 
   function doSwap() {
@@ -6961,7 +6998,7 @@ function renderDashboard(workouts) {
   const syncColor = (hevyStatus === 'error' || healthStatus === 'missing') ? C.textDim
     : (healthStatus === 'stale') ? C.warn : C.accent;
   document.getElementById('last-updated').innerHTML =
-    `v1.27 \u00b7${now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })} <span id="sync-dot" style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${syncColor};margin-left:5px;vertical-align:middle;position:relative;top:-1px;"></span>`;
+    `v1.28 \u00b7${now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })} <span id="sync-dot" style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${syncColor};margin-left:5px;vertical-align:middle;position:relative;top:-1px;"></span>`;
 
   // Populate globals BEFORE renderTimedSession so lifted-today detection works
   heatmapDayWorkouts = pp.heatmapDayWorkouts || {};
