@@ -1,7 +1,12 @@
 <!DOCTYPE html>
 
 <!--
-  LiftScript v1.31
+  LiftScript v1.32
+  Changes from v1.31 (Dedication recalibration - stop penalizing 6-day/week pattern):
+  1.  Lift score curve peak shifted from 5 days/week to 6 days/week. Old: 5 days = 1.0, 6 days = 0.85, 7 days = 0.70. New: 5-6 days = 1.0, 7 days = 0.85, 8 days = 0.70.
+  2.  Consecutive-day fatigue penalty start shifted from 5 consec days to 6 consec days. Old: 5 consec = -0.07, 6 = -0.14, 7 = -0.21. New: 6 consec = -0.07, 7 = -0.14, 8 = -0.21.
+  3.  Rationale: the original curve assumed a 4-5 day/week training pattern with rest days baked in. For users training 6 days/week consistently, both penalties stacked on every session past day 5, suppressing dedication and causing the Power Score to DROP after a workout and APPEAR to rise during rest days (the rise is actually at the comeback workout, not during rest, but it reads that way). New calibration treats 6 days/week as the peak and only penalizes truly extreme overtraining (7+ days, 7+ consec).
+  4.  No structural change to weights, signal definitions, or other components. Pure threshold shift.
   Changes from v1.30 (Today card branch dividers - deferred item from Aesthetics Pass Seq E):
   1.  Added organic branch divider between the hero block ('Today's Session ~46m') and the chips row (Reroll/Hevy/60m/Gym/Auto).
   2.  Replaced the straight border-bottom separator below the chips row with an organic branch divider, matching the treatment already used between exercises and cardio.
@@ -898,7 +903,7 @@ margin-top: 4px;
     <div class="header" style="position:relative;z-index:1;">
       <div style="display:flex;align-items:center;gap:10px;">
         <h1>LiftScript</h1>
-        <div class="subtitle" id="last-updated">v1.31</div>
+        <div class="subtitle" id="last-updated">v1.32</div>
         <div id="power-score-wrap" role="button" aria-label="Toggle Power Score details" tabindex="0" style="margin-left:auto;display:flex;align-items:center;gap:6px;cursor:pointer;-webkit-tap-highlight-color:transparent;min-height:32px;" onclick="togglePowerScoreDetail()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();togglePowerScoreDetail();}">
           <div id="power-score-ring"></div>
         </div>
@@ -2731,15 +2736,15 @@ function preprocessWorkouts(workouts, bodyweightLbs, weightData) {
       if (heatmapDayCardio[lbStr]) weekCardioMin += heatmapDayCardio[lbStr].minutes;
     }
 
-    // Lifting: peaks at 4-5 days (1.0), declines at 6+ (overtraining)
-    // 0->0, 1->0.25, 2->0.5, 3->0.75, 4->1.0, 5->1.0, 6->0.85, 7->0.7
+    // Lifting: peaks at 5-6 days (1.0), declines at 7+ (overtraining)
+    // 0->0, 1->0.25, 2->0.5, 3->0.75, 4->1.0, 5->1.0, 6->1.0, 7->0.85, 8->0.7
     let liftScore;
-    if (weekLiftDays <= 5) liftScore = Math.min(weekLiftDays / 4, 1.0);
-    else liftScore = 1.0 - ((weekLiftDays - 5) * 0.15);
+    if (weekLiftDays <= 6) liftScore = Math.min(weekLiftDays / 4, 1.0);
+    else liftScore = 1.0 - ((weekLiftDays - 6) * 0.15);
 
-    // Consecutive day fatigue penalty: 5+ straight days hurts recovery
-    // 5 consecutive -> -0.08, 6 -> -0.15, 7 -> -0.22
-    const fatiguePenalty = consecLift >= 5 ? (consecLift - 4) * 0.07 : 0;
+    // Consecutive day fatigue penalty: 6+ straight days hurts recovery
+    // 6 consecutive -> -0.07, 7 -> -0.14, 8 -> -0.21
+    const fatiguePenalty = consecLift >= 6 ? (consecLift - 5) * 0.07 : 0;
 
     // Muscle coverage: all 12 groups in 7d = 1.0
     const coverageScore = weekMusclesHit.size / totalMuscleGroups;
@@ -7199,7 +7204,7 @@ function renderDashboard(workouts) {
   const syncColor = (hevyStatus === 'error' || healthStatus === 'missing') ? C.textDim
     : (healthStatus === 'stale') ? C.warn : C.accent;
   document.getElementById('last-updated').innerHTML =
-    `v1.31 \u00b7${now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })} <span id="sync-dot" style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${syncColor};margin-left:5px;vertical-align:middle;position:relative;top:-1px;"></span>`;
+    `v1.32 \u00b7${now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })} <span id="sync-dot" style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${syncColor};margin-left:5px;vertical-align:middle;position:relative;top:-1px;"></span>`;
 
   // Populate globals BEFORE renderTimedSession so lifted-today detection works
   heatmapDayWorkouts = pp.heatmapDayWorkouts || {};
