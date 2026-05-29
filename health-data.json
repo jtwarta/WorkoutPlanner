@@ -1,17 +1,17 @@
 {"updated":"
-2026-05-28T07:00:02-07:00
+2026-05-29T07:00:02-07:00
 ","resting_heart_rate":
-60
+57
 ,"cardio_fitness":
 40.25
 ,"cardio_recovery":
 27.08218130218476
 ,"steps":
-15243.5714285714
+15119
 ,"active_energy_kcal":
-339.454
+339.222
 ,"walking_heart_rate_avg":
-110
+95
 ,"workouts":[{"type":"Walking
 
 ","start":"May 27, 2026 at 8:50 PM
@@ -472,8 +472,8 @@
 ,"lean_body_mass_lbs": 
 ,"waist_circumference_in": 35
 
-,"rhr_12m":60,"rhr_6m":65,"rhr_3m":57
-,"vo2_12m":38.54,"vo2_6m":39.92,"vo2_3m":40.71
-,"rec_12m":43.13789774733413,"rec_6m":29.53859668058604,"rec_3m":24.45890193295748
+,"rhr_12m":55,"rhr_6m":56,"rhr_3m":58
+,"vo2_12m":38.68,"vo2_6m":39.92,"vo2_3m":40.71
+,"rec_12m":37.75722554247812,"rec_6m":29.53859668058604,"rec_3m":24.45890193295748
 
 }
