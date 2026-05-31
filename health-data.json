@@ -1,18 +1,63 @@
 {"updated":"
-2026-05-29T07:00:02-07:00
+2026-05-31T07:00:05-07:00
 ","resting_heart_rate":
 57
 ,"cardio_fitness":
-40.25
+39.86
 ,"cardio_recovery":
 27.08218130218476
 ,"steps":
-15119
+17389
 ,"active_energy_kcal":
-339.222
+468.127833333331
 ,"walking_heart_rate_avg":
-95
+94
 ,"workouts":[{"type":"Walking
+
+","start":"May 30, 2026 at 9:59 PM
+
+","duration_min":12.3
+
+,"calories":41 kcal
+
+}
+{"type":"Walking
+
+","start":"May 30, 2026 at 8:50 PM
+
+","duration_min":4.9
+
+,"calories":18 kcal
+
+}
+{"type":"Hiking
+
+","start":"May 30, 2026 at 1:45 PM
+
+","duration_min":37.1
+
+,"calories":176 kcal
+
+}
+{"type":"Running
+
+","start":"May 30, 2026 at 9:39 AM
+
+","duration_min":43.1
+
+,"calories":201 kcal
+
+}
+{"type":"Walking
+
+","start":"May 29, 2026 at 12:31 PM
+
+","duration_min":12.5
+
+,"calories":42 kcal
+
+}
+{"type":"Walking
 
 ","start":"May 27, 2026 at 8:50 PM
 
@@ -416,51 +461,6 @@
 
 ,"calories":187 kcal
 
-}
-{"type":"Traditional Strength Training
-
-","start":"Apr 5, 2026 at 3:50 PM
-
-","duration_min":56.2
-
-,"calories":245 kcal
-
-}
-{"type":"Traditional Strength Training
-
-","start":"Apr 4, 2026 at 12:54 PM
-
-","duration_min":72.4
-
-,"calories":278 kcal
-
-}
-{"type":"Traditional Strength Training
-
-","start":"Apr 3, 2026 at 9:00 PM
-
-","duration_min":18
-
-,"calories":79 kcal
-
-}
-{"type":"Traditional Strength Training
-
-","start":"Apr 3, 2026 at 6:40 PM
-
-","duration_min":0.4
-
-,"calories":1 kcal
-
-}
-{"type":"Traditional Strength Training
-
-","start":"Apr 3, 2026 at 1:19 PM
-
-","duration_min":0.7
-
-,"calories":2 kcal
-
 }]
 ,"weight_entries": [{"date":"2026-04-11","lbs":168.5002003889644}
 
@@ -472,8 +472,8 @@
 ,"lean_body_mass_lbs": 
 ,"waist_circumference_in": 35
 
-,"rhr_12m":55,"rhr_6m":56,"rhr_3m":58
-,"vo2_12m":38.68,"vo2_6m":39.92,"vo2_3m":40.71
-,"rec_12m":37.75722554247812,"rec_6m":29.53859668058604,"rec_3m":24.45890193295748
+,"rhr_12m":67,"rhr_6m":59,"rhr_3m":59
+,"vo2_12m":38.85,"vo2_6m":39.92,"vo2_3m":40.71
+,"rec_12m":37.75858379185369,"rec_6m":29.53859668058604,"rec_3m":24.45890193295748
 
 }
