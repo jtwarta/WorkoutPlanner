@@ -1,5 +1,5 @@
 {"updated":"
-2026-06-04T07:00:03-07:00
+2026-06-05T07:00:15-07:00
 ","resting_heart_rate":
 54
 ,"cardio_fitness":
@@ -7,9 +7,9 @@
 ,"cardio_recovery":
 27.08218130218476
 ,"steps":
-17265.5714285714
+16715.4285714286
 ,"active_energy_kcal":
-487.535571428569
+510.891999999998
 ,"walking_heart_rate_avg":
 79
 ,"workouts":[{"type":"Hiking
@@ -472,8 +472,8 @@
 ,"lean_body_mass_lbs": 
 ,"waist_circumference_in": 35
 
-,"rhr_12m":56,"rhr_6m":65,"rhr_3m":59
-,"vo2_12m":39.57,"vo2_6m":38.06,"vo2_3m":40.71
+,"rhr_12m":67,"rhr_6m":58,"rhr_3m":55
+,"vo2_12m":39.57,"vo2_6m":38.06,"vo2_3m":40.54
 ,"rec_12m":38.49083192688727,"rec_6m":29.84074918545938,"rec_3m":24.45890193295748
 
 }
