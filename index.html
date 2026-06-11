@@ -1,7 +1,14 @@
 <!DOCTYPE html>
 
 <!--
-  LiftScript v1.32
+  LiftScript v1.33
+  Changes from v1.32 (v1.33 - audit remediation: Power Score Dedication fix, session variety, progression gate):
+  1.  POWER SCORE FIX: Dedication pillar mapping corrected from score*50 to score*100 in computePowerScore. The "0-2 scale" comment was wrong: the Dedication timeline is a 0-1.09 weighted composite (lift 40% + coverage 20% + cardio 30% capped 1.3 + consistency 10%), unlike Cardio Fitness and Body Comp which genuinely span 0-2. The *50 mapping permanently capped the pillar at ~55/100. Expected visible impact: Power Score +3 at current tapered volume, +11 to +13 at the normal 6-day/week cadence. The chart Dedication line is unaffected (chart self-normalizes each series).
+  2.  SESSION VARIETY: fitCandidates dedupes by exercise name family (equipment parenthetical stripped, so all "Standing Calf Raise (X)" variants compete for one slot) and soft-caps isolations at 2 per muscle per session. Fixes the builder stacking 3 near-identical variants (9 sets of one movement) on a maximally-urgent muscle. Skips are silent: variety hygiene, not a research rail, so no Session Adjustments entry.
+  3.  PROGRESSION GATE: double progression now requires ALL working sets at the top weight to reach the rep ceiling before adding weight (lastReps = min reps among heaviest-weight sets). Previously the first set at the top weight gated alone, so an 8,6,5 session on a 6-8 range triggered +5 lbs. Canonical double progression for straight sets; degrades to a top-set gate for pyramid-style logging. Conservative direction chosen deliberately: under-delivered volume plus aggressive bumps is the worst pairing, especially returning from a taper on stale history.
+  4.  Removed dead code: walkHRPassesGate block (pre-v1.18a HR-gate remnant, computed but never read). Also removes the stray 220-age formula; Tanaka 208 - 0.7*age is now the single HRmax source.
+  5.  Removed test.html debug harness from the repo root.
+  6.  Reworded Big 5 cap message ("Adding another...") to avoid the broken ordinal ("a 4rd") reachable since the v1.30 adaptive cap; fixed the unreachable "8 consec" comment tier.
   Changes from v1.31 (Dedication recalibration - stop penalizing 6-day/week pattern):
   1.  Lift score curve peak shifted from 5 days/week to 6 days/week. Old: 5 days = 1.0, 6 days = 0.85, 7 days = 0.70. New: 5-6 days = 1.0, 7 days = 0.85, 8 days = 0.70.
   2.  Consecutive-day fatigue penalty start shifted from 5 consec days to 6 consec days. Old: 5 consec = -0.07, 6 = -0.14, 7 = -0.21. New: 6 consec = -0.07, 7 = -0.14, 8 = -0.21.
@@ -903,7 +910,7 @@ margin-top: 4px;
     <div class="header" style="position:relative;z-index:1;">
       <div style="display:flex;align-items:center;gap:10px;">
         <h1>LiftScript</h1>
-        <div class="subtitle" id="last-updated">v1.32</div>
+        <div class="subtitle" id="last-updated">v1.33</div>
         <div id="power-score-wrap" role="button" aria-label="Toggle Power Score details" tabindex="0" style="margin-left:auto;display:flex;align-items:center;gap:6px;cursor:pointer;-webkit-tap-highlight-color:transparent;min-height:32px;" onclick="togglePowerScoreDetail()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();togglePowerScoreDetail();}">
           <div id="power-score-ring"></div>
         </div>
@@ -1397,6 +1404,14 @@ function getWorkingSets(exercise) {
 // Normalize exercise name for caching/matching
 function normalizeExerciseName(name) {
   return (name || '').trim().toLowerCase().replace(/\s+/g, ' ').replace(/[\u2018\u2019\u2032]/g, "'");
+}
+
+// v1.33: exercise "family" = name with the trailing equipment parenthetical
+// stripped. "Standing Calf Raise (Dumbbell)" / "(Barbell)" / "(Smith)" are
+// one family. fitCandidates uses this to keep near-identical variants from
+// stacking inside a single session.
+function exerciseFamily(name) {
+  return (name || '').replace(/\s*\([^)]*\)\s*$/, '').trim().toLowerCase();
 }
 
 // Format set counts: show decimals only when fractional
@@ -2383,10 +2398,19 @@ function preprocessWorkouts(workouts, bodyweightLbs, weightData) {
 
       // --- Exercise history ---
       if (workingSets.length > 0) {
+        // v1.33: progression gate = ALL sets at the top weight must hit the
+        // rep ceiling, so lastReps is the MIN reps among sets at the heaviest
+        // weight (canonical double progression for straight sets; degrades to
+        // a top-set gate for pyramid-style logging). Previously this recorded
+        // the reps of the FIRST set at the top weight, which triggered +5 lbs
+        // off an 8,6,5 session on a 6-8 range. Zero-rep sets are ignored for
+        // the min; bodyweight (0-lb) exercises keep their old behavior.
         let bestWeight = 0, bestReps = 0;
         for (const s of workingSets) {
           const wLbs = Math.round((s.weight_kg || 0) * 2.20462);
-          if (wLbs > bestWeight) { bestWeight = wLbs; bestReps = s.reps || 0; }
+          const r = s.reps || 0;
+          if (wLbs > bestWeight) { bestWeight = wLbs; bestReps = r; }
+          else if (wLbs > 0 && wLbs === bestWeight && r > 0 && (bestReps === 0 || r < bestReps)) { bestReps = r; }
         }
         if (!exHistory[name]) exHistory[name] = { weights: [], dates: [] };
         exHistory[name].lastWeightLbs = bestWeight;
@@ -2559,17 +2583,6 @@ function preprocessWorkouts(workouts, bodyweightLbs, weightData) {
 
   // Merge Apple Watch cardio into heatmap (dedup against Hevy within 30 min)
   const WATCH_NON_CARDIO_HM = /strength|weight\s*train|yoga|pilates|stretch|cool\s*down|flexibility|mind.*body|tai\s*chi/i;
-  // Walk HR gate: uses global walking HR average from Apple Health.
-  // See Cardio Counting Rules table in APPLE_CARDIO_TYPES section.
-  // Only outdoor walks are gated -- indoor walks and hikes always count.
-  var walkHRPassesGate = false;
-  if (healthData) {
-    var _rhr = healthData.resting_heart_rate || 0;
-    var _hrMax = 220 - PROFILE.age;
-    var z2Floor = _rhr > 0 ? Math.round(_rhr + (_hrMax - _rhr) * 0.55) : Math.round(_hrMax * 0.55);
-    var globalWalkHR = parseFloat(healthData.walking_heart_rate_avg) || 0;
-    walkHRPassesGate = globalWalkHR >= z2Floor;
-  }
   if (healthData && Array.isArray(healthData.workouts)) {
     // Collect actual Hevy cardio timestamps for accurate dedup
     const hevyCardioTs = [];
@@ -2743,7 +2756,7 @@ function preprocessWorkouts(workouts, bodyweightLbs, weightData) {
     else liftScore = 1.0 - ((weekLiftDays - 6) * 0.15);
 
     // Consecutive day fatigue penalty: 6+ straight days hurts recovery
-    // 6 consecutive -> -0.07, 7 -> -0.14, 8 -> -0.21
+    // 6 consecutive -> -0.07, 7 -> -0.14 (max: the 7-day window never sees 8)
     const fatiguePenalty = consecLift >= 6 ? (consecLift - 5) * 0.07 : 0;
 
     // Muscle coverage: all 12 groups in 7d = 1.0
@@ -3807,10 +3820,17 @@ function buildTimedSession(recs, prefs) {
     var big5InSession = [];          // e.g. ['squat', 'bench']
     var big5Cap = bigFiveCapForBudget(capSec);
     var conflictLog = [];            // user-visible resolution reasons
+    // v1.33: session variety guards
+    var usedFamilies = new Set();    // same movement, different equipment = one slot
+    var muscIsoCount = {};           // soft cap: 2 isolations per muscle per session
 
     for (var ci = 0; ci < cands.length; ci++) {
       var c = cands[ci];
       if (total + c.timeSec > capSec) continue;
+      // v1.33: variety guards -- silent skips (hygiene, not a research rail)
+      var fam = exerciseFamily(c.name);
+      if (usedFamilies.has(fam)) continue;
+      if (c.isIsolation && (muscIsoCount[c.muscle] || 0) >= 2) continue;
       if (c.isCompound && c.movementPattern) {
         if (usedPat.has(c.movementPattern)) continue;
       }
@@ -3826,7 +3846,7 @@ function buildTimedSession(recs, prefs) {
           conflictLog.push({
             type: 'cap',
             skipped: c.name,
-            reason: 'Session cap of ' + big5Cap + ' heavy compounds for ' + Math.round(capSec / 60) + '-min sessions. Adding a ' + (big5Cap + 1) + 'rd would compromise recovery or rush accessories.'
+            reason: 'Session cap of ' + big5Cap + ' heavy compounds for ' + Math.round(capSec / 60) + '-min sessions. Adding another would compromise recovery or rush accessories.'
           });
           continue;
         }
@@ -3864,10 +3884,12 @@ function buildTimedSession(recs, prefs) {
       if (c.isCompound) muscCompCount[c.muscle] = (muscCompCount[c.muscle] || 0) + 1;
       if (c.muscle === topM && c.isIsolation) topMHasIso = true;
       if (big5Key) big5InSession.push(big5Key);
+      usedFamilies.add(fam);
+      if (c.isIsolation) muscIsoCount[c.muscle] = (muscIsoCount[c.muscle] || 0) + 1;
     }
     if (!topMHasIso && sess.length > 0) {
       var isoC = cands.find(function(c) {
-        return c.muscle === topM && c.isIsolation && sess.indexOf(c) === -1 && total + c.timeSec <= capSec;
+        return c.muscle === topM && c.isIsolation && sess.indexOf(c) === -1 && total + c.timeSec <= capSec && !usedFamilies.has(exerciseFamily(c.name));
       });
       if (isoC) { sess.push(isoC); total += isoC.timeSec; }
     }
@@ -7041,8 +7063,12 @@ function computePowerScore() {
   // 4. Dedication (25%) - from dedication timeline (rolling 7d effort)
   if (dedicationData.length > 0) {
     const latest = dedicationData[dedicationData.length - 1];
-    // Score is 0-2 scale, map to 0-100
-    const dedScore = Math.min(100, Math.round(latest.score * 50));
+    // v1.33 FIX: Dedication spans 0-~1.09 (weighted composite: lift 40% +
+    // coverage 20% + cardio 30% capped at 1.3 + consistency 10%), NOT 0-2
+    // like the Cardio Fitness / Body Comp pillars. The old *50 mapping
+    // permanently capped this pillar at ~55/100. Map 0-1 -> 0-100; cap at
+    // 100 since cardio overdrive past 150 min/wk can push the raw above 1.0.
+    const dedScore = Math.min(100, Math.round(latest.score * 100));
     const detail = latest.liftDays + ' lifts + ' + latest.cardioMin + 'min cardio/7d';
     components.push({ key: 'dedication', label: 'Dedication', value: dedScore, weight: 25, detail });
   }
@@ -7204,7 +7230,7 @@ function renderDashboard(workouts) {
   const syncColor = (hevyStatus === 'error' || healthStatus === 'missing') ? C.textDim
     : (healthStatus === 'stale') ? C.warn : C.accent;
   document.getElementById('last-updated').innerHTML =
-    `v1.32 \u00b7${now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })} <span id="sync-dot" style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${syncColor};margin-left:5px;vertical-align:middle;position:relative;top:-1px;"></span>`;
+    `v1.33 \u00b7${now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })} <span id="sync-dot" style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${syncColor};margin-left:5px;vertical-align:middle;position:relative;top:-1px;"></span>`;
 
   // Populate globals BEFORE renderTimedSession so lifted-today detection works
   heatmapDayWorkouts = pp.heatmapDayWorkouts || {};
