@@ -1,18 +1,90 @@
 {"updated":"
-2026-06-19T07:00:02-07:00
+2026-06-22T20:05:57-07:00
 ","resting_heart_rate":
-67
+74
 ,"cardio_fitness":
-39.33
+39.7
 ,"cardio_recovery":
 29.86352191906463
 ,"steps":
-16089.7142857143
+15957.25
 ,"active_energy_kcal":
-286.770571428571
+455.777571428571
 ,"walking_heart_rate_avg":
-112
-,"workouts":[{"type":"Walking
+86
+,"workouts":[{"type":"Hiking
+
+","start":"Jun 21, 2026 at 4:00 PM
+
+","duration_min":53.1
+
+,"calories":246 kcal
+
+}
+{"type":"Running
+
+","start":"Jun 21, 2026 at 1:57 PM
+
+","duration_min":38.9
+
+,"calories":268 kcal
+
+}
+{"type":"Hiking
+
+","start":"Jun 21, 2026 at 12:35 PM
+
+","duration_min":71.8
+
+,"calories":414 kcal
+
+}
+{"type":"Traditional Strength Training
+
+","start":"Jun 21, 2026 at 11:07 AM
+
+","duration_min":38
+
+,"calories":239 kcal
+
+}
+{"type":"Walking
+
+","start":"Jun 20, 2026 at 7:56 PM
+
+","duration_min":23.5
+
+,"calories":67 kcal
+
+}
+{"type":"Traditional Strength Training
+
+","start":"Jun 20, 2026 at 4:34 PM
+
+","duration_min":29.3
+
+,"calories":189 kcal
+
+}
+{"type":"Walking
+
+","start":"Jun 20, 2026 at 12:06 AM
+
+","duration_min":4.9
+
+,"calories":16 kcal
+
+}
+{"type":"Walking
+
+","start":"Jun 19, 2026 at 10:20 PM
+
+","duration_min":19.9
+
+,"calories":89 kcal
+
+}
+{"type":"Walking
 
 ","start":"Jun 18, 2026 at 8:23 PM
 
@@ -389,91 +461,17 @@
 
 ,"calories":262 kcal
 
-}
-{"type":"Traditional Strength Training
-
-","start":"Apr 29, 2026 at 7:52 PM
-
-","duration_min":26.7
-
-,"calories":79 kcal
-
-}
-{"type":"Traditional Strength Training
-
-","start":"Apr 28, 2026 at 8:43 PM
-
-","duration_min":24.7
-
-,"calories":110 kcal
-
-}
-{"type":"Traditional Strength Training
-
-","start":"Apr 26, 2026 at 10:55 AM
-
-","duration_min":29.6
-
-,"calories":130 kcal
-
-}
-{"type":"Traditional Strength Training
-
-","start":"Apr 25, 2026 at 11:32 AM
-
-","duration_min":33.6
-
-,"calories":150 kcal
-
-}
-{"type":"Walking
-
-","start":"Apr 22, 2026 at 8:49 PM
-
-","duration_min":30
-
-,"calories":92 kcal
-
-}
-{"type":"Elliptical
-
-","start":"Apr 22, 2026 at 8:20 PM
-
-","duration_min":20.7
-
-,"calories":184 kcal
-
-}
-{"type":"Traditional Strength Training
-
-","start":"Apr 19, 2026 at 2:22 PM
-
-","duration_min":49
-
-,"calories":177 kcal
-
-}
-{"type":"Traditional Strength Training
-
-","start":"Apr 18, 2026 at 2:36 PM
-
-","duration_min":11.4
-
-,"calories":50 kcal
-
 }]
 ,"weight_entries": [{"date":"2026-04-11","lbs":168.5002003889644}
 
 {"date":"2026-03-29","lbs":167.4001990807872}
-
-{"date":"2026-03-21","lbs":168.0001997943384}
 ]
 ,"body_fat_pct": 
 ,"lean_body_mass_lbs": 
 ,"waist_circumference_in": 35
 
-,"rhr_12m":48,"rhr_6m":60,"rhr_3m":63
-,"vo2_12m":42.93,"vo2_6m":38.06,"vo2_3m":39.48
-,"rec_12m":35.54543844974156,"rec_6m":29.84074918545938,"rec_3m":24.46014644551881
+,"rhr_12m":67,"rhr_6m":57,"rhr_3m":69
+,"vo2_12m":42.13,"vo2_6m":37.42,"vo2_3m":39.64
+,"rec_12m":35.78562229906576,"rec_6m":29.84074918545938,"rec_3m":24.4601464455188
 
 }
