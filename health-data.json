@@ -1,5 +1,5 @@
 {"updated":"
-2026-06-28T07:00:03-07:00
+2026-06-30T07:00:02-07:00
 ","resting_heart_rate":
 60
 ,"cardio_fitness":
@@ -7,12 +7,48 @@
 ,"cardio_recovery":
 26.58417108709818
 ,"steps":
-17598.5714285714
+13844.7142857143
 ,"active_energy_kcal":
-493.070714285713
+371.937428571428
 ,"walking_heart_rate_avg":
 101
 ,"workouts":[{"type":"Walking
+
+","start":"Jun 29, 2026 at 8:25 PM
+
+","duration_min":14.6
+
+,"calories":47 kcal
+
+}
+{"type":"Traditional Strength Training
+
+","start":"Jun 29, 2026 at 7:43 PM
+
+","duration_min":33.3
+
+,"calories":177 kcal
+
+}
+{"type":"Hiking
+
+","start":"Jun 28, 2026 at 7:36 PM
+
+","duration_min":73.1
+
+,"calories":358 kcal
+
+}
+{"type":"Traditional Strength Training
+
+","start":"Jun 28, 2026 at 9:15 AM
+
+","duration_min":38.5
+
+,"calories":193 kcal
+
+}
+{"type":"Walking
 
 ","start":"Jun 26, 2026 at 7:57 PM
 
@@ -425,42 +461,6 @@
 
 ,"calories":84 kcal
 
-}
-{"type":"Walking
-
-","start":"May 8, 2026 at 4:26 PM
-
-","duration_min":74.9
-
-,"calories":305 kcal
-
-}
-{"type":"Hiking
-
-","start":"May 8, 2026 at 11:05 AM
-
-","duration_min":70.7
-
-,"calories":450 kcal
-
-}
-{"type":"Traditional Strength Training
-
-","start":"May 7, 2026 at 8:26 PM
-
-","duration_min":25.9
-
-,"calories":114 kcal
-
-}
-{"type":"Walking
-
-","start":"May 6, 2026 at 8:41 PM
-
-","duration_min":16
-
-,"calories":61 kcal
-
 }]
 ,"weight_entries": [{"date":"2026-04-11","lbs":168.5002003889644}
 ]
@@ -468,8 +468,8 @@
 ,"lean_body_mass_lbs": 
 ,"waist_circumference_in": 35
 
-,"rhr_12m":62.00000000000001,"rhr_6m":53,"rhr_3m":58
-,"vo2_12m":41.58,"vo2_6m":37.42,"vo2_3m":40.33
-,"rec_12m":35.78555661930377,"rec_6m":29.84074918545938,"rec_3m":24.4601464455188
+,"rhr_12m":56,"rhr_6m":56,"rhr_3m":54
+,"vo2_12m":41.46,"vo2_6m":37.42,"vo2_3m":40.93
+,"rec_12m":34.9093988532623,"rec_6m":29.84074918545938,"rec_3m":35.14008698021495
 
 }
