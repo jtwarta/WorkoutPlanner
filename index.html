@@ -1,7 +1,23 @@
 <!DOCTYPE html>
 
 <!--
-  LiftScript v1.38
+  LiftScript v1.39
+  Changes from v1.38 (v1.39 - progression stall detection + deload):
+  1.  exerciseHistory now records the per-session gating rep count (min reps
+      among top-weight sets, v1.33 semantics) in a reps[] array parallel to
+      weights[]/dates[].
+  2.  prescribeExercise: if the trailing run at the current weight spans >= 4
+      sessions and no attempt in the last 3 sessions exceeded the baseline
+      gating rep count (max(reps[-3:]) <= reps[-4]) while still below the rep
+      ceiling -- so a single bad day after progress does not trigger it --
+      the prescription becomes a ~10% deload (rounded to 5 lbs, guaranteed
+      below the stalled weight, floor 5 lbs) with reps reset to the bottom of
+      the range. NSCA-aligned failure mode for double progression; previously
+      the app prescribed +1 rep forever regardless of stagnation. Skipped for
+      bodyweight/hold exercises. Prescription objects gain a deload flag.
+  3.  Today tab: stalled exercises show an amber DELOAD chip after the name
+      and an amber prescription. Send to Hevy writes 'deload -10%' into the
+      exercise notes so the cue survives into the logged routine.
   Changes from v1.37 (v1.38 - Strength Index true rolling window):
   1.  The SI "rolling 6-month window" now actually rolls. Old behavior:
       per-lift 1RMs were cumulative high-water marks over the pass, with a
@@ -983,7 +999,7 @@ margin-top: 4px;
     <div class="header" style="position:relative;z-index:1;">
       <div style="display:flex;align-items:center;gap:10px;">
         <h1>LiftScript</h1>
-        <div class="subtitle" id="last-updated">v1.38</div>
+        <div class="subtitle" id="last-updated">v1.39</div>
         <div id="power-score-wrap" role="button" aria-label="Toggle Power Score details" tabindex="0" style="margin-left:auto;display:flex;align-items:center;gap:6px;cursor:pointer;-webkit-tap-highlight-color:transparent;min-height:32px;" onclick="togglePowerScoreDetail()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();togglePowerScoreDetail();}">
           <div id="power-score-ring"></div>
         </div>
@@ -2494,13 +2510,15 @@ function preprocessWorkouts(workouts, bodyweightLbs, weightData) {
           if (wLbs > bestWeight) { bestWeight = wLbs; bestReps = r; }
           else if (wLbs > 0 && wLbs === bestWeight && r > 0 && (bestReps === 0 || r < bestReps)) { bestReps = r; }
         }
-        if (!exHistory[name]) exHistory[name] = { weights: [], dates: [] };
+        if (!exHistory[name]) exHistory[name] = { weights: [], dates: [], reps: [] };
+        if (!exHistory[name].reps) exHistory[name].reps = []; // safety for older shapes
         exHistory[name].lastWeightLbs = bestWeight;
         exHistory[name].lastReps = bestReps;
         exHistory[name].lastDate = dateStr;
         exHistory[name].lastSets = workingSets.length;
         exHistory[name].weights.push(bestWeight);
         exHistory[name].dates.push(dateStr);
+        exHistory[name].reps.push(bestReps); // v1.39: per-session gating reps for stall detection
         // Capture Hevy exercise_template_id for Send to Hevy
         if (ex.exercise_template_id && !templateIdMap[name]) {
           templateIdMap[name] = ex.exercise_template_id;
@@ -3595,15 +3613,56 @@ function prescribeExercise(name) {
   const repRangeLow = parseInt(repParts[0], 10) || 8;
   const repRangeHigh = repParts.length > 1 ? (parseInt(repParts[1], 10) || repRangeLow) : repRangeLow;
 
+  let isDeload = false;
   if (hist && hist.lastWeightLbs > 0) {
     const lastW = hist.lastWeightLbs;
     const lastR = hist.lastReps || repRangeLow;
     if (hist.lastSets >= 2 && hist.lastSets <= 6) sets = hist.lastSets;
 
+    // v1.39: stall detection. Double progression previously had no failure
+    // mode -- repeat the same weight and reps forever and the app keeps
+    // prescribing +1 rep. Rule (NSCA-aligned: repeated failed attempts at a
+    // target -> reduce load and rebuild): if the trailing run at the current
+    // weight spans >= 4 sessions and the gating rep count (min reps among
+    // top-weight sets) shows no net progress across the last 3 attempts,
+    // prescribe a ~10% deload (rounded to 5 lbs) and reset to the bottom of
+    // the rep range. Skipped for bodyweight/hold exercises.
+    let stalled = false;
+    if (note !== 'bodyweight' && note !== 'hold'
+        && Array.isArray(hist.weights) && Array.isArray(hist.reps)
+        && hist.weights.length >= 4 && hist.reps.length === hist.weights.length
+        && lastR < repRangeHigh) {
+      let runLen = 0;
+      for (let hi = hist.weights.length - 1; hi >= 0; hi--) {
+        if (hist.weights[hi] === lastW) runLen++;
+        else break;
+      }
+      if (runLen >= 4) {
+        // "No net progress" = NO attempt in the last 3 sessions exceeded the
+        // baseline rep count. A single bad day after visible progress (e.g.
+        // 6,8,9,6) does NOT trigger a deload; a flat or declining run
+        // (7,7,7,7 or 4,4,3,3) does.
+        const rBase = hist.reps[hist.reps.length - 4];
+        const recentMax = Math.max(
+          hist.reps[hist.reps.length - 1],
+          hist.reps[hist.reps.length - 2],
+          hist.reps[hist.reps.length - 3]
+        );
+        if (recentMax > 0 && rBase > 0 && recentMax <= rBase) stalled = true;
+      }
+    }
+
     // Double progression:
     // Phase 1 -- same weight, +1 rep, until top of rep range is reached
     // Phase 2 -- once top of rep range is hit, bump weight +5 lbs and reset to bottom of rep range
-    if (lastR >= repRangeHigh) {
+    // Phase 0 (v1.39) -- stalled: deload ~10%, reset to bottom of rep range
+    if (stalled) {
+      let deloaded = Math.max(5, Math.round((lastW * 0.9) / 5) * 5);
+      if (deloaded >= lastW) deloaded = Math.max(5, lastW - 5);
+      weightLbs = deloaded;
+      reps = String(repRangeLow);
+      isDeload = true;
+    } else if (lastR >= repRangeHigh) {
       // Hit the top of the rep range -- bump weight, reset to low end
       weightLbs = lastW + 5;
       reps = String(repRangeLow);
@@ -3625,7 +3684,7 @@ function prescribeExercise(name) {
   if (note === 'bodyweight' || note === 'hold') weightLbs = 0;
   // Final guard: ensure weight is always a multiple of 5
   if (weightLbs > 0) weightLbs = Math.round(weightLbs / 5) * 5;
-  return { sets, reps, weightLbs, note };
+  return { sets, reps, weightLbs, note, deload: isDeload };
 }
 
 function formatPrescription(p) {
@@ -4350,9 +4409,10 @@ async function sendSessionToHevy() {
         sets: sets
       };
 
-      if (p.note === 'per hand' || p.note === 'per side') {
-        exObj.notes = p.note;
-      }
+      var noteParts = [];
+      if (p.deload) noteParts.push('deload -10%'); // v1.39
+      if (p.note === 'per hand' || p.note === 'per side') noteParts.push(p.note);
+      if (noteParts.length > 0) exObj.notes = noteParts.join(' \u00b7 ');
 
       exercises.push(exObj);
     }
@@ -4677,10 +4737,15 @@ function renderTimedSession(recs) {
         : '';
       const nameColor = isAnchor ? C.text : C.textMid;
       const nameWeight = isAnchor ? '600' : '400';
+      // v1.39: stalled exercises surface a deload chip + amber prescription
+      const isDeload = !!(ex.prescription && ex.prescription.deload);
+      const deloadChip = isDeload
+        ? '<span style="font-family:var(--font-mono);font-size:8px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:' + C.warn + ';background:' + C.warnDim + ';border:1px solid rgba(212,152,59,0.32);padding:1px 5px;border-radius:3px;margin-left:6px;vertical-align:middle;">Deload</span>'
+        : '';
       exHtml += `
         <div class="ex-row${isAnchor ? ' ex-row-anchor' : ''}">
-          <div class="ex-name" style="color:${nameColor};font-weight:${nameWeight};">${anchorPrefix}${ex.name}</div>
-          <div class="ex-prescription" style="color:${C.accent}">${rx}</div>
+          <div class="ex-name" style="color:${nameColor};font-weight:${nameWeight};">${anchorPrefix}${ex.name}${deloadChip}</div>
+          <div class="ex-prescription" style="color:${isDeload ? C.warn : C.accent}">${rx}</div>
         </div>`;
     }
     exHtml += `</div>`;
@@ -7373,7 +7438,7 @@ function renderDashboard(workouts) {
   const syncColor = (hevyStatus === 'error' || healthStatus === 'missing') ? C.textDim
     : (healthStatus === 'stale') ? C.warn : C.accent;
   document.getElementById('last-updated').innerHTML =
-    `v1.38<br>${now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }).replace(/\u202f/g, ' ')} <span id="sync-dot" style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${syncColor};margin-left:5px;vertical-align:middle;position:relative;top:-1px;"></span>`;
+    `v1.39<br>${now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }).replace(/\u202f/g, ' ')} <span id="sync-dot" style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${syncColor};margin-left:5px;vertical-align:middle;position:relative;top:-1px;"></span>`;
 
   // Populate globals BEFORE renderTimedSession so lifted-today detection works
   heatmapDayWorkouts = pp.heatmapDayWorkouts || {};
