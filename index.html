@@ -1,7 +1,21 @@
 <!DOCTYPE html>
 
 <!--
-  LiftScript v1.36
+  LiftScript v1.37
+  Changes from v1.36 (v1.37 - Body Comp timeline computed from dated measurements):
+  1.  computeBodyCompTimeline rewritten. Old behavior: one score from
+      current-snapshot values stamped on every weigh-in date -- a flat line
+      that could not trend. New: dated measurement entries (embedded baseline
+      + Hevy CSV imports) walked chronologically with per-field carry-forward;
+      frame-target achievement and waist-to-height scored per date; body fat
+      held constant (no history source exists); per-date reweighting for
+      missing components (same scheme as before). Final point at today merges
+      the live Apple Health waist.
+  2.  Removed the dead healthData.weight_history branch (schema only has
+      weight_entries) and the dependency on the proportionDeficits global.
+  3.  Note: early dates have fewer measured fields, so frame achievement
+      averages over fewer muscles there -- inherent to sparse data, still
+      strictly more informative than the old constant.
   Changes from v1.35 (v1.36 - chart time-axis alignment):
   1.  Weight & Trends: the weight line (plus its gradient fill, endpoint dots,
       and tooltip anchor points) is now plotted on the same time-proportional
@@ -953,7 +967,7 @@ margin-top: 4px;
     <div class="header" style="position:relative;z-index:1;">
       <div style="display:flex;align-items:center;gap:10px;">
         <h1>LiftScript</h1>
-        <div class="subtitle" id="last-updated">v1.36</div>
+        <div class="subtitle" id="last-updated">v1.37</div>
         <div id="power-score-wrap" role="button" aria-label="Toggle Power Score details" tabindex="0" style="margin-left:auto;display:flex;align-items:center;gap:6px;cursor:pointer;-webkit-tap-highlight-color:transparent;min-height:32px;" onclick="togglePowerScoreDetail()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();togglePowerScoreDetail();}">
           <div id="power-score-ring"></div>
         </div>
@@ -7035,63 +7049,76 @@ function showError(msg) {
 // Called after proportionDeficits are available
 // ============================================================
 function computeBodyCompTimeline() {
+  // v1.37 rewrite: the old timeline computed ONE score from current-snapshot
+  // bf/waist/frame values and stamped it on every historical weigh-in date --
+  // the chart line was a constant and could not trend by construction.
+  // Now: walk dated measurement entries (embedded baseline + CSV imports)
+  // chronologically with per-field carry-forward, scoring frame achievement
+  // and waist-to-height PER DATE. Body fat has no history source (single
+  // Apple Health snapshot) so it is held constant when available; the score
+  // reweights per-date for whichever components exist. A final point at
+  // today merges the current Apple Health waist so "now" is represented.
   bodyCompData = [];
   const heightIn = PROFILE.heightIn;
-  if (!healthData) return;
+  const bf = (healthData && healthData.body_fat_pct) || 0;
 
-  // Get body fat (current snapshot only)
-  const bf = healthData.body_fat_pct || 0;
-  // Get waist (current snapshot only)
-  const waistIn = healthData.waist_circumference_in || 0;
-  // Get frame target achievement
-  const deficits = Object.values(proportionDeficits);
-  const hasFrame = deficits.length > 0;
-  const avgAchievement = hasFrame ? 1 - (deficits.reduce((a, b) => a + b, 0) / deficits.length) : 0;
+  // Build per-date measurement snapshots with carry-forward
+  const entries = getStoredMeasurements(); // chronologically sorted
+  const state = {};
+  const points = [];
+  for (const entry of entries) {
+    if (!entry.date) continue;
+    let changed = false;
+    for (const field of MEASUREMENT_FIELDS) {
+      const v = entry[field.key];
+      if (v != null && v !== '' && !isNaN(v)) {
+        state[field.key] = parseFloat(v);
+        changed = true;
+      }
+    }
+    if (changed) points.push({ date: entry.date, snap: Object.assign({}, state) });
+  }
 
-  // Build timeline from weight data dates (anchoring body comp to weigh-in dates)
-  const allWeightData = [...WEIGHT_DATA_BASELINE];
-  if (healthData.weight_history) {
-    for (const w of healthData.weight_history) {
-      if (w.date && w.value) allWeightData.push(w);
+  // Final "now" point: carry latest state, merge Apple Health waist if present
+  if (healthData && healthData.waist_circumference_in > 0) {
+    const todayStr = localDateStr(new Date());
+    const snap = Object.assign({}, state, { waist_in: healthData.waist_circumference_in });
+    if (points.length > 0 && points[points.length - 1].date === todayStr) {
+      points[points.length - 1].snap = snap;
+    } else {
+      points.push({ date: todayStr, snap });
     }
   }
-  if (healthData.weight_entries) {
-    for (const w of healthData.weight_entries) {
-      if (w.date && w.lbs) allWeightData.push({ date: w.date, value: parseFloat(w.lbs) });
-    }
-  }
-  const weightByDate = {};
-  for (const w of allWeightData) { if (w.value > 0) weightByDate[w.date] = w.value; }
-  const dates = Object.keys(weightByDate).sort();
 
-  for (const dateStr of dates) {
+  for (const p of points) {
     let total = 0, sum = 0;
 
-    // Body fat score: 10%=2.0, 15%=1.6, 20%=1.2, 25%=0.8, 30%=0.4, 35%=0
+    // Body fat score (constant -- snapshot only): 10%=2.0, 22.5%=1.0, 35%=0
     if (bf > 0) {
-      const bfScore = Math.max(0, Math.min(2.0, (35 - bf) / 12.5));
-      sum += bfScore * 40;
+      sum += Math.max(0, Math.min(2.0, (35 - bf) / 12.5)) * 40;
       total += 40;
     }
 
-    // Frame target achievement
-    if (hasFrame) {
-      const frameScore = Math.max(0, Math.min(2.0, avgAchievement * 2));
-      sum += frameScore * 40;
+    // Frame target achievement at this date
+    const deficits = computeProportionDeficits(p.snap);
+    const defVals = Object.values(deficits);
+    if (defVals.length > 0) {
+      const avgAchievement = 1 - (defVals.reduce((a, b) => a + b, 0) / defVals.length);
+      sum += Math.max(0, Math.min(2.0, avgAchievement * 2)) * 40;
       total += 40;
     }
 
-    // Waist-to-height ratio
+    // Waist-to-height ratio at this date
+    const waistIn = p.snap.waist_in || 0;
     if (waistIn > 0 && heightIn > 0) {
       const whr = waistIn / heightIn;
-      const whrScore = Math.max(0, Math.min(2.0, (0.60 - whr) / 0.09));
-      sum += whrScore * 20;
+      sum += Math.max(0, Math.min(2.0, (0.60 - whr) / 0.09)) * 20;
       total += 20;
     }
 
     if (total > 0) {
       bodyCompData.push({
-        date: dateStr,
+        date: p.date,
         score: Math.round((sum / total) * 100) / 100,
       });
     }
@@ -7308,7 +7335,7 @@ function renderDashboard(workouts) {
   const syncColor = (hevyStatus === 'error' || healthStatus === 'missing') ? C.textDim
     : (healthStatus === 'stale') ? C.warn : C.accent;
   document.getElementById('last-updated').innerHTML =
-    `v1.36<br>${now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }).replace(/\u202f/g, ' ')} <span id="sync-dot" style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${syncColor};margin-left:5px;vertical-align:middle;position:relative;top:-1px;"></span>`;
+    `v1.37<br>${now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }).replace(/\u202f/g, ' ')} <span id="sync-dot" style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${syncColor};margin-left:5px;vertical-align:middle;position:relative;top:-1px;"></span>`;
 
   // Populate globals BEFORE renderTimedSession so lifted-today detection works
   heatmapDayWorkouts = pp.heatmapDayWorkouts || {};
