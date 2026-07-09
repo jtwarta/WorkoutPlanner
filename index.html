@@ -1,7 +1,16 @@
 <!DOCTYPE html>
 
 <!--
-  LiftScript v1.35
+  LiftScript v1.36
+  Changes from v1.35 (v1.36 - chart time-axis alignment):
+  1.  Weight & Trends: the weight line (plus its gradient fill, endpoint dots,
+      and tooltip anchor points) is now plotted on the same time-proportional
+      x-axis as the SI / Cardio Fitness / Dedication / Body Comp overlays.
+      Previously weight was index-spaced (one even step per weigh-in regardless
+      of the gap between weigh-ins) while overlays were day-offset spaced, so
+      the two could not be read against each other on the same canvas.
+      Clustered weigh-ins now correctly cluster; long gaps read as long gaps.
+  2.  Removed the never-read csMin field from _chartPoints.
   Changes from v1.34 (v1.35 - correctness remediation from full-file audit):
   1.  DEDICATION FIX: cardio-only Hevy workouts (hikes, runs, cardio circuits) no
       longer count as lift days. preprocessWorkouts initializes heatmapDayWorkouts
@@ -944,7 +953,7 @@ margin-top: 4px;
     <div class="header" style="position:relative;z-index:1;">
       <div style="display:flex;align-items:center;gap:10px;">
         <h1>LiftScript</h1>
-        <div class="subtitle" id="last-updated">v1.35</div>
+        <div class="subtitle" id="last-updated">v1.36</div>
         <div id="power-score-wrap" role="button" aria-label="Toggle Power Score details" tabindex="0" style="margin-left:auto;display:flex;align-items:center;gap:6px;cursor:pointer;-webkit-tap-highlight-color:transparent;min-height:32px;" onclick="togglePowerScoreDetail()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();togglePowerScoreDetail();}">
           <div id="power-score-ring"></div>
         </div>
@@ -5305,7 +5314,19 @@ function renderWeightChart() {
   const wValues = recent.map(d => d.value);
   const wMin = Math.min(...wValues) - 2;
   const wMax = Math.max(...wValues) + 2;
-  const wXStep = chartW / Math.max(recent.length - 1, 1);
+  // v1.36: weight points were index-spaced (even pixels per weigh-in) while
+  // every overlay line (SI/CF/Ded/BC) was time-proportional -- two different
+  // x-axes on one canvas. With irregular weigh-in intervals this distorted
+  // the visual co-movement the chart exists to show. Weight now uses the
+  // same day-offset mapping as the overlays.
+  const wFirstDate = recent[0].date;
+  const wLastDate = recent[recent.length - 1].date;
+  const wTotalDays = (new Date(wLastDate) - new Date(wFirstDate)) / (1000 * 60 * 60 * 24);
+  const wXForDate = function(dateStr) {
+    if (wTotalDays <= 0) return pad.left;
+    const off = (new Date(dateStr) - new Date(wFirstDate)) / (1000 * 60 * 60 * 24);
+    return pad.left + (off / wTotalDays) * chartW;
+  };
 
   // Weight line (always visible - base layer) - v1.27: thicker
   _chartPoints = []; // reset
@@ -5316,15 +5337,15 @@ function renderWeightChart() {
   ctx.lineCap = 'round';
 
   recent.forEach((d, i) => {
-    const x = pad.left + i * wXStep;
+    const x = wXForDate(d.date);
     const y = pad.top + (1 - (d.value - wMin) / (wMax - wMin)) * chartH;
     if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
-    _chartPoints.push({ x, y, date: d.date, weight: d.value, si: null, cs: null, csMin: null, ded: null, bc: null });
+    _chartPoints.push({ x, y, date: d.date, weight: d.value, si: null, cs: null, ded: null, bc: null });
   });
   ctx.stroke();
 
   // Gradient fill
-  const lastX = pad.left + (recent.length - 1) * wXStep;
+  const lastX = wXForDate(wLastDate);
   ctx.lineTo(lastX, h - pad.bottom);
   ctx.lineTo(pad.left, h - pad.bottom);
   ctx.closePath();
@@ -5336,7 +5357,7 @@ function renderWeightChart() {
 
   // Endpoint dots
   [0, recent.length - 1].forEach(i => {
-    const x = pad.left + i * wXStep;
+    const x = wXForDate(recent[i].date);
     const y = pad.top + (1 - (recent[i].value - wMin) / (wMax - wMin)) * chartH;
     ctx.beginPath();
     ctx.arc(x, y, 4, 0, Math.PI * 2);
@@ -7287,7 +7308,7 @@ function renderDashboard(workouts) {
   const syncColor = (hevyStatus === 'error' || healthStatus === 'missing') ? C.textDim
     : (healthStatus === 'stale') ? C.warn : C.accent;
   document.getElementById('last-updated').innerHTML =
-    `v1.35<br>${now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }).replace(/\u202f/g, ' ')} <span id="sync-dot" style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${syncColor};margin-left:5px;vertical-align:middle;position:relative;top:-1px;"></span>`;
+    `v1.36<br>${now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }).replace(/\u202f/g, ' ')} <span id="sync-dot" style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${syncColor};margin-left:5px;vertical-align:middle;position:relative;top:-1px;"></span>`;
 
   // Populate globals BEFORE renderTimedSession so lifted-today detection works
   heatmapDayWorkouts = pp.heatmapDayWorkouts || {};
