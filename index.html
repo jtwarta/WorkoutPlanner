@@ -1,7 +1,23 @@
 <!DOCTYPE html>
 
 <!--
-  LiftScript v1.37
+  LiftScript v1.38
+  Changes from v1.37 (v1.38 - Strength Index true rolling window):
+  1.  The SI "rolling 6-month window" now actually rolls. Old behavior:
+      per-lift 1RMs were cumulative high-water marks over the pass, with a
+      183-days-before-NOW gate on which workouts entered -- so the timeline
+      was monotone per lift (historical dips never rendered) and SI only
+      dropped on a reload where an old PR crossed the boundary, rewriting the
+      whole timeline when it did. New: per-lift chronological event lists
+      (best est 1RM per lift per workout); each datapoint takes the max over
+      events in the trailing 183 days relative to THAT date. SI can now
+      decline as PRs age out -- expected and honest.
+  2.  Downstream unchanged in shape: timeline lift entries keep {rm, mult,
+      src}; PR board still scans all-time max; 30-day trend arrows can now
+      legitimately show declines. Removed write-only siUpdated flag and the
+      now-unused sixMonthsAgo/isWithin6m gate.
+  3.  Note: the fetch cap (~155 workouts / ~6 months) means the earliest
+      timeline points have a partially-filled window -- same as before.
   Changes from v1.36 (v1.37 - Body Comp timeline computed from dated measurements):
   1.  computeBodyCompTimeline rewritten. Old behavior: one score from
       current-snapshot values stamped on every weigh-in date -- a flat line
@@ -967,7 +983,7 @@ margin-top: 4px;
     <div class="header" style="position:relative;z-index:1;">
       <div style="display:flex;align-items:center;gap:10px;">
         <h1>LiftScript</h1>
-        <div class="subtitle" id="last-updated">v1.37</div>
+        <div class="subtitle" id="last-updated">v1.38</div>
         <div id="power-score-wrap" role="button" aria-label="Toggle Power Score details" tabindex="0" style="margin-left:auto;display:flex;align-items:center;gap:6px;cursor:pointer;-webkit-tap-highlight-color:transparent;min-height:32px;" onclick="togglePowerScoreDetail()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();togglePowerScoreDetail();}">
           <div id="power-score-ring"></div>
         </div>
@@ -2399,7 +2415,6 @@ const STRENGTH_INDEX_LIFTS = {
 function preprocessWorkouts(workouts, bodyweightLbs, weightData) {
   const now = new Date();
   const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-  const sixMonthsAgo = new Date(now.getTime() - 183 * 24 * 60 * 60 * 1000);
 
   // Sort oldest -> newest for history building
   const sorted = [...workouts].sort((a, b) =>
@@ -2411,8 +2426,12 @@ function preprocessWorkouts(workouts, bodyweightLbs, weightData) {
   const templateIdMap = {};
   const muscleStats = {};
   const muscle1RMInputs = {}; // { muscleKey: { best1RM, exercise } }
-  const siRolling1RMs = { bench: 0, squat: 0, deadlift: 0, ohp: 0, row: 0 };
-  const siRollingSrc = { bench: null, squat: null, deadlift: null, ohp: null, row: null };
+  // v1.38: true rolling window. Per-lift chronological event lists (one
+  // best-estimated-1RM event per lift per workout); each SI datapoint takes
+  // the max over events in the trailing 183 days, so old PRs age out of the
+  // index instead of pinning it forever ("rolling" per the master doc).
+  const siEvents = { bench: [], squat: [], deadlift: [], ohp: [], row: [] };
+  const SI_WINDOW_MS = 183 * 24 * 60 * 60 * 1000;
   const siTimeline = [];
   const heatmapDayMuscle = {};
   const heatmapDayWorkouts = {};
@@ -2446,9 +2465,8 @@ function preprocessWorkouts(workouts, bodyweightLbs, weightData) {
     const wDate = new Date(w.start_time || w.created_at);
     const dateStr = localDateStr(wDate);
     const isRecent = wDate >= thirtyDaysAgo;
-    const isWithin6m = wDate >= sixMonthsAgo;
     const musclesThisWorkout = new Set();
-    let siUpdated = false;
+    const siWorkoutBest = { bench: null, squat: null, deadlift: null, ohp: null, row: null };
 
     if (!heatmapDayMuscle[dateStr]) heatmapDayMuscle[dateStr] = {};
     if (!heatmapDayWorkouts[dateStr]) heatmapDayWorkouts[dateStr] = [];
@@ -2578,21 +2596,20 @@ function preprocessWorkouts(workouts, bodyweightLbs, weightData) {
         }
       }
 
-      // --- Strength index timeline (6-month rolling window) ---
-      if (isWithin6m) {
-        for (const [liftKey, liftDef] of Object.entries(STRENGTH_INDEX_LIFTS)) {
-          const matched = liftDef.patterns.some(p => p.test(name));
-          if (!matched) continue;
-          for (const s of workingSets) {
-            const wLbs = (s.weight_kg || 0) * 2.20462;
-            const reps = s.reps || 0;
-            if (wLbs <= 0 || reps <= 0) continue;
-            const est = estimate1RM(wLbs, reps);
-            if (est > siRolling1RMs[liftKey]) {
-              siRolling1RMs[liftKey] = est;
-              siRollingSrc[liftKey] = { ex: name, wt: Math.round(wLbs), reps: reps, date: dateStr };
-              siUpdated = true;
-            }
+      // --- Strength index events (v1.38: true 183-day rolling window) ---
+      // Record the best estimated 1RM per lift in THIS workout; the SI
+      // datapoint below windows over the trailing 183 days.
+      for (const [liftKey, liftDef] of Object.entries(STRENGTH_INDEX_LIFTS)) {
+        const matched = liftDef.patterns.some(p => p.test(name));
+        if (!matched) continue;
+        for (const s of workingSets) {
+          const wLbs = (s.weight_kg || 0) * 2.20462;
+          const reps = s.reps || 0;
+          if (wLbs <= 0 || reps <= 0) continue;
+          const est = estimate1RM(wLbs, reps);
+          const prevBest = siWorkoutBest[liftKey];
+          if (!prevBest || est > prevBest.est) {
+            siWorkoutBest[liftKey] = { est: est, src: { ex: name, wt: Math.round(wLbs), reps: reps, date: dateStr } };
           }
         }
       }
@@ -2606,7 +2623,27 @@ function preprocessWorkouts(workouts, bodyweightLbs, weightData) {
     }
 
     // Strength Score data point (normalized: 1.0 = 50th percentile gym-goer for user's age)
-    const hasData = Object.values(siRolling1RMs).some(v => v > 0);
+    // v1.38: push this workout's per-lift bests as events, then take the max
+    // over the trailing 183 days per lift. SI can now decline as PRs age out.
+    const wMs = wDate.getTime();
+    for (const liftKey in siWorkoutBest) {
+      if (siWorkoutBest[liftKey]) {
+        siEvents[liftKey].push({ t: wMs, est: siWorkoutBest[liftKey].est, src: siWorkoutBest[liftKey].src });
+      }
+    }
+    const siWindowStart = wMs - SI_WINDOW_MS;
+    const siCurrent = {};
+    let hasData = false;
+    for (const liftKey in siEvents) {
+      let best = 0, bestSrc = null;
+      const evs = siEvents[liftKey];
+      for (let ei = evs.length - 1; ei >= 0; ei--) {
+        if (evs[ei].t < siWindowStart) break; // events are chronological
+        if (evs[ei].est > best) { best = evs[ei].est; bestSrc = evs[ei].src; }
+      }
+      siCurrent[liftKey] = { rm1: best, src: bestSrc };
+      if (best > 0) hasData = true;
+    }
     if (hasData) {
       const bw = getBodyweightAt(dateStr);
       const lifts = {};
@@ -2614,19 +2651,20 @@ function preprocessWorkouts(workouts, bodyweightLbs, weightData) {
 
       // First pass: identify which lifts have data and sum their weights
       for (const [liftKey, liftDef] of Object.entries(STRENGTH_INDEX_LIFTS)) {
-        if (siRolling1RMs[liftKey] > 0) totalWeight += liftDef.weight;
+        if (siCurrent[liftKey].rm1 > 0) totalWeight += liftDef.weight;
       }
 
       // Second pass: compute normalized score with re-weighted lifts
       let index = 0;
       for (const [liftKey, liftDef] of Object.entries(STRENGTH_INDEX_LIFTS)) {
-        const mult = bw > 0 ? siRolling1RMs[liftKey] / bw : 0;
+        const rm1 = siCurrent[liftKey].rm1;
+        const mult = bw > 0 ? rm1 / bw : 0;
         const normalized = liftDef.p50 > 0 ? mult / liftDef.p50 : 0;
         const adjustedWeight = totalWeight > 0 ? liftDef.weight / totalWeight : 0;
-        if (siRolling1RMs[liftKey] > 0) {
+        if (rm1 > 0) {
           index += normalized * adjustedWeight;
         }
-        lifts[liftKey] = { rm: Math.round(siRolling1RMs[liftKey]), mult: Math.round(mult * 100) / 100, src: siRollingSrc[liftKey] };
+        lifts[liftKey] = { rm: Math.round(rm1), mult: Math.round(mult * 100) / 100, src: siCurrent[liftKey].src };
       }
       siTimeline.push({ date: dateStr, index: Math.round(index * 100) / 100, lifts: { ...lifts } });
     }
@@ -7335,7 +7373,7 @@ function renderDashboard(workouts) {
   const syncColor = (hevyStatus === 'error' || healthStatus === 'missing') ? C.textDim
     : (healthStatus === 'stale') ? C.warn : C.accent;
   document.getElementById('last-updated').innerHTML =
-    `v1.37<br>${now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }).replace(/\u202f/g, ' ')} <span id="sync-dot" style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${syncColor};margin-left:5px;vertical-align:middle;position:relative;top:-1px;"></span>`;
+    `v1.38<br>${now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }).replace(/\u202f/g, ' ')} <span id="sync-dot" style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${syncColor};margin-left:5px;vertical-align:middle;position:relative;top:-1px;"></span>`;
 
   // Populate globals BEFORE renderTimedSession so lifted-today detection works
   heatmapDayWorkouts = pp.heatmapDayWorkouts || {};
