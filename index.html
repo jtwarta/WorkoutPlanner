@@ -1,7 +1,30 @@
 <!DOCTYPE html>
 
 <!--
-  LiftScript v1.34
+  LiftScript v1.35
+  Changes from v1.34 (v1.35 - correctness remediation from full-file audit):
+  1.  DEDICATION FIX: cardio-only Hevy workouts (hikes, runs, cardio circuits) no
+      longer count as lift days. preprocessWorkouts initializes heatmapDayWorkouts
+      [dateStr] = [] for every Hevy workout before inspecting contents, and the
+      Dedication loop tested the entry for truthiness -- an empty array is truthy,
+      so 14 cardio-only workouts in the current history each scored as a lift day,
+      inflating liftScore and chaining the consecutive-day fatigue penalty across
+      hike days. Fix: check .length > 0, matching weekStats and
+      countConsecutiveTrainingDays which were already correct.
+  2.  SET-TYPE FIX (latent): getWorkingSets filtered on s.set_type, but the Hevy
+      GET /workouts API returns the set kind in s.type (verified live). The old
+      check was vacuously true, so warmup/dropset sets would silently count as
+      working sets (set counts, volume, lastSets prescriptions). Zero impact on
+      current history (all 1,197 sets are 'normal') but certain breakage the first
+      time a warmup set is logged. 'failure' sets still count as working.
+  3.  Per-workout calories from health-data.json (new Shortcut field) now flow
+      into the cardio breakdown rows -- the UI already rendered calories > 0 but
+      cardioLog hardcoded 0.
+  4.  Chart secondary 'off' state now persists ('none' sentinel; empty string
+      failed the load whitelist and reverted to SI on reload).
+  5.  Stale comments corrected: Watch-only source claim above APPLE_CARDIO_TYPES
+      (all-source per doc S27) and the pre-v1.18a HR-gate row in the cardio
+      counting rules table (now the 20-min duration gate).
   Changes from v1.33 (v1.34 - legibility micro-pass from the aesthetics audit):
   1.  Chart legend wraps at narrow widths (flex-wrap + tightened gap). The Body Comp toggle was clipped entirely out of view at 390px with no wrap or pan affordance.
   2.  New lifted text-danger color: C.dangerText / --danger-text = #ED7960 "ember" (4.62:1 on surface2, 5.32:1 on surface). Base danger #CC4433 (3.15:1) failed WCAG AA for the small text it was carrying and is now reserved for stripes/fills/lines. Applied to: muscle grid fraction text, rest-day chip (high state), power score detail values, frame-target percentage labels, SI percentile labels, PR 30-day down-trend arrows, chart tooltip CF value, Cancel button text, Hevy import error text.
@@ -921,7 +944,7 @@ margin-top: 4px;
     <div class="header" style="position:relative;z-index:1;">
       <div style="display:flex;align-items:center;gap:10px;">
         <h1>LiftScript</h1>
-        <div class="subtitle" id="last-updated">v1.34</div>
+        <div class="subtitle" id="last-updated">v1.35</div>
         <div id="power-score-wrap" role="button" aria-label="Toggle Power Score details" tabindex="0" style="margin-left:auto;display:flex;align-items:center;gap:6px;cursor:pointer;-webkit-tap-highlight-color:transparent;min-height:32px;" onclick="togglePowerScoreDetail()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();togglePowerScoreDetail();}">
           <div id="power-score-ring"></div>
         </div>
@@ -1406,11 +1429,17 @@ function calculateExerciseTime(exerciseName, sets) {
 // SHARED HELPERS (v1.1 - Task 4)
 // ============================================================
 
-// Consistent working-set extraction used everywhere
+// Consistent working-set extraction used everywhere.
+// v1.35: the Hevy GET /workouts API returns the set kind in 'type'
+// ('normal' | 'warmup' | 'failure' | 'dropset'), NOT 'set_type' -- verified
+// against the live API. The old filter checked a field that never exists,
+// so every set (incl. warmups) silently counted as a working set.
+// 'failure' sets still count as working sets (they are max-effort work).
 function getWorkingSets(exercise) {
-  return (exercise.sets || []).filter(s =>
-    s.set_type === 'normal' || !s.set_type
-  );
+  return (exercise.sets || []).filter(s => {
+    const t = s.type || s.set_type;
+    return !t || t === 'normal' || t === 'failure';
+  });
 }
 
 // Normalize exercise name for caching/matching
@@ -2633,7 +2662,7 @@ function preprocessWorkouts(workouts, bodyweightLbs, weightData) {
       if (isDup) continue;
       if (!heatmapDayCardio[dateStr]) heatmapDayCardio[dateStr] = { minutes: 0, sessions: [] };
       heatmapDayCardio[dateStr].minutes += dur;
-      heatmapDayCardio[dateStr].sessions.push({ name: aw.type || 'Cardio', minutes: Math.round(dur), source: 'watch', timestamp: awDate.getTime() });
+      heatmapDayCardio[dateStr].sessions.push({ name: aw.type || 'Cardio', minutes: Math.round(dur), source: 'watch', timestamp: awDate.getTime(), calories: parseFloat(aw.calories) || 0 });
     }
   }
 
@@ -2749,7 +2778,7 @@ function preprocessWorkouts(workouts, bodyweightLbs, weightData) {
       const lb = new Date(d);
       lb.setDate(lb.getDate() - i);
       const lbStr = localDateStr(lb);
-      if (heatmapDayWorkouts[lbStr]) {
+      if (heatmapDayWorkouts[lbStr] && heatmapDayWorkouts[lbStr].length > 0) {
         weekLiftDays++;
         const dayMuscles = heatmapDayMuscle[lbStr];
         if (dayMuscles) {
@@ -2953,13 +2982,13 @@ const CARDIO_PROTOCOLS = {
 // Hevy          | Any cardio    | ALWAYS (intentional logging)
 // Apple Watch   | Indoor Walk   | ALWAYS (treadmill = intentional)
 // Apple Watch   | Hiking/Hike   | ALWAYS (intentional training)
-// Apple Watch   | Outdoor Walk  | ONLY if walking HR avg >= Zone 2
+// Apple Watch   | Outdoor Walk  | ONLY if duration >= 20 min (v1.18a)
 // Passive       | Steps         | NEVER (tracked in vitals only)
 // ---------------------------------------------------------------
 
-// Apple Watch workout types that count as cardio
-// Only workouts explicitly started via the Watch Workouts app are included
-// in health-data.json (the Shortcut filters source = Apple Watch).
+// Apple Watch workout types that count as cardio.
+// v1.35 comment fix: the Shortcut's HealthKit query returns workouts from
+// ALL sources (iPhone, third-party apps, Watch) -- see master doc S27.
 // Keys are lowercase; matching uses exact then fuzzy fallback.
 const APPLE_CARDIO_TYPES = {
   'indoor walk':    'treadmill',
@@ -3042,7 +3071,7 @@ function analyzeCardioHistory(dayCardioMap) {
         type: sess.name || 'Unknown',
         date: sess.timestamp ? new Date(sess.timestamp) : d,
         minutes: sess.minutes,
-        calories: 0,
+        calories: sess.calories || 0,
       });
     }
   }
@@ -5151,6 +5180,7 @@ let _chartTooltipTimer = null;
 var _chartSecondary = (function() {
   try {
     var s = localStorage.getItem('chart_secondary_v1');
+    if (s === 'none') return null; // v1.35: weight-only view now persists
     if (s && ['si','cardio','dedication','bodyComp'].indexOf(s) !== -1) return s;
   } catch(_) {}
   return 'si';
@@ -5598,7 +5628,7 @@ function toggleChartLine(key) {
     _chartLineVisible[key] = true;
     _chartSecondary = key;
   }
-  try { localStorage.setItem('chart_secondary_v1', _chartSecondary || ''); } catch(_) {}
+  try { localStorage.setItem('chart_secondary_v1', _chartSecondary || 'none'); } catch(_) {}
   haptic(4);
   renderWeightChart();
 }
@@ -7257,7 +7287,7 @@ function renderDashboard(workouts) {
   const syncColor = (hevyStatus === 'error' || healthStatus === 'missing') ? C.textDim
     : (healthStatus === 'stale') ? C.warn : C.accent;
   document.getElementById('last-updated').innerHTML =
-    `v1.34<br>${now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }).replace(/\u202f/g, ' ')} <span id="sync-dot" style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${syncColor};margin-left:5px;vertical-align:middle;position:relative;top:-1px;"></span>`;
+    `v1.35<br>${now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }).replace(/\u202f/g, ' ')} <span id="sync-dot" style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${syncColor};margin-left:5px;vertical-align:middle;position:relative;top:-1px;"></span>`;
 
   // Populate globals BEFORE renderTimedSession so lifted-today detection works
   heatmapDayWorkouts = pp.heatmapDayWorkouts || {};
