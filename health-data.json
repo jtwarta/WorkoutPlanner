@@ -1,5 +1,5 @@
 {"updated":"
-2026-07-13T07:00:09-07:00
+2026-07-15T07:00:02-07:00
 ","resting_heart_rate":
 61.99999999999999
 ,"cardio_fitness":
@@ -7,12 +7,57 @@
 ,"cardio_recovery":
 26.58417108709818
 ,"steps":
-12015.5714285714
+10244.625
 ,"active_energy_kcal":
-246.8962
+360.630666666667
 ,"walking_heart_rate_avg":
 96
-,"workouts":[{"type":"Walking
+,"workouts":[{"type":"Elliptical
+
+","start":"Jul 14, 2026 at 2:58 PM
+
+","duration_min":14.9
+
+,"calories":104 kcal
+
+}
+{"type":"Traditional Strength Training
+
+","start":"Jul 14, 2026 at 2:32 PM
+
+","duration_min":41
+
+,"calories":250 kcal
+
+}
+{"type":"Traditional Strength Training
+
+","start":"Jul 14, 2026 at 2:32 PM
+
+","duration_min":26.5
+
+,"calories":148 kcal
+
+}
+{"type":"Walking
+
+","start":"Jul 13, 2026 at 9:39 PM
+
+","duration_min":36.1
+
+,"calories":158 kcal
+
+}
+{"type":"Traditional Strength Training
+
+","start":"Jul 13, 2026 at 12:56 PM
+
+","duration_min":94.8
+
+,"calories":505 kcal
+
+}
+{"type":"Walking
 
 ","start":"Jul 12, 2026 at 11:48 AM
 
@@ -416,59 +461,14 @@
 
 ,"calories":176 kcal
 
-}
-{"type":"Running
-
-","start":"May 30, 2026 at 9:39 AM
-
-","duration_min":43.1
-
-,"calories":201 kcal
-
-}
-{"type":"Walking
-
-","start":"May 29, 2026 at 12:31 PM
-
-","duration_min":12.5
-
-,"calories":42 kcal
-
-}
-{"type":"Walking
-
-","start":"May 27, 2026 at 8:50 PM
-
-","duration_min":32.2
-
-,"calories":97 kcal
-
-}
-{"type":"Running
-
-","start":"May 26, 2026 at 8:39 PM
-
-","duration_min":14.3
-
-,"calories":72 kcal
-
-}
-{"type":"Hiking
-
-","start":"May 26, 2026 at 8:06 PM
-
-","duration_min":33.3
-
-,"calories":160 kcal
-
 }]
 ,"weight_entries": []
 ,"body_fat_pct": 
 ,"lean_body_mass_lbs": 
 ,"waist_circumference_in": 35
 
-,"rhr_12m":57,"rhr_6m":55,"rhr_3m":55
-,"vo2_12m":40.53,"vo2_6m":38.41,"vo2_3m":41.28
-,"rec_12m":34.20303400557211,"rec_6m":35.01460143203793,"rec_3m":25.00871567009568
+,"rhr_12m":52,"rhr_6m":55,"rhr_3m":59
+,"vo2_12m":39.92,"vo2_6m":38.41,"vo2_3m":41.28
+,"rec_12m":36.16100605038852,"rec_6m":35.01460143203793,"rec_3m":25.00871567009568
 
 }
