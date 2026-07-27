@@ -1,5 +1,5 @@
 {"updated":"
-2026-07-24T07:00:28-07:00
+2026-07-27T07:00:25-07:00
 ","resting_heart_rate":
 55
 ,"cardio_fitness":
@@ -7,12 +7,48 @@
 ,"cardio_recovery":
 27.87940116623478
 ,"steps":
-14030.25
+13802.5714285714
 ,"active_energy_kcal":
-485.334428571428
+385.019166666667
 ,"walking_heart_rate_avg":
 95
-,"workouts":[{"type":"Other
+,"workouts":[{"type":"Walking
+
+","start":"Jul 25, 2026 at 7:17 PM
+
+","duration_min":115.8
+
+,"calories":313 kcal
+
+}
+{"type":"Traditional Strength Training
+
+","start":"Jul 25, 2026 at 12:23 PM
+
+","duration_min":23.3
+
+,"calories":116 kcal
+
+}
+{"type":"Walking
+
+","start":"Jul 24, 2026 at 1:00 PM
+
+","duration_min":21.1
+
+,"calories":62 kcal
+
+}
+{"type":"Traditional Strength Training
+
+","start":"Jul 24, 2026 at 12:22 PM
+
+","duration_min":28.2
+
+,"calories":159 kcal
+
+}
+{"type":"Other
 
 ","start":"Jul 23, 2026 at 8:38 PM
 
@@ -425,49 +461,13 @@
 
 ,"calories":189 kcal
 
-}
-{"type":"Walking
-
-","start":"Jun 20, 2026 at 12:06 AM
-
-","duration_min":4.9
-
-,"calories":16 kcal
-
-}
-{"type":"Walking
-
-","start":"Jun 19, 2026 at 10:20 PM
-
-","duration_min":19.9
-
-,"calories":89 kcal
-
-}
-{"type":"Walking
-
-","start":"Jun 18, 2026 at 8:23 PM
-
-","duration_min":28.8
-
-,"calories":120 kcal
-
-}
-{"type":"Elliptical
-
-","start":"Jun 18, 2026 at 8:04 PM
-
-","duration_min":18.8
-
-,"calories":147 kcal
-
 }]
 ,"weight_entries": []
 ,"body_fat_pct": 
 ,"lean_body_mass_lbs": 
 ,"waist_circumference_in": 35
 
-,"rhr_12m":53,"rhr_6m":54,"rhr_3m":53
+,"rhr_12m":55,"rhr_6m":56,"rhr_3m":53
 ,"vo2_12m":42.1,"vo2_6m":39.3,"vo2_3m":40.6
 ,"rec_12m":34.90270738937284,"rec_6m":36.63855095766542,"rec_3m":25.00871567009568
 
