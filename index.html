@@ -1,7 +1,13 @@
 <!DOCTYPE html>
 
 <!--
-  LiftScript v1.39
+  LiftScript v1.40
+  Changes from v1.39 (v1.40 - waist tile source-of-truth fix):
+  - Body Composition WAIST tile now uses the merged measurement value
+    (getLatestMeasurements) instead of raw Apple Health, so a newer manual/
+    Hevy-imported waist entry is not shadowed by a stale HealthKit value.
+    Target-delta label unchanged (distance from height*0.45).
+
   Changes from v1.38 (v1.39 - progression stall detection + deload):
   1.  exerciseHistory now records the per-session gating rep count (min reps
       among top-weight sets, v1.33 semantics) in a reps[] array parallel to
@@ -999,7 +1005,7 @@ margin-top: 4px;
     <div class="header" style="position:relative;z-index:1;">
       <div style="display:flex;align-items:center;gap:10px;">
         <h1>LiftScript</h1>
-        <div class="subtitle" id="last-updated">v1.39</div>
+        <div class="subtitle" id="last-updated">v1.40</div>
         <div id="power-score-wrap" role="button" aria-label="Toggle Power Score details" tabindex="0" style="margin-left:auto;display:flex;align-items:center;gap:6px;cursor:pointer;-webkit-tap-highlight-color:transparent;min-height:32px;" onclick="togglePowerScoreDetail()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();togglePowerScoreDetail();}">
           <div id="power-score-ring"></div>
         </div>
@@ -6739,8 +6745,11 @@ function renderBodyCompDisplay() {
     hasAny = true;
   }
 
-  // Waist
+  // Waist -- v1.40: prefer merged measurement (manual entry wins when newer)
+  // over raw Apple Health so this tile agrees with the frame-target card
   var waistAH = healthData.waist_circumference_in;
+  var mergedMeas = getLatestMeasurements();
+  if (mergedMeas && mergedMeas.waist_in > 0) waistAH = mergedMeas.waist_in;
   if (waistAH && waistAH > 0) {
     var waistTarget = PROFILE.heightIn * 0.45;
     var waistStatus = waistAH <= waistTarget ? { label: 'On target', color: C.accent } : { label: '+' + (waistAH - waistTarget).toFixed(1) + ' in', color: C.warn };
@@ -7438,7 +7447,7 @@ function renderDashboard(workouts) {
   const syncColor = (hevyStatus === 'error' || healthStatus === 'missing') ? C.textDim
     : (healthStatus === 'stale') ? C.warn : C.accent;
   document.getElementById('last-updated').innerHTML =
-    `v1.39<br>${now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }).replace(/\u202f/g, ' ')} <span id="sync-dot" style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${syncColor};margin-left:5px;vertical-align:middle;position:relative;top:-1px;"></span>`;
+    `v1.40<br>${now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }).replace(/\u202f/g, ' ')} <span id="sync-dot" style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${syncColor};margin-left:5px;vertical-align:middle;position:relative;top:-1px;"></span>`;
 
   // Populate globals BEFORE renderTimedSession so lifted-today detection works
   heatmapDayWorkouts = pp.heatmapDayWorkouts || {};
