@@ -1,5 +1,5 @@
 {"updated":"
-2026-08-07T07:00:01-07:00
+2026-08-10T07:00:02-07:00
 ","resting_heart_rate":
 52
 ,"cardio_fitness":
@@ -7,12 +7,66 @@
 ,"cardio_recovery":
 27.87940116623478
 ,"steps":
-12219.2857142857
+13864.4285714286
 ,"active_energy_kcal":
-296.97
+406.817142857143
 ,"walking_heart_rate_avg":
 89
-,"workouts":[{"type":"Elliptical
+,"workouts":[{"type":"Walking
+
+","start":"Aug 9, 2026 at 7:23 PM
+
+","duration_min":61.2
+
+,"calories":358 kcal
+
+}
+{"type":"Traditional Strength Training
+
+","start":"Aug 9, 2026 at 10:56 AM
+
+","duration_min":73.2
+
+,"calories":324 kcal
+
+}
+{"type":"Walking
+
+","start":"Aug 8, 2026 at 7:30 PM
+
+","duration_min":26.2
+
+,"calories":75 kcal
+
+}
+{"type":"Walking
+
+","start":"Aug 8, 2026 at 12:26 PM
+
+","duration_min":54
+
+,"calories":336 kcal
+
+}
+{"type":"Traditional Strength Training
+
+","start":"Aug 8, 2026 at 11:22 AM
+
+","duration_min":25.4
+
+,"calories":111 kcal
+
+}
+{"type":"Walking
+
+","start":"Aug 7, 2026 at 7:35 PM
+
+","duration_min":50.3
+
+,"calories":336 kcal
+
+}
+{"type":"Elliptical
 
 ","start":"Aug 6, 2026 at 8:41 PM
 
@@ -407,68 +461,14 @@
 
 ,"calories":262 kcal
 
-}
-{"type":"Hiking
-
-","start":"Jul 4, 2026 at 7:12 PM
-
-","duration_min":113.3
-
-,"calories":487 kcal
-
-}
-{"type":"Hiking
-
-","start":"Jul 3, 2026 at 7:56 PM
-
-","duration_min":49.9
-
-,"calories":210 kcal
-
-}
-{"type":"Hiking
-
-","start":"Jul 3, 2026 at 9:36 AM
-
-","duration_min":71.7
-
-,"calories":368 kcal
-
-}
-{"type":"Traditional Strength Training
-
-","start":"Jul 2, 2026 at 7:56 PM
-
-","duration_min":38.6
-
-,"calories":275 kcal
-
-}
-{"type":"Hiking
-
-","start":"Jun 30, 2026 at 8:03 PM
-
-","duration_min":53
-
-,"calories":221 kcal
-
-}
-{"type":"Walking
-
-","start":"Jun 29, 2026 at 8:25 PM
-
-","duration_min":14.6
-
-,"calories":47 kcal
-
 }]
 ,"weight_entries": []
 ,"body_fat_pct": 
 ,"lean_body_mass_lbs": 
 ,"waist_circumference_in": 35
 
-,"rhr_12m":53,"rhr_6m":72,"rhr_3m":59
-,"vo2_12m":42.32,"vo2_6m":40.13,"vo2_3m":40.52
-,"rec_12m":36.86289518351517,"rec_6m":36.63855095766542,"rec_3m":26.83212660608516
+,"rhr_12m":52,"rhr_6m":72,"rhr_3m":55
+,"vo2_12m":41.85,"vo2_6m":40.13,"vo2_3m":40.52
+,"rec_12m":36.60188856739571,"rec_6m":36.63855095766542,"rec_3m":26.83212660608516
 
 }
