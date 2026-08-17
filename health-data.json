@@ -1,5 +1,5 @@
 {"updated":"
-2026-08-14T07:00:01-07:00
+2026-08-17T07:00:01-07:00
 ","resting_heart_rate":
 52
 ,"cardio_fitness":
@@ -7,12 +7,75 @@
 ,"cardio_recovery":
 27.87940116623478
 ,"steps":
-14471.5714285714
+12310.25
 ,"active_energy_kcal":
-411.613142857143
+416.282
 ,"walking_heart_rate_avg":
 89
-,"workouts":[{"type":"Running
+,"workouts":[{"type":"Traditional Strength Training
+
+","start":"Aug 16, 2026 at 7:24 PM
+
+","duration_min":20
+
+,"calories":88 kcal
+
+}
+{"type":"Walking
+
+","start":"Aug 16, 2026 at 1:20 PM
+
+","duration_min":72.4
+
+,"calories":254 kcal
+
+}
+{"type":"Walking
+
+","start":"Aug 16, 2026 at 11:42 AM
+
+","duration_min":64.6
+
+,"calories":361 kcal
+
+}
+{"type":"Traditional Strength Training
+
+","start":"Aug 15, 2026 at 7:27 PM
+
+","duration_min":28
+
+,"calories":124 kcal
+
+}
+{"type":"Running
+
+","start":"Aug 15, 2026 at 5:22 PM
+
+","duration_min":22.9
+
+,"calories":132 kcal
+
+}
+{"type":"Walking
+
+","start":"Aug 15, 2026 at 4:41 PM
+
+","duration_min":40.2
+
+,"calories":202 kcal
+
+}
+{"type":"Walking
+
+","start":"Aug 14, 2026 at 6:55 PM
+
+","duration_min":66.6
+
+,"calories":415 kcal
+
+}
+{"type":"Running
 
 ","start":"Aug 13, 2026 at 7:57 PM
 
@@ -398,77 +461,14 @@
 
 ,"calories":248 kcal
 
-}
-{"type":"Walking
-
-","start":"Jul 15, 2026 at 9:34 PM
-
-","duration_min":59.9
-
-,"calories":154 kcal
-
-}
-{"type":"Elliptical
-
-","start":"Jul 15, 2026 at 1:55 PM
-
-","duration_min":22.2
-
-,"calories":168 kcal
-
-}
-{"type":"Traditional Strength Training
-
-","start":"Jul 15, 2026 at 1:36 PM
-
-","duration_min":18.7
-
-,"calories":95 kcal
-
-}
-{"type":"Elliptical
-
-","start":"Jul 14, 2026 at 2:58 PM
-
-","duration_min":14.9
-
-,"calories":104 kcal
-
-}
-{"type":"Traditional Strength Training
-
-","start":"Jul 14, 2026 at 2:32 PM
-
-","duration_min":41
-
-,"calories":250 kcal
-
-}
-{"type":"Traditional Strength Training
-
-","start":"Jul 14, 2026 at 2:32 PM
-
-","duration_min":26.5
-
-,"calories":148 kcal
-
-}
-{"type":"Walking
-
-","start":"Jul 13, 2026 at 9:39 PM
-
-","duration_min":36.1
-
-,"calories":158 kcal
-
 }]
 ,"weight_entries": []
 ,"body_fat_pct": 
 ,"lean_body_mass_lbs": 
 ,"waist_circumference_in": 35
 
-,"rhr_12m":50,"rhr_6m":60,"rhr_3m":58
-,"vo2_12m":41.85,"vo2_6m":40.81,"vo2_3m":41.01
-,"rec_12m":36.60188856739571,"rec_6m":24.45890193295748,"rec_3m":28.93079051294071
+,"rhr_12m":58,"rhr_6m":50,"rhr_3m":56
+,"vo2_12m":40.92,"vo2_6m":40.81,"vo2_3m":41.01
+,"rec_12m":36.06035287014377,"rec_6m":24.45890193295748,"rec_3m":28.93079051294071
 
 }
