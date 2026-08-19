@@ -1,7 +1,17 @@
 <!DOCTYPE html>
 
 <!--
-  LiftScript v1.40
+  LiftScript v1.41
+  Changes from v1.40 (v1.41 - Hevy 429 rate-limit hardening):
+  - New fetchHevy() wrapper: on HTTP 429, backs off (Retry-After header or
+    2s/5s/10s) and retries up to 3x before failing. All Hevy API call sites
+    (workouts, both template loops, routine search + save) route through it.
+  - Exercise template fetch pageSize 10 -> 100 (live-verified supported):
+    full-library load drops from ~47 requests to ~5; maxPages 50/30 -> 8.
+    /workouts remains pageSize=10 (API rejects larger; live-verified 400).
+  - Terminal 429 in fetchWorkouts now surfaces a human message
+    ("wait a minute, then refresh") instead of a raw empty API error.
+
   Changes from v1.39 (v1.40 - waist tile source-of-truth fix):
   - Body Composition WAIST tile now uses the merged measurement value
     (getLatestMeasurements) instead of raw Apple Health, so a newer manual/
@@ -1005,7 +1015,7 @@ margin-top: 4px;
     <div class="header" style="position:relative;z-index:1;">
       <div style="display:flex;align-items:center;gap:10px;">
         <h1>LiftScript</h1>
-        <div class="subtitle" id="last-updated">v1.40</div>
+        <div class="subtitle" id="last-updated">v1.41</div>
         <div id="power-score-wrap" role="button" aria-label="Toggle Power Score details" tabindex="0" style="margin-left:auto;display:flex;align-items:center;gap:6px;cursor:pointer;-webkit-tap-highlight-color:transparent;min-height:32px;" onclick="togglePowerScoreDetail()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();togglePowerScoreDetail();}">
           <div id="power-score-ring"></div>
         </div>
@@ -2374,6 +2384,23 @@ function fetchWithTimeout(url, options, timeoutMs) {
     })
   ]);
 }
+
+// v1.41: Hevy fetch with 429 rate-limit backoff. Retries up to 3 times,
+// honoring Retry-After when present, else 2s/5s/10s. All Hevy API call
+// sites route through this so a burst (workout pages + template pages)
+// no longer hard-fails the refresh on a transient 429.
+async function fetchHevy(url, options, timeoutMs) {
+  var delays = [2000, 5000, 10000];
+  for (var attempt = 0; ; attempt++) {
+    var resp = await fetchWithTimeout(url, options, timeoutMs);
+    if (resp.status !== 429 || attempt >= delays.length) return resp;
+    var waitMs = delays[attempt];
+    var ra = resp.headers && resp.headers.get ? resp.headers.get('Retry-After') : null;
+    if (ra && !isNaN(parseInt(ra, 10))) waitMs = Math.min(parseInt(ra, 10) * 1000, 30000);
+    try { updateLoading('Hevy rate limit \u2014 retrying in ' + Math.round(waitMs / 1000) + 's...'); } catch (_) {}
+    await new Promise(function(res) { setTimeout(res, waitMs); });
+  }
+}
 const CACHE_KEY = 'workoutCache_v1';
 const CACHE_STALE_MS = 8 * 60 * 60 * 1000; // 8 hours
 
@@ -2399,11 +2426,14 @@ async function fetchWorkouts(pageSize = 10, maxPages = 16) {
 
   while (page <= totalPages && page <= maxPages && allWorkouts.length < HARD_CAP) {
     updateLoading('Loading workouts' + (allWorkouts.length > 0 ? ` (${allWorkouts.length})` : '') + '...');
-    const resp = await fetchWithTimeout(`${API_BASE}/workouts?page=${page}&pageSize=${pageSize}`, {
+    const resp = await fetchHevy(`${API_BASE}/workouts?page=${page}&pageSize=${pageSize}`, {
       headers: { 'api-key': apiKey },
       mode: 'cors'
     });
     if (!resp.ok) {
+      if (resp.status === 429) {
+        throw new Error('Hevy rate limit (429) \u2014 wait a minute, then refresh');
+      }
       let body = '';
       try { body = await resp.text(); } catch (_) {}
       throw new Error(`API error ${resp.status}: ${body || resp.statusText}`);
@@ -4193,10 +4223,10 @@ async function fetchAllHevyTemplateIds() {
     }
 
     var page = 1;
-    var maxPages = 50;
+    var maxPages = 8; // v1.41: pageSize=100 -> ~5 pages for full library
     var matched = 0;
     while (page <= maxPages) {
-      var resp = await fetchWithTimeout(API_BASE + '/exercise_templates?page=' + page + '&pageSize=10', {
+      var resp = await fetchHevy(API_BASE + '/exercise_templates?page=' + page + '&pageSize=100', {
         headers: { 'api-key': apiKey },
         mode: 'cors'
       });
@@ -4298,9 +4328,9 @@ async function resolveTemplateIds(names) {
   // Second: fetch from API for any still missing
   try {
     var page = 1;
-    var maxPages = 30;
+    var maxPages = 8; // v1.41: pageSize=100 -> ~5 pages for full library
     while (missing.length > 0 && page <= maxPages) {
-      var resp = await fetchWithTimeout(API_BASE + '/exercise_templates?page=' + page + '&pageSize=10', {
+      var resp = await fetchHevy(API_BASE + '/exercise_templates?page=' + page + '&pageSize=100', {
         headers: { 'api-key': apiKey },
         mode: 'cors'
       });
@@ -4434,7 +4464,7 @@ async function sendSessionToHevy() {
     try {
       var searchPage = 1;
       while (searchPage <= 5) {
-        var searchResp = await fetchWithTimeout(API_BASE + '/routines?page=' + searchPage + '&pageSize=10', {
+        var searchResp = await fetchHevy(API_BASE + '/routines?page=' + searchPage + '&pageSize=10', {
           headers: { 'api-key': apiKey },
           mode: 'cors'
         });
@@ -4463,7 +4493,7 @@ async function sendSessionToHevy() {
       // Update existing routine via PUT
       var putBody = JSON.stringify({ routine: routinePayload });
       console.log('Hevy PUT to ' + existingId + ':', putBody);
-      resp = await fetchWithTimeout(API_BASE + '/routines/' + existingId, {
+      resp = await fetchHevy(API_BASE + '/routines/' + existingId, {
         method: 'PUT',
         headers: {
           'api-key': apiKey,
@@ -4493,7 +4523,7 @@ async function sendSessionToHevy() {
       var postPayload = Object.assign({}, routinePayload, { folder_id: null });
       var postBody = JSON.stringify({ routine: postPayload });
       console.log('Hevy POST payload:', postBody);
-      resp = await fetchWithTimeout(API_BASE + '/routines', {
+      resp = await fetchHevy(API_BASE + '/routines', {
         method: 'POST',
         headers: {
           'api-key': apiKey,
@@ -7447,7 +7477,7 @@ function renderDashboard(workouts) {
   const syncColor = (hevyStatus === 'error' || healthStatus === 'missing') ? C.textDim
     : (healthStatus === 'stale') ? C.warn : C.accent;
   document.getElementById('last-updated').innerHTML =
-    `v1.40<br>${now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }).replace(/\u202f/g, ' ')} <span id="sync-dot" style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${syncColor};margin-left:5px;vertical-align:middle;position:relative;top:-1px;"></span>`;
+    `v1.41<br>${now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }).replace(/\u202f/g, ' ')} <span id="sync-dot" style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${syncColor};margin-left:5px;vertical-align:middle;position:relative;top:-1px;"></span>`;
 
   // Populate globals BEFORE renderTimedSession so lifted-today detection works
   heatmapDayWorkouts = pp.heatmapDayWorkouts || {};
