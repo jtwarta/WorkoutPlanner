@@ -1,5 +1,5 @@
 {"updated":"
-2026-08-29T07:00:05-07:00
+2026-09-01T07:00:25-07:00
 ","resting_heart_rate":
 58
 ,"cardio_fitness":
@@ -7,12 +7,75 @@
 ,"cardio_recovery":
 27.87940116623478
 ,"steps":
-9209
+9691.71428571429
 ,"active_energy_kcal":
-418.0166
+693.488533333334
 ,"walking_heart_rate_avg":
 89.5
 ,"workouts":[{"type":"Walking
+
+","start":"Aug 31, 2026 at 8:46 PM
+
+","duration_min":37.9
+
+,"calories":139 kcal
+
+}
+{"type":"Traditional Strength Training
+
+","start":"Aug 31, 2026 at 6:20 PM
+
+","duration_min":183.6
+
+,"calories":784 kcal
+
+}
+{"type":"Traditional Strength Training
+
+","start":"Aug 31, 2026 at 6:20 PM
+
+","duration_min":146.4
+
+,"calories":820 kcal
+
+}
+{"type":"Traditional Strength Training
+
+","start":"Aug 29, 2026 at 8:53 PM
+
+","duration_min":56
+
+,"calories":259 kcal
+
+}
+{"type":"Running
+
+","start":"Aug 29, 2026 at 4:39 PM
+
+","duration_min":12.7
+
+,"calories":102 kcal
+
+}
+{"type":"Walking
+
+","start":"Aug 29, 2026 at 4:32 PM
+
+","duration_min":6.8
+
+,"calories":38 kcal
+
+}
+{"type":"Walking
+
+","start":"Aug 29, 2026 at 4:14 PM
+
+","duration_min":17.3
+
+,"calories":108 kcal
+
+}
+{"type":"Walking
 
 ","start":"Aug 27, 2026 at 8:36 PM
 
@@ -398,77 +461,14 @@
 
 ,"calories":295 kcal
 
-}
-{"type":"Walking
-
-","start":"Jul 27, 2026 at 8:27 PM
-
-","duration_min":57.4
-
-,"calories":196 kcal
-
-}
-{"type":"Walking
-
-","start":"Jul 27, 2026 at 10:28 AM
-
-","duration_min":79.5
-
-,"calories":360 kcal
-
-}
-{"type":"Walking
-
-","start":"Jul 25, 2026 at 7:17 PM
-
-","duration_min":115.8
-
-,"calories":313 kcal
-
-}
-{"type":"Traditional Strength Training
-
-","start":"Jul 25, 2026 at 12:23 PM
-
-","duration_min":23.3
-
-,"calories":116 kcal
-
-}
-{"type":"Walking
-
-","start":"Jul 24, 2026 at 1:00 PM
-
-","duration_min":21.1
-
-,"calories":62 kcal
-
-}
-{"type":"Traditional Strength Training
-
-","start":"Jul 24, 2026 at 12:22 PM
-
-","duration_min":28.2
-
-,"calories":159 kcal
-
-}
-{"type":"Other
-
-","start":"Jul 23, 2026 at 8:38 PM
-
-","duration_min":43.6
-
-,"calories":243 kcal
-
 }]
 ,"weight_entries": []
 ,"body_fat_pct": 
 ,"lean_body_mass_lbs": 
 ,"waist_circumference_in": 35
 
-,"rhr_12m":49,"rhr_6m":59,"rhr_3m":64
-,"vo2_12m":41.44,"vo2_6m":40.71,"vo2_3m":40.22
+,"rhr_12m":58,"rhr_6m":58,"rhr_3m":54
+,"vo2_12m":41.44,"vo2_6m":40.71,"vo2_3m":40.25
 ,"rec_12m":35.97650606737924,"rec_6m":24.45890193295748,"rec_3m":27.08218130218476
 
 }
