@@ -1,5 +1,5 @@
 {"updated":"
-2026-09-04T07:00:02-07:00
+2026-09-07T07:00:01-07:00
 ","resting_heart_rate":
 58
 ,"cardio_fitness":
@@ -7,12 +7,75 @@
 ,"cardio_recovery":
 27.87940116623478
 ,"steps":
-9922.71428571429
+10768.2857142857
 ,"active_energy_kcal":
-551.553933333333
+611.300523809524
 ,"walking_heart_rate_avg":
 89.5
-,"workouts":[{"type":"Traditional Strength Training
+,"workouts":[{"type":"Walking
+
+","start":"Sep 6, 2026 at 7:57 PM
+
+","duration_min":26.5
+
+,"calories":97 kcal
+
+}
+{"type":"Traditional Strength Training
+
+","start":"Sep 6, 2026 at 4:10 PM
+
+","duration_min":204.3
+
+,"calories":902 kcal
+
+}
+{"type":"Running
+
+","start":"Sep 6, 2026 at 11:02 AM
+
+","duration_min":41.7
+
+,"calories":159 kcal
+
+}
+{"type":"Walking
+
+","start":"Sep 6, 2026 at 10:24 AM
+
+","duration_min":37.8
+
+,"calories":227 kcal
+
+}
+{"type":"Traditional Strength Training
+
+","start":"Sep 5, 2026 at 9:30 AM
+
+","duration_min":60.4
+
+,"calories":270 kcal
+
+}
+{"type":"Walking
+
+","start":"Sep 4, 2026 at 7:13 PM
+
+","duration_min":44.1
+
+,"calories":303 kcal
+
+}
+{"type":"Walking
+
+","start":"Sep 4, 2026 at 2:14 PM
+
+","duration_min":30.8
+
+,"calories":67 kcal
+
+}
+{"type":"Traditional Strength Training
 
 ","start":"Sep 3, 2026 at 8:04 PM
 
@@ -398,77 +461,14 @@
 
 ,"calories":55 kcal
 
-}
-{"type":"Traditional Strength Training
-
-","start":"Aug 6, 2026 at 8:24 PM
-
-","duration_min":16.6
-
-,"calories":90 kcal
-
-}
-{"type":"Traditional Strength Training
-
-","start":"Aug 5, 2026 at 9:43 PM
-
-","duration_min":13
-
-,"calories":57 kcal
-
-}
-{"type":"Traditional Strength Training
-
-","start":"Aug 3, 2026 at 7:10 PM
-
-","duration_min":51.2
-
-,"calories":291 kcal
-
-}
-{"type":"Running
-
-","start":"Aug 3, 2026 at 12:24 PM
-
-","duration_min":15.4
-
-,"calories":133 kcal
-
-}
-{"type":"Walking
-
-","start":"Aug 3, 2026 at 11:54 AM
-
-","duration_min":29.3
-
-,"calories":90 kcal
-
-}
-{"type":"Walking
-
-","start":"Aug 3, 2026 at 9:52 AM
-
-","duration_min":41.8
-
-,"calories":217 kcal
-
-}
-{"type":"Elliptical
-
-","start":"Aug 1, 2026 at 11:01 AM
-
-","duration_min":21.8
-
-,"calories":180 kcal
-
 }]
 ,"weight_entries": []
 ,"body_fat_pct": 
 ,"lean_body_mass_lbs": 
 ,"waist_circumference_in": 35
 
-,"rhr_12m":50,"rhr_6m":55,"rhr_3m":65
-,"vo2_12m":40.67,"vo2_6m":40.54,"vo2_3m":39.45
-,"rec_12m":35.74744963856512,"rec_6m":24.45890193295748,"rec_3m":27.08218130218476
+,"rhr_12m":56,"rhr_6m":58,"rhr_3m":60
+,"vo2_12m":40.62,"vo2_6m":40.54,"vo2_3m":39.3
+,"rec_12m":34.1305518408384,"rec_6m":24.45890193295748,"rec_3m":27.00268262680843
 
 }
