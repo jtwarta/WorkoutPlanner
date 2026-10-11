@@ -1,7 +1,19 @@
 <!DOCTYPE html>
 
 <!--
-  LiftScript v1.45
+  LiftScript v1.46
+  Changes from v1.45 (v1.46 - History rebuilt to docs/DESIGN.md):
+  - This week: three Newsreader figures (sessions, total sets, muscles of
+    12) with week-over-week change in words ("2 fewer than last week", Resin
+    when behind); cardio as "N of 150 min cardio" with a 4 px bar.
+  - Heatmap: full muscle names, 17 px cells, one Sapwood ramp for lifts and
+    cardio (blue removed; cardio minutes bucketed 15/25/35/45), today's
+    column outlined, legend in words.
+  - Day detail opens under the heatmap (FLIP), dates in Newsreader, emoji
+    source icons replaced with words.
+  - First visit: figures count up, cardio bar grows, heatmap columns appear
+    left to right with today last.
+
   Changes from v1.44 (v1.45 - Muscles rebuilt to docs/DESIGN.md):
   - The 12-card grid becomes a list grouped by the existing urgency tiers:
     Due now (high), Coming due (med), On track, Rested (trained within 24 h).
@@ -625,7 +637,7 @@ font-family: -apple-system, system-ui, sans-serif; font-size: 17px; font-weight:
 .cd-prog { padding-top: 8px; cursor: pointer; -webkit-tap-highlight-color: transparent; }
 .cd-progrow { display: flex; align-items: baseline; justify-content: space-between; }
 .cd-bar { height: 4px; border-radius: 999px; background: #3A2E26; overflow: hidden; margin-top: 8px; }
-.cd-bar > div { height: 100%; border-radius: 999px; background: #EAD7BC; }
+.cd-bar > div { height: 100%; border-radius: 999px; background: #EAD7BC; transform-origin: left center; }
 .cd-item { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding: 12px 0; }
 
 /* Muscles (v1.45, DESIGN.md s8): grouped list, one surface level */
@@ -744,96 +756,23 @@ transform: scale(0.96);
 }
 /* HISTORY - HEATMAP (v1.1: no scroll) */
 /* ===================== */
-.heatmap-container {
-margin: 0 -4px;
-padding: 0 4px;
-}
-.heatmap-grid {
-display: grid;
-gap: 3px;
-}
-.heatmap-label {
-font-size: 12px;
-font-family: -apple-system,system-ui,sans-serif;
-color: var(--text-mid);
-display: flex;
-align-items: center;
-padding-right: 6px;
-white-space: nowrap;
-position: sticky;
-left: 0;
-background: var(--surface);
-z-index: 2;
-
-
-}
-.heatmap-cell {
-width: 18px;
-height: 18px;
-border-radius: 3px;
-background: var(--surface2);
-cursor: pointer;
-transition: opacity 0.15s ease, transform 0.12s ease;
-}
-.heatmap-cell:active {
-opacity: 0.7;
-}
-.heatmap-day-labels {
-font-size: 10px;
-font-family: -apple-system,system-ui,sans-serif;
-color: var(--text-dim);
-display: flex;
-align-items: flex-end;
-padding-bottom: 4px;
-text-align: center;
-justify-content: center;
-}
-.heatmap-day-detail {
-max-height: 0;
-overflow: hidden;
-transition: max-height 0.3s ease, opacity 0.25s ease;
-opacity: 0;
-margin-top: 0;
-}
-.heatmap-day-detail.open {
-opacity: 1;
-margin-top: 12px;
-}
-.heatmap-day-detail-inner {
-font-family: var(--font-sans);
-text-transform: none;
-
-padding: 14px;
-background: var(--surface2);
-border-radius: 6px;
-border: 1px solid var(--border);
-font-size: 14px;
-line-height: 1.6;
-}
-.heatmap-day-detail-inner .detail-date {
-font-weight: 600;
-margin-bottom: 8px;
-font-size: 13px;
-font-family: -apple-system,system-ui,sans-serif;
-color: var(--text-mid);
-}
-.heatmap-day-detail-inner .detail-exercise {
-display: flex;
-justify-content: space-between;
-align-items: baseline;
-padding: 4px 0;
-}
-.heatmap-day-detail-inner .detail-name {
-font-weight: 500;
-font-size: 14px;
-color: var(--text);
-}
-.heatmap-day-detail-inner .detail-sets {
-font-size: 12px;
-font-family: -apple-system,system-ui,sans-serif;
-color: var(--accent);
-flex-shrink: 0;
-}
+/* History (v1.46, DESIGN.md s8). Literal hex: these rules style innerHTML content. */
+.hs-trio { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 8px; }
+.hs-num { font-family: 'Newsreader', Georgia, serif; font-size: 28px; font-weight: 500; line-height: 1.1; color: #EAD7BC; }
+.hs-cardio { margin-top: 20px; }
+.heatmap-container { position: relative; margin-top: 12px; }
+.heatmap-grid { display: grid; gap: 3px; }
+.heatmap-label { font-family: -apple-system, system-ui, sans-serif; font-size: 11px; line-height: 17px; color: #9A8E83; white-space: nowrap; }
+.heatmap-cell { width: 17px; height: 17px; border-radius: 3px; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.heatmap-day-labels { font-family: -apple-system, system-ui, sans-serif; font-size: 11px; line-height: 1; color: #9A8E83; white-space: nowrap; align-self: end; }
+.hm-today { position: absolute; border: 1px solid #EAD7BC; border-radius: 4px; pointer-events: none; }
+.hm-legend { display: flex; align-items: center; gap: 4px; margin-top: 14px; font-family: -apple-system, system-ui, sans-serif; font-size: 11px; color: #9A8E83; }
+.hm-legend i { display: inline-block; width: 12px; height: 12px; border-radius: 3px; }
+.heatmap-day-detail { margin-top: 12px; }
+.hd-date { font-family: 'Newsreader', Georgia, serif; font-size: 17px; line-height: 1.3; color: #EAD7BC; margin-bottom: 6px; }
+.hd-row { display: flex; justify-content: space-between; gap: 12px; padding: 3px 0; }
+.hd-row span:first-child { color: #EAD7BC; }
+.hd-row span:last-child { text-align: right; }
 
 /* ===================== */
 /* LOADING & ERROR       */
@@ -980,7 +919,7 @@ margin-top: 4px;
     <div class="header">
       <div class="hdr-id">
         <h1>LiftScript</h1>
-        <div class="subtitle" id="last-updated">v1.45</div>
+        <div class="subtitle" id="last-updated">v1.46</div>
       </div>
       <button id="header-refresh-btn" class="hdr-btn" onclick="refreshData()" title="Refresh data" aria-label="Refresh data from Hevy and health">
         <svg width="17" height="17" viewBox="0 0 16 16" fill="none" style="display:block;">
@@ -1027,15 +966,13 @@ margin-top: 4px;
 
 <div id="tab-history" class="hidden">
   <div class="card" id="weekly-summary-card">
-    <div class="card-title">This Week</div>
+    <div class="td-titlerow td-in"><div class="td-title">This week</div><div class="td-cap">Last 7 days</div></div>
     <div id="weekly-summary"></div>
   </div>
   <div class="card">
-    <div class="card-title">Training Heatmap</div>
+    <div class="td-titlerow td-in"><div class="td-title">Two weeks</div><div class="td-cap">Tap a day for details</div></div>
     <div class="heatmap-container" id="heatmap-container"></div>
-    <div class="heatmap-day-detail" id="heatmap-day-detail">
-      <div class="heatmap-day-detail-inner" id="heatmap-day-detail-inner"></div>
-    </div>
+    <div class="heatmap-day-detail" id="heatmap-day-detail" style="display:none;"><div class="heatmap-day-detail-inner rec-explainer" id="heatmap-day-detail-inner"></div></div>
   </div>
 </div>
 
@@ -4865,49 +4802,29 @@ function renderWeeklySummary(dayWorkoutsMap, dayMuscleMap, dayCardioMap, workout
   lastWeekEnd.setDate(lastWeekEnd.getDate() - 7);
   const lastWeek = weekStats(lastWeekEnd);
 
-  // Delta helper
+  // v1.46: week-over-week comparison in words; same condition as before
+  // (shown only when it changed and last week was non-zero). Resin when behind.
   function delta(curr, prev) {
     const diff = curr - prev;
     if (diff === 0 || prev === 0) return '';
-    const sign = diff > 0 ? '+' : '';
-    return `<span style="font-size:10px;font-family:-apple-system,system-ui,sans-serif;color:${diff > 0 ? C.accent : C.warn};margin-left:4px;">${sign}${diff}</span>`;
+    return '<div class="td-cap"' + (diff < 0 ? ' style="color:' + C.resin + ';"' : '') + '>' +
+      (diff > 0 ? diff + ' more' : (-diff) + ' fewer') + ' than last week</div>';
   }
 
-  // Cardio bar
   const cardioTarget = CARDIO_WEEKLY_TARGETS.totalMinModerate;
   const cardioPct = Math.min(100, Math.round((thisWeek.cardioMin / cardioTarget) * 100));
-  const cardioBarColor = cardioPct >= 100 ? C.accent : cardioPct >= 50 ? C.blue : C.warn;
-
-  const statStyle = `padding:12px;border-radius:8px;border:1px solid ${C.border};background:${C.surface2};text-align:center;`;
-  const labelStyle = `font-size:10px;font-weight:600;color:${C.textDim};font-family:-apple-system,system-ui,sans-serif;margin-bottom:4px;`;
-  const valueStyle = `font-family:-apple-system,system-ui,sans-serif;font-size:22px;font-weight:700;color:${C.text};line-height:1.2;`;
-  const subStyle = `font-size:11px;font-family:-apple-system,system-ui,sans-serif;color:${C.textDark};`;
-
-  container.innerHTML = `
-    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px;">
-      <div style="${statStyle}">
-        <div style="${labelStyle}">Sessions</div>
-        <div style="${valueStyle}">${thisWeek.sessions}${delta(thisWeek.sessions, lastWeek.sessions)}</div>
-        <div style="${subStyle}">of 7 days</div>
-      </div>
-      <div style="${statStyle}">
-        <div style="${labelStyle}">Volume</div>
-        <div style="${valueStyle}">${thisWeek.totalSets}${delta(thisWeek.totalSets, lastWeek.totalSets)}</div>
-        <div style="${subStyle}">total sets</div>
-      </div>
-      <div style="${statStyle}">
-        <div style="${labelStyle}">Coverage</div>
-        <div style="${valueStyle}">${thisWeek.musclesHit}<span style="font-size:14px;font-weight:400;color:${C.textDim};">/${muscleTotal}</span></div>
-        <div style="${subStyle}">muscles</div>
-      </div>
-    </div>
-    <div style="display:flex;align-items:center;gap:10px;">
-      <div style="font-family:-apple-system,system-ui,sans-serif;font-size:13px;color:${cardioPct >= 100 ? C.accent : C.text};font-weight:600;white-space:nowrap;">${Math.round(thisWeek.cardioMin)}/${cardioTarget}m</div>
-      <div style="flex:1;height:5px;border-radius:3px;background:${C.surface3};overflow:hidden;">
-        <div style="height:100%;border-radius:3px;background:${cardioBarColor};width:${cardioPct}%;transition:width 0.4s ease;"></div>
-      </div>
-      <div style="font-family:-apple-system,system-ui,sans-serif;font-size:11px;color:${C.textDim};white-space:nowrap;">cardio</div>
-    </div>`;
+  const stat = function(v, label, cmp) {
+    return '<div><div class="hs-num hs-count" data-v="' + v + '">' + v + '</div><div class="td-cap">' + label + '</div>' + (cmp || '') + '</div>';
+  };
+  container.innerHTML =
+    '<div class="hs-trio td-in">' +
+      stat(thisWeek.sessions, 'sessions', delta(thisWeek.sessions, lastWeek.sessions)) +
+      stat(thisWeek.totalSets, 'total sets', delta(thisWeek.totalSets, lastWeek.totalSets)) +
+      stat(thisWeek.musclesHit, 'of ' + muscleTotal + ' muscles', '') +
+    '</div>' +
+    '<div class="hs-cardio td-in"><div class="cd-progrow"><div><span class="ex-num hs-count" data-v="' + Math.round(thisWeek.cardioMin) + '">' + Math.round(thisWeek.cardioMin) +
+      '</span> <span class="ex-unit">of ' + cardioTarget + ' min cardio</span></div></div>' +
+      '<div class="cd-bar"><div style="width:' + cardioPct + '%;"></div></div></div>';
 }
 
 // ============================================================
@@ -4942,7 +4859,7 @@ function renderHeatmap(dayMuscleMap, dayWorkoutsMap, dayCardioMap) {
   heatmapDayCardio = dayCardioMap || {};
   const container = document.getElementById('heatmap-container');
   const muscleKeys = ['chest', 'back', 'shoulders', 'quads', 'hamstrings', 'glutes', 'biceps', 'triceps', 'calves', 'core', 'neck', 'forearms'];
-  const muscleLabels = ['Chest', 'Back', 'Shldr', 'Quads', 'Hams', 'Glts', 'Bis', 'Tris', 'Calves', 'Core', 'Neck', 'F.Arms'];
+  const muscleLabels = ['Chest', 'Back', 'Shoulders', 'Quads', 'Hamstrings', 'Glutes', 'Biceps', 'Triceps', 'Calves', 'Core', 'Neck', 'Forearms']; // v1.46: words, not abbreviations
 
   const CARDIO_THRESHOLD_MIN = 15; // minimum minutes for a lit cell
 
@@ -4963,152 +4880,114 @@ function renderHeatmap(dayMuscleMap, dayWorkoutsMap, dayCardioMap) {
   }
   if (maxSets === 0) maxSets = 1;
 
-  const labelWidth = 54;
-  const cellSize = 16;
+  // v1.46 (DESIGN.md s8): 64 px labels, 17 px cells, 3 px gap, one Sapwood
+  // ramp for lifts and cardio, today's column outlined, legend in words.
+  const labelWidth = 64;
+  const cellSize = 17;
+  const gap = 3;
   const totalRows = muscleKeys.length + 1; // +1 for cardio
+  const RAMP = ['rgba(234,215,188,0.32)', 'rgba(234,215,188,0.52)', 'rgba(234,215,188,0.74)', 'rgba(234,215,188,1)']; // review: 1-4 set days must separate from empty
   let html = '';
 
-  html += `<div class="heatmap-grid" style="grid-template-columns: ${labelWidth}px repeat(${numDays}, ${cellSize}px); grid-template-rows: 22px repeat(${totalRows}, ${cellSize}px);">`;
+  html += '<div class="heatmap-grid" style="grid-template-columns:' + labelWidth + 'px repeat(' + numDays + ', ' + cellSize + 'px);grid-template-rows:22px repeat(' + totalRows + ', ' + cellSize + 'px);">';
 
-  // Day labels row -- evenly spaced for 14 days
-  html += `<div></div>`;
+  // Day labels row (same positions as before)
+  html += '<div></div>';
   for (let i = 0; i < days.length; i++) {
     const d = new Date(days[i] + 'T12:00:00');
-    const isFirst = i === 0;
     const isLast = i === days.length - 1;
-    const isMid1 = i === 4;
-    const isMid2 = i === 9;
     let label = '';
-    if (isFirst || isMid1 || isMid2) {
-      label = `${d.getMonth() + 1}/${d.getDate()}`;
-    } else if (isLast) {
-      label = 'Today';
-    }
-    html += `<div class="heatmap-day-labels">${label}</div>`;
+    if (i === 0 || i === 4 || i === 9) label = (d.getMonth() + 1) + '/' + d.getDate();
+    else if (isLast) label = 'Today';
+    html += '<div class="heatmap-day-labels"' + (isLast ? ' style="direction:rtl;"' : '') + '>' + label + '</div>';
   }
 
-  // Muscle rows
+  // Muscle rows: existing 4 thresholds (1-4, 5-9, 10-14, 15+ sets)
   for (let m = 0; m < muscleKeys.length; m++) {
     const mKey = muscleKeys[m];
-    html += `<div class="heatmap-label">${muscleLabels[m]}</div>`;
-    for (const day of days) {
+    html += '<div class="heatmap-label">' + muscleLabels[m] + '</div>';
+    for (let di = 0; di < days.length; di++) {
+      const day = days[di];
       const sets = (dayMuscleMap[day] && dayMuscleMap[day][mKey]) || 0;
-      // v1.25: 5-step graduated fill - discrete levels read more clearly than continuous
-      let bgColor;
-      if (sets === 0) bgColor = C.surface2;
-      else if (sets <= 4) bgColor = 'rgba(95,160,82,0.22)';
-      else if (sets <= 9) bgColor = 'rgba(95,160,82,0.42)';
-      else if (sets <= 14) bgColor = 'rgba(95,160,82,0.65)';
-      else bgColor = 'rgba(95,160,82,0.88)';
-      html += `<div class="heatmap-cell" style="background:${bgColor}" data-day="${day}" onclick="selectHeatmapDay('${day}')" title="${day}: ${formatSets(sets)} sets"></div>`;
+      const bg = sets === 0 ? C.bark : (sets <= 4 ? RAMP[0] : (sets <= 9 ? RAMP[1] : (sets <= 14 ? RAMP[2] : RAMP[3])));
+      html += '<div class="heatmap-cell" style="background:' + bg + ';" data-day="' + day + '" data-col="' + di + '" onclick="selectHeatmapDay(\'' + day + '\')" title="' + day + ': ' + formatSets(sets) + ' sets"></div>';
     }
   }
 
-  // Cardio row (blue, opacity scales with duration: 15 min -> 0.3, 30 -> 0.6, 45+ -> 1.0)
-  html += `<div class="heatmap-label" style="color:${C.blue}">Cardio</div>`;
-  for (const day of days) {
+  // Cardio row: same ramp; 15+ min lights a cell (15-24, 25-34, 35-44, 45+)
+  html += '<div class="heatmap-label">Cardio</div>';
+  for (let di = 0; di < days.length; di++) {
+    const day = days[di];
     const cd = heatmapDayCardio[day];
     const min = cd ? cd.minutes : 0;
-    let bgColor = C.surface2;
-    if (min >= CARDIO_THRESHOLD_MIN) {
-      const opacity = Math.max(0.3, Math.min((min - 15) / 30 + 0.3, 1));
-      bgColor = `rgba(96, 165, 250, ${opacity.toFixed(2)})`; // blue RGB
-    }
-    const title = min > 0 ? `${day}: ${Math.round(min)} min cardio` : day;
-    html += `<div class="heatmap-cell" style="background:${bgColor}" data-day="${day}" onclick="selectHeatmapDay('${day}')" title="${title}"></div>`;
+    const bg = min < CARDIO_THRESHOLD_MIN ? C.bark : (min < 25 ? RAMP[0] : (min < 35 ? RAMP[1] : (min < 45 ? RAMP[2] : RAMP[3])));
+    const title = min > 0 ? day + ': ' + Math.round(min) + ' min cardio' : day;
+    html += '<div class="heatmap-cell" style="background:' + bg + ';" data-day="' + day + '" data-col="' + di + '" onclick="selectHeatmapDay(\'' + day + '\')" title="' + title + '"></div>';
   }
-
   html += '</div>';
-  // v1.25: legend strip showing the 5-step volume scale
-  html += '<div style="display:flex;align-items:center;justify-content:center;gap:4px;margin-top:12px;font-family:var(--font-mono);font-size:9px;color:' + C.textDim + ';">'
-    + '<span style="margin-right:4px;">Less</span>'
-    + '<div style="width:12px;height:12px;border-radius:2px;background:' + C.surface2 + ';"></div>'
-    + '<div style="width:12px;height:12px;border-radius:2px;background:rgba(95,160,82,0.22);"></div>'
-    + '<div style="width:12px;height:12px;border-radius:2px;background:rgba(95,160,82,0.42);"></div>'
-    + '<div style="width:12px;height:12px;border-radius:2px;background:rgba(95,160,82,0.65);"></div>'
-    + '<div style="width:12px;height:12px;border-radius:2px;background:rgba(95,160,82,0.88);"></div>'
-    + '<span style="margin-left:4px;">More</span>'
-    + '</div>';
-  container.innerHTML = html;
 
-  // Click outside any cell to deselect (attach once)
-  if (!container.dataset.clickOutside) {
-    container.dataset.clickOutside = '1';
-    container.addEventListener('click', function(e) {
-      if (!e.target.classList.contains('heatmap-cell')) {
-        const detailEl = document.getElementById('heatmap-day-detail');
-        if (detailEl.classList.contains('open')) {
-          detailEl.style.maxHeight = '0';
-          detailEl.classList.remove('open');
-          selectedHeatmapDay = null;
-          document.querySelectorAll('.heatmap-cell').forEach(c => { c.style.outline = 'none'; });
-        }
-      }
-    });
-  }
+  // Today's column outline (grid geometry is fixed, so position is exact)
+  const step = cellSize + gap;
+  html += '<div class="hm-today" data-col="' + (numDays - 1) + '" style="left:' + (labelWidth + gap + (numDays - 1) * step - 2) + 'px;top:' + (22 + gap - 2) +
+    'px;width:' + (cellSize + 4) + 'px;height:' + (totalRows * cellSize + (totalRows - 1) * gap + 4) + 'px;"></div>';
+
+  html += '<div class="hm-legend td-in"><span style="margin-right:4px;">Fewer sets</span><i style="background:' + C.bark + ';"></i>' +
+    RAMP.map(function(r) { return '<i style="background:' + r + ';"></i>'; }).join('') + '<span style="margin-left:4px;">More sets</span></div>';
+  container.innerHTML = html;
 }
 
 function selectHeatmapDay(day) {
-  const detailEl = document.getElementById('heatmap-day-detail');
-  const innerEl = document.getElementById('heatmap-day-detail-inner');
-
-  if (selectedHeatmapDay === day && detailEl.classList.contains('open')) {
-    detailEl.style.maxHeight = '0';
-    detailEl.classList.remove('open');
+  // v1.46: day detail opens under the heatmap (FLIP); tap the same day to close
+  var detailEl = document.getElementById('heatmap-day-detail');
+  var innerEl = document.getElementById('heatmap-day-detail-inner');
+  if (!detailEl || !innerEl) return;
+  var isOpen = detailEl.style.display === 'block';
+  var markCells = function(d) {
+    document.querySelectorAll('.heatmap-cell').forEach(function(cell) {
+      cell.style.boxShadow = (d && cell.dataset.day === d) ? '0 0 0 1px ' + C.sapwood : 'none';
+    });
+  };
+  if (isOpen && selectedHeatmapDay === day) {
+    flipToggle(detailEl, false);
     selectedHeatmapDay = null;
+    markCells(null);
     return;
   }
-
   selectedHeatmapDay = day;
   const exercises = heatmapDayWorkouts[day] || [];
   const cardio = heatmapDayCardio[day] || null;
   const dateObj = new Date(day + 'T12:00:00');
   const dateStr = dateObj.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
-
   const hasLifts = exercises.length > 0;
   const hasCardio = cardio && cardio.sessions && cardio.sessions.length > 0;
 
-  if (!hasLifts && !hasCardio) {
-    innerEl.innerHTML = `<div class="detail-date">${dateStr}</div><div style="color:${C.textDim};font-size:12px;">Rest day</div>`;
-  } else {
-    let html = `<div class="detail-date">${dateStr}</div>`;
-    for (const ex of exercises) {
-      const weightStr = ex.bestWeight > 0 ? ` @ ${ex.bestWeight}lbs` : '';
-      html += `<div class="detail-exercise">
-        <span class="detail-name">${ex.name}</span>
-        <span class="detail-sets">${ex.sets}s${ex.bestReps > 0 ? ` \u00d7 ${ex.bestReps}r` : ''}${weightStr}</span>
-      </div>`;
-    }
-    if (hasCardio) {
-      for (const sess of cardio.sessions) {
-        const icon = sess.source === 'watch' ? '\u231A' : '\uD83C\uDFCB\uFE0F';
-        html += `<div class="detail-exercise">
-          <span class="detail-name" style="color:${C.blue}">${icon} ${sess.name}</span>
-          <span class="detail-sets" style="color:${C.blue}">${sess.minutes} min</span>
-        </div>`;
-      }
-    }
-    innerEl.innerHTML = html;
+  let html = '<div class="hd-date">' + dateStr + '</div>';
+  if (!hasLifts && !hasCardio) html += '<div>Rest day</div>';
+  for (const ex of exercises) {
+    html += '<div class="hd-row"><span>' + ex.name + '</span><span>' + ex.sets + ' sets' +
+      (ex.bestReps > 0 ? ' \u00d7 ' + ex.bestReps : '') + (ex.bestWeight > 0 ? ' at ' + ex.bestWeight + ' lb' : '') + '</span></div>';
   }
-
-  detailEl.classList.add('open');
-  detailEl.style.maxHeight = innerEl.scrollHeight + 24 + 'px';
-
-  document.querySelectorAll('.heatmap-cell').forEach(cell => {
-    cell.style.outline = cell.dataset.day === day ? `1.5px solid ${C.accent}` : 'none';
-  });
+  if (hasCardio) {
+    for (const sess of cardio.sessions) {
+      html += '<div class="hd-row"><span>' + sess.name + (sess.source === 'watch' ? ', Watch' : ', Hevy') + '</span><span>' + sess.minutes + ' min</span></div>';
+    }
+  }
+  innerEl.innerHTML = html;
+  markCells(day);
+  hapticTick();
+  if (!isOpen) flipToggle(detailEl, true);
+  else motion(innerEl, [{ opacity: 0 }, { opacity: 1 }], MOTION.fast, MOTION.settle);
 }
 
 // Dismiss heatmap selection when tapping outside
 document.addEventListener('click', function(e) {
   if (!selectedHeatmapDay) return;
   if (e.target.closest('.heatmap-container, .heatmap-day-detail')) return;
-  const detailEl = document.getElementById('heatmap-day-detail');
-  if (detailEl && detailEl.classList.contains('open')) {
-    detailEl.style.maxHeight = '0';
-    detailEl.classList.remove('open');
+  var detailEl = document.getElementById('heatmap-day-detail');
+  if (detailEl && detailEl.style.display === 'block') {
+    detailEl.style.display = 'none';
     selectedHeatmapDay = null;
-    document.querySelectorAll('.heatmap-cell').forEach(cell => { cell.style.outline = 'none'; });
+    document.querySelectorAll('.heatmap-cell').forEach(function(cell) { cell.style.boxShadow = 'none'; });
   }
 });
 
@@ -7221,6 +7100,18 @@ function tabEntrance(tab) {
   items.forEach(function(it, i) {
     motion(it, [{ opacity: 0, transform: 'translateY(12px)' }, { opacity: 1, transform: 'none' }], MOTION.base, MOTION.grow, stagger(i, items.length));
   });
+  // v1.46: History: numbers count up, cardio bar grows, heatmap columns
+  // appear left to right with today's column last (DESIGN.md s7)
+  if (tab === 'history') {
+    entranceItems('history', '.hs-count').forEach(function(n) { countUp(n, +n.getAttribute('data-v'), 0, MOTION.slow, 0); });
+    entranceItems('history', '.hs-cardio .cd-bar > div').forEach(function(b) {
+      motion(b, [{ transform: 'scaleX(0)' }, { transform: 'scaleX(1)' }], MOTION.slow, MOTION.grow, 160);
+    });
+    entranceItems('history', '.heatmap-cell, .hm-today').forEach(function(cell) {
+      var col = +(cell.getAttribute('data-col') || 0);
+      motion(cell, [{ opacity: 0 }, { opacity: 1 }], MOTION.base, MOTION.grow, 240 + stagger(col, 14));
+    });
+  }
   // v1.45: Muscles volume bars grow after the rows start (DESIGN.md s7)
   var bars = tab === 'muscles' ? entranceItems('muscles', '.mu-bar > div') : [];
   bars.forEach(function(b, i) {
@@ -7529,7 +7420,7 @@ function renderDashboard(workouts) {
   const syncColor = (hevyStatus === 'error' || healthStatus === 'missing') ? C.ember
     : (healthStatus === 'stale') ? C.resin : C.lichen; // v1.43
   document.getElementById('last-updated').innerHTML =
-    `v1.45, ${now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }).replace(/\u202f/g, ' ')} <span id="sync-dot" style="display:inline-block;width:6px;height:6px;border-radius:50%;background:${syncColor};margin-left:4px;vertical-align:middle;position:relative;top:-1px;"></span>`;
+    `v1.46, ${now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }).replace(/\u202f/g, ' ')} <span id="sync-dot" style="display:inline-block;width:6px;height:6px;border-radius:50%;background:${syncColor};margin-left:4px;vertical-align:middle;position:relative;top:-1px;"></span>`;
 
   // Populate globals BEFORE renderTimedSession so lifted-today detection works
   heatmapDayWorkouts = pp.heatmapDayWorkouts || {};

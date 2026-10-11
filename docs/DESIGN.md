@@ -58,7 +58,7 @@ Rules:
 - Heartwood is never text and never sits on Bark (2.58, fails 3:1).
 - The one filled button (Send to Hevy) is Sapwood fill with Char text (13.23).
 - Translucent variants are rgba of a palette color only, e.g. heatmap ramp
-  `rgba(234,215,188, .22 / .42 / .68 / 1)`.
+  `rgba(234,215,188, .32 / .52 / .74 / 1)`.
 - Status always pairs color with a word ("Due now", "Deload", "Low"). Color
   is never the only signal.
 
@@ -308,8 +308,9 @@ behind.
 
 **Heatmap.** 14 columns x 13 rows. Label column 64 px (full names, micro,
 Ash). Cells 17 px, gap 3, radius 3. Empty = Bark. Filled = Sapwood ramp at
-.22 / .42 / .68 / 1. Cardio row uses the same ramp (15+ min lights a cell). Today's column gets a 1 px
-Sapwood outline. Legend in words: "Fewer sets" to "More sets".
+.32 / .52 / .74 / 1. Cardio row uses the same ramp (15+ min lights a cell). Today's column gets a 1 px
+Sapwood outline. Legend in words: "Fewer sets" to "More sets". Cardio minutes bucket at
+15 / 25 / 35 / 45. Title "Two weeks"; "This week" captions "Last 7 days".
 
 **SI block.** Hero number (Newsreader 48) with the tier word beside it (SF
 15, Ash: "Intermediate"). Tier scale: a hairline from 0 to 2.5 with ticks at
