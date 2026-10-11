@@ -594,6 +594,21 @@ cross-references.
 | v1.13-era | Exercise rotation scoring, compound anchors, vitals-only Cardio Score, Dedication score, Body Comp index, Power Score composite, 5-line chart |
 | v1.11–v1.12b | Hevy CSV measurement import, new measurement fields, tappable tiles + sparklines, radar proportions, muscle grid redesign |
 
+## 30. Design System (revamp in progress)
+
+- Direction **Growth Rings** approved October 11, 2026 (A of three; the
+  Phase 0 audit and style frames were reviewed in chat).
+- Rulebook: `docs/DESIGN.md` (tokens, motion, storyboards, haptics,
+  components, bans, build plan). Implement against it only.
+- Parity baseline: git tag `pre-revamp-v1.42`. Earlier baseline
+  `pre-revamp-v1.41` predates the v1.42 chart fix.
+- Build plan: v1.43 foundation + boot, v1.44 Today, v1.45 Muscles, v1.46
+  History, v1.47 Body. Presentation only: scoring, prescription, and data
+  logic do not change.
+- Review tooling: `tools/render.py` (fixture record/replay, frozen clock,
+  iPhone viewport, Hevy writes blocked) and `tools/compose.py` (contact
+  sheets). Fixtures are never committed.
+
 ## Appendix: Sprint validation practices (July 2026)
 
 - Cross-reference all findings against the live API and live data before
