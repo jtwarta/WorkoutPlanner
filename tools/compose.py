@@ -44,7 +44,7 @@ def contact_sheet(callouts=None):
     sheet = Image.new('RGB', (W, TOP + H + GAP), BG)
     d = ImageDraw.Draw(sheet)
     d.text((GAP, 22), TITLE, fill=INK, font=f(FONT_B, 30))
-    d.text((GAP, 60), 'Full-page renders, top to bottom. Pins match the numbered critique.', fill=MUTED, font=f(FONT_R, 18))
+    d.text((GAP, 60), 'Full-page renders, top to bottom.' + (' Pins match the numbered critique.' if callouts else ''), fill=MUTED, font=f(FONT_R, 18))
     for i, (label, im, off, tab) in enumerate(cols):
         x0 = GAP + i * (COLW + GAP)
         sheet.paste(im, (x0, TOP))

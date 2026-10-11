@@ -151,7 +151,7 @@ async def render(served, out):
 
         # Key state: muscle detail
         await page.evaluate("switchTab('muscles')"); await page.wait_for_timeout(800)
-        m = page.locator('.muscle-cell').first
+        m = page.locator('.mu-row, .muscle-cell').first
         await m.scroll_into_view_if_needed(); await m.click(); await page.wait_for_timeout(900)
         await page.screenshot(path=f'{out}/state_muscle.png')
 
@@ -170,6 +170,7 @@ async def render(served, out):
         for key, _ in TABS:
             await page.evaluate(f"switchTab('{key}')"); await page.wait_for_timeout(700)
             snap[key] = await page.evaluate(f"document.getElementById('tab-{key}').innerText")
+            snap[key + '_all'] = await page.evaluate(f"document.getElementById('tab-{key}').textContent")
         snap['header'] = await page.evaluate("document.querySelector('.header') ? document.querySelector('.header').innerText : ''")
         json.dump(snap, open(f'{out}/text_snapshot.json', 'w'), indent=1)
         await b.close()

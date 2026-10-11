@@ -1,6 +1,6 @@
 # LiftScript — Master Documentation
 
-**Version: v1.46** · **Reconstructed July 10, 2026 · updated to v1.46 October 11, 2026**
+**Version: v1.47** · **Reconstructed July 10, 2026 · updated to v1.47 October 11, 2026**
 
 > **Provenance note:** the original `Master_documentation.md` (last at v1.34 +
 > pending v1.35–v1.39 deltas) was deleted from the project before patching. This
@@ -20,6 +20,9 @@
 >
 > **v1.42 update (Oct 11, 2026):** chart time-domain fix. Touches §2, §23,
 > §28 (#25), §29.
+>
+> **v1.43–v1.47 update (Oct 11, 2026):** visual revamp (Growth Rings). Touches
+> §10, §23, §24, §29, §30, Appendix. Presentation only; logic unchanged.
 
 ---
 
@@ -51,7 +54,7 @@ Scientific foundation (as documented in the code header):
 
 ## 2. Architecture & Development Rules
 
-- **Single file:** all HTML/CSS/JS in `index.html` (~7,620 lines at v1.46).
+- **Single file:** all HTML/CSS/JS in `index.html` (~7,432 lines at v1.47).
   Assets: `manifest.json`, `icon-180/192/512.png`, `health-data.json`
   (written by the iOS Shortcut, not by hand).
 - **Pure ASCII in index.html.** Special characters use `\uXXXX` escapes.
@@ -229,10 +232,11 @@ inter-set rest, +90 s transition per exercise; session caps 30/45/60 min.
   timeline rewrites on boundary crossings; §28 #22.) The fetch cap means the
   earliest points have a partially-filled window.
 - Tiers: Developing < 0.9 ≤ Intermediate < 1.3 ≤ Advanced < 1.8 ≤ Elite
-  (track max 2.5). Rendered as segmented XP bar with tappable tier tooltips,
-  concentric Big-5 percentile rings, per-lift percentile bars with source-
-  set detail (tap), 30-day trend arrows, and the PR board (all-time PR per
-  lift from the timeline, sparklines).
+  (track max 2.5). Rendered (v1.47) as a Newsreader hero with the tier word, a hairline
+  tier scale (tap a tier for its range), per-lift rows with percentile,
+  30-day change in words and a p50-ticked bar (tap for the source set), and
+  the PR board (all-time PR per lift, Sapwood sparklines). The concentric
+  Big-5 rings were removed (rings mean weeks).
 - Known scope note: the OHP pattern set (`overhead press|shoulder press|
   military press`) matches machine shoulder presses too.
 
@@ -412,8 +416,10 @@ re-normalized across available pillars. Tap to expand the pillar breakdown.
 - Canvas chart, period chips 1M/3M/6M/1Y/ALL. Weight line always on (green,
   gradient fill); ONE secondary line at a time (v1.27 exclusive legend
   toggle, persisted in `chart_secondary_v1`; `'none'` sentinel since v1.35
-  so the weight-only view survives reload): Strength (purple), Cardio
-  Fitness (red), Dedication (gold, 5-point smoothed), Body Comp (rose).
+  so the weight-only view survives reload): Strength, Cardio Fitness,
+  Dedication (5-point smoothed), Body Comp. Since v1.47 the weight line is
+  Sapwood and the one secondary line is always Resin and solid; the legend
+  names it.
 - **v1.36:** weight line (fill, endpoint dots, tooltip anchors) plots on the
   same day-offset time-proportional x-axis as the overlays. (Pre-v1.36
   weight was index-spaced — two x-axes on one canvas, §28 #20.)
@@ -433,30 +439,27 @@ re-normalized across available pillars. Tap to expand the pillar breakdown.
 
 - **Tabs:** Today / Muscles / History / Body; fade+slide transitions; ARIA
   tablist (v1.28).
-- **Today:** hero (Today's/Tomorrow's Session + est. minutes + CUSTOM
-  badge), completed banner, rest-day chip (3+/5+ consecutive days),
-  Reroll/Reset/Hevy/60m/Gym/Auto chip row, Session Adjustments strip,
-  anatomy-ordered exercise groups with "Why this?" expanders, anchor ◉
-  glyphs, DELOAD chips (v1.39), cardio plan with weekly moss progress bar
-  and tappable source breakdown.
-- **Muscles:** grid sorted by priority score; cross-section recency rings
-  (days-since in organic tree rings), urgency-tier volume bars + fractions
-  (v1.34), RESTED gold treatment, tap for explainer (auto scroll-into-view),
-  Build Custom multi-select → custom session.
-- **History:** This Week stats (sessions/volume/coverage vs last week +
-  cardio bar); 14-day × 13-row heatmap (12 muscles + cardio row; 5-step
-  graduated fill; ≥15 min lights the cardio cell; tap for day detail).
-- **Body:** Strength Index card (§10), Weight & Trends (§23), Health Vitals
-  (RHR/Recovery/VO2 with 12/6/3-mo sparklines; Steps/Active Cal/Walking HR;
-  unified 5-tier badges Elite/Great/Good/Fair/Low), Body Measurements card
-  (§22) with Import/Export.
-- **Redwood aesthetic:** bark-noise texture on cards, branch-divider SVGs,
-  moss progress bars, time-of-day canopy light gradient (6 diurnal bands),
-  tree-ring loading screen, JetBrains Mono (data) + SF Pro (prose) dual
-  typography, WCAG-lifted `--danger-text` #ED7960 for small red text
-  (v1.34). Haptics via iOS 17.4 checkbox-switch label-click workaround
-  (WebKit blocks clicking the input directly); navigator.vibrate on
-  Android. prefers-reduced-motion honored globally.
+- **Today (v1.44):** Newsreader session title + "About N min"; quiet text
+  toggles (60 min / Gym / Auto focus) and Reroll; exercise rows with name +
+  equipment, Newsreader prescription, Heartwood edge rule on anchors, Resin
+  "Deload"; Why this? as FLIP explainers under each muscle label; Send to
+  Hevy as the single filled button; cardio plan rows.
+- **Muscles (v1.45):** list grouped by urgency (Due now / Coming due / On
+  track / Rested), volume bar + "N of M weekly sets", days-since figure,
+  inline detail, quiet "Build a custom session" select mode.
+- **History (v1.46):** stat trio with week-over-week change in words, cardio
+  row, 14-day heatmap (full names, one Sapwood ramp for lifts and cardio,
+  today's column outlined), inline day detail.
+- **Body (v1.47):** Strength (§10), Weight and trends (§23) with "Weighed
+  <date>", Vitals as rows with ratings in words and one freshness caption,
+  Measurements as one list against frame targets with "Measured <date>"
+  (duplicate tile grid removed), Import/Export as quiet text buttons.
+- **Growth Rings design system (v1.43+, §30):** Char/Bark surfaces,
+  Sapwood text, Heartwood/Lichen/Resin/Ember accents; Newsreader + SF Pro;
+  WAAPI motion; the 26-week cross-section as header Power Score button,
+  boot sequence, and Power Score sheet. Haptics via the iOS 17.4
+  checkbox-switch label-click workaround (WebKit blocks clicking the input
+  directly); navigator.vibrate on Android. prefers-reduced-motion honored.
 - **localStorage keys:** `workoutCache_v1` (8 h TTL), `wa_prefs_v1_1`,
   `weightHistory`, `bodyMeasurements_v1`, `hevy_template_map` +
   `hevy_template_map_ts` (7 d TTL), `hevy_routine_id`, `chart_secondary_v1`,
@@ -565,6 +568,7 @@ cross-references.
 
 | Version | Key changes |
 |---|---|
+| v1.47 | Body rebuilt (SI hero + tier scale, lift rows, PR rows, weight freshness, chart restyle with Resin secondary line, vitals rows, measurements list; duplicate tiles removed) and transitional palette retired (88 C refs + 23 CSS vars renamed, old keys deleted). Revamp complete |
 | v1.46 | History rebuilt: stat trio with week-over-week change in words, cardio row, heatmap with full names / one Sapwood ramp for lifts + cardio (cardio buckets 15/25/35/45) / today column outline / word legend, inline FLIP day detail, column-by-column entrance; parity 13/13 |
 | v1.45 | Muscles rebuilt: grid to list grouped by urgency tier (Due now / Coming due / On track / Rested), volume bar + weekly-sets caption, days-since figure, inline FLIP detail, quiet select mode, Heartwood focus ring; recency rings and legend removed; parity 41/41 |
 | v1.44 | Today rebuilt: Newsreader session title + prescriptions, quiet settings toggles, anchor Heartwood rule, Resin deload, FLIP explainers, Send to Hevy as the single filled button (no spinner, double haptic), cardio plan rows, tab exit/entrance via motion(); parity: all 88 Today numbers match incl. collapsed content |
@@ -598,20 +602,36 @@ cross-references.
 | v1.13-era | Exercise rotation scoring, compound anchors, vitals-only Cardio Score, Dedication score, Body Comp index, Power Score composite, 5-line chart |
 | v1.11–v1.12b | Hevy CSV measurement import, new measurement fields, tappable tiles + sparklines, radar proportions, muscle grid redesign |
 
-## 30. Design System (revamp in progress)
+## 30. Design System: Growth Rings (v1.43 to v1.47)
 
-- Direction **Growth Rings** approved October 11, 2026 (A of three; the
-  Phase 0 audit and style frames were reviewed in chat).
-- Rulebook: `docs/DESIGN.md` (tokens, motion, storyboards, haptics,
-  components, bans, build plan). Implement against it only.
-- Parity baseline: git tag `pre-revamp-v1.42`. Earlier baseline
-  `pre-revamp-v1.41` predates the v1.42 chart fix.
-- Build plan: v1.43 foundation + boot, v1.44 Today, v1.45 Muscles, v1.46 History
-  (shipped Oct 11, 2026), v1.47 Body. Presentation only: scoring, prescription, and data
-  logic do not change.
-- Review tooling: `tools/render.py` (fixture record/replay, frozen clock,
-  iPhone viewport, Hevy writes blocked) and `tools/compose.py` (contact
-  sheets). Fixtures are never committed.
+- Approved October 11, 2026 (direction A of three, chosen from rendered
+  style frames). Rulebook: `docs/DESIGN.md`. Every presentation change goes
+  through it; add the rule there before building something it doesn't cover.
+- Three overriding rules: rings mean weeks; one surface level; stale numbers
+  state their age once, at the group level.
+- Tokens live in the C object and `:root`: char, bark, line, sapwood, ash,
+  heartwood, lichen, resin, ember, ring tones, plus rgba variants. The
+  pre-revamp keys were renamed app-wide and deleted in v1.47.
+- Type: Newsreader (numbers, titles, wordmark; tabular digits by default) +
+  SF Pro. No monospace, no uppercase transforms, no tracking.
+- Motion: `motion()` Web Animations helper; durations 160 / 320 / 640 ms;
+  easings grow / settle / exit; stagger `i x min(40, 320 / n)` ms; FLIP
+  expanders; transform and opacity only. Boot ~1.6 s on cold start (tap to
+  skip); full entrance on a tab's first visit per session, quiet fade after;
+  reduced motion is instant.
+- Signature: the 26-week cross-section (ring width = working sets that week,
+  display only), at 292 px in the boot, 220 px in the Power Score sheet,
+  40 px as the header Power Score button.
+- Review tooling (`tools/`): `render.py` records live Hevy + health
+  responses once and replays them with a frozen clock at iPhone size (Hevy
+  writes blocked; fixtures never committed); `compose.py` builds contact
+  sheets; `strip_tab.py` pauses all animations and seeks them in 100 ms
+  steps for frame strips.
+- Parity vs tag `pre-revamp-v1.42` (every number in each tab's text,
+  including collapsed panels): Today 88/88, Muscles 41/41, History 13/13.
+  Body differs only by design: the duplicate measurement tiles (9 values +
+  9 "195d ago" ages + the duplicate waist tile) and the "Est 1RM" header
+  were removed; freshness dates were added; health age reads in days.
 
 ## Appendix: Sprint validation practices (July 2026)
 
@@ -621,6 +641,9 @@ cross-references.
 - Node unit harnesses extract functions from index.html via regex and run
   scenario matrices before push (15 scenarios for the v1.39 deload rule).
 - Master doc updated with version deltas after each sprint.
+- Revamp (Oct 2026): each step rendered against recorded fixtures, numeric
+  parity checked against the baseline tag, entrance reviewed as a seeked
+  100 ms frame strip, failures fixed and re-rendered before push.
 - v1.41 (Aug 2026): 5-scenario unit test of `fetchHevy` (clean 200; 429×2
   then 200; 429 forever = 4 calls; Retry-After capped at 30 s; non-numeric
   Retry-After falls back to 2 s) before push. Live `curl -D` header capture

@@ -1,7 +1,7 @@
 # LiftScript Design System: Growth Rings
 
-**Status:** approved October 11, 2026 (direction A of three). Rulebook for the
-visual revamp. Implement against this document only. If a screen needs
+**Status:** approved October 11, 2026 (direction A of three); implemented in
+v1.43 to v1.47. Rulebook for all presentation work. Implement against this document only. If a screen needs
 something this file doesn't cover, add the rule here first, then build it.
 
 **Scope:** presentation only. Scoring, prescription, recommendation, and data
@@ -354,7 +354,8 @@ and what to do ("Hevy is rate-limiting. Wait a minute, then refresh.").
 | Weight | latest weigh-in not today | "Weighed Feb 16" in Ash; Resin after 7 days |
 | Measurements | over 30 days | "Measured Mar 29, 6 months ago" in Resin |
 
-Values themselves stay Sapwood. Age is stated once, never per tile.
+Values themselves stay Sapwood. Age is stated once, never per tile, as a
+caption directly under the section title.
 
 ## 10. Bans
 
