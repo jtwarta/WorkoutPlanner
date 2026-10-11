@@ -253,7 +253,7 @@ Heartwood rule under it. 44 px tall. No container, no pill.
 
 **Cross-section.** Input: working sets per local week for the last 26 weeks
 (via `getWorkingSets`, display-only, no effect on any score; this week matched
-History's weekly set count in Phase 0). Geometry: pith radius = 0.16 x outer;
+History's weekly set count in Phase 0). Geometry: pith radius = 0.32 x outer (0.55 below 120 px so the score fits);
 ring widths proportional to `1 + 2.2 x sets / max`, normalized to fill the
 band; a zero-set week is a 1.4 px Char line (a missing ring). Edge wobble,
 deterministic: `r x (1 + 0.012 sin(3a + 0.7i) + 0.007 sin(5a + 1.3i))`.

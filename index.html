@@ -1,7 +1,25 @@
 <!DOCTYPE html>
 
 <!--
-  LiftScript v1.42
+  LiftScript v1.43
+  Changes from v1.42 (v1.43 - Growth Rings foundation, docs/DESIGN.md):
+  - Tokens: Growth Rings palette in C and :root (char, bark, line, sapwood,
+    ash, heartwood, lichen, resin, ember, ring tones) with a transitional
+    remap of every pre-revamp key until v1.47.
+  - Type: Newsreader (numbers, titles, wordmark) + SF Pro. JetBrains Mono,
+    uppercase transforms, and letter-spacing removed app-wide.
+  - Motion system: motion() Web Animations helper, 3 durations, 3 easings,
+    one stagger rule, count-ups driven by a no-op animation, reduced-motion
+    honored. haptic cues hapticTick / hapticDouble.
+  - Cross-section: one ring per week for 26 weeks, width = working sets
+    (display only). Header shows it at 40 px as the Power Score button.
+  - Boot: loader pith hands off to the cross-section, rings lay down, score
+    counts up, cross-section travels to the header, header + tabs + Today
+    enter (~1.6 s, cold start only, tap to skip).
+  - Power Score sheet rebuilt: 220 px cross-section regrows, pillars count up.
+  - Header and tab bar rebuilt; cards flattened to one surface level; bark
+    texture, branch dividers, canopy light, dot grid removed.
+
   Changes from v1.41 (v1.42 - chart time domain fix):
   - Weight & Trends x-axis is now the selected period ending today. It was
     the span of weigh-ins inside the period, which clipped every overlay
@@ -263,39 +281,54 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="theme-color" content="#1E1C18">
+<meta name="theme-color" content="#17120F">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon-180.png">
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
 <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
 <title>LiftScript</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400..600;1,6..72,500&display=swap" rel="stylesheet">
 <style>
 :root {
-  --bg: #1E1C18;
-  --surface: #2A2720;
-  --surface2: #35312A;
-  --surface3: #403B33;
-  --border: rgba(180,160,120,0.10);
-  --border-light: rgba(180,160,120,0.15);
-  --text: #E8E0D0;
-  --text-mid: #A89E88;
-  --text-dim: #8B8270;  /* v1.28: raised from #7A7262 for WCAG AA */
-  --accent: #5FA052;
-  --accent-dim: rgba(95, 160, 82, 0.14);
-  --warn: #D4983B;
-  --warn-dim: rgba(212, 152, 59, 0.14);
-  --danger: #CC4433;
-  --danger-dim: rgba(204, 68, 51, 0.12);
-  --danger-text: #ED7960;
-  --blue: #7CBAD4;
-  --blue-dim: rgba(124, 186, 212, 0.14);
-  --purple: #C084FC;
-  --purple-dim: rgba(192, 132, 252, 0.14);
-  --strength: #C084FC;
-  --strength-dim: rgba(192, 132, 252, 0.14);
-  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
+  /* v1.43 Growth Rings tokens (docs/DESIGN.md s2) */
+  --char: #17120F;
+  --bark: #2A211C;
+  --line: #3A2E26;
+  --sapwood: #EAD7BC;
+  --ash: #9A8E83;
+  --heartwood: #A4442B;
+  --lichen: #A9BD8B;
+  --resin: #E0A440;
+  --ember: #E5735A;
+  --ring-heart: #8E3B26;
+  --ring-sap: #D2A37A;
+  --ring-new: #E3C29A;
+  /* Transitional remap of pre-revamp variables (deleted after v1.47) */
+  --bg: #17120F;
+  --surface: #2A211C;
+  --surface2: #2A211C;
+  --surface3: #2A211C;
+  --border: #3A2E26;
+  --border-light: #3A2E26;
+  --text: #EAD7BC;
+  --text-mid: #9A8E83;
+  --text-dim: #9A8E83;
+  --accent: #A9BD8B;
+  --accent-dim: rgba(169,189,139,0.14);
+  --warn: #E0A440;
+  --warn-dim: rgba(224,164,64,0.14);
+  --danger: #E5735A;
+  --danger-dim: rgba(229,115,90,0.12);
+  --danger-text: #E5735A;
+  --blue: #9A8E83;
+  --blue-dim: rgba(154,142,131,0.14);
+  --purple: #E0A440;
+  --purple-dim: rgba(224,164,64,0.14);
+  --strength: #E0A440;
+  --strength-dim: rgba(224,164,64,0.14);
+  --font-num: 'Newsreader', Georgia, serif;
+  --font-mono: -apple-system, system-ui, sans-serif; /* v1.43: mono banned; alias kept for old rules */
   --font-sans: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'SF Pro Display', system-ui, 'Helvetica Neue', sans-serif;
   color-scheme: dark;
 }
@@ -303,8 +336,8 @@
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
 html, body {
-background: #1E1C18;
-background-color: #1E1C18;
+background: #17120F;
+background-color: #17120F;
 color-scheme: dark;
 overscroll-behavior-y: none;
 }
@@ -318,66 +351,66 @@ min-height: 100vh;
 -webkit-font-smoothing: antialiased;
 -moz-osx-font-smoothing: grayscale;
 line-height: 1.5;
+font-variant-numeric: tabular-nums;
 }
 
 /* Layout */
 .app {
 max-width: 480px;
 margin: 0 auto;
-padding: max(20px, env(safe-area-inset-top)) max(18px, env(safe-area-inset-right)) calc(120px + env(safe-area-inset-bottom)) max(18px, env(safe-area-inset-left));
-background: #1E1C18;
+padding: max(20px, env(safe-area-inset-top)) max(22px, env(safe-area-inset-right)) calc(120px + env(safe-area-inset-bottom)) max(22px, env(safe-area-inset-left));
+background: #17120F;
 }
 
-/* Header */
+/* Header (v1.43, DESIGN.md s8) */
 .header {
-padding: 8px 0 12px;
-margin-bottom: 12px;
-border-bottom: 1px solid rgba(95,160,82,0.15);
-border-bottom: 1px dashed rgba(255,255,255,0.10);
+display: flex;
+align-items: center;
+gap: 2px;
+padding: 6px 0 2px;
+margin: 0;
+border: none;
 }
+.hdr-id { flex: 1; min-width: 0; }
 .header h1 {
-font-family: var(--font-mono);
-font-size: 22px;
-font-weight: 700;
-letter-spacing: 0.15em;
-text-transform: uppercase;
-color: var(--accent);
-text-shadow: 0 0 24px rgba(232, 196, 74, 0.18);
+font-family: var(--font-num);
+font-style: italic;
+font-weight: 500;
+font-size: 20px;
+line-height: 1.2;
+color: #EAD7BC;
 }
 .header .subtitle {
-font-size: 10px;
-line-height: 1.6;
-color: var(--text-dim);
-font-family: 'JetBrains Mono', monospace;
-letter-spacing: 0.1em;
-text-transform: uppercase;
+font-family: var(--font-sans);
+font-size: 13px;
+line-height: 1.3;
+color: #9A8E83;
+}
+.hdr-btn {
+display: flex;
+align-items: center;
+justify-content: center;
+min-width: 44px;
+min-height: 44px;
+background: none;
+border: none;
+cursor: pointer;
+-webkit-tap-highlight-color: transparent;
 }
 
-/* Cards */
+/* Cards (v1.43): one surface level -- no fill, border, shadow, or texture */
 .card {
-background: linear-gradient(135deg, var(--surface) 0%, #302C24 100%);
-border: 1px solid var(--border);
-border-left: 3px solid rgba(95,160,82,0.25);
-border-radius: 10px;
-padding: 20px;
-margin-bottom: 14px;
-box-shadow: 0 2px 12px rgba(0,0,0,0.25), inset 0 1px 0 rgba(180,160,120,0.06);
+background: none;
+border: none;
+border-radius: 0;
+padding: 0;
+margin-bottom: 32px;
+box-shadow: none;
 position: relative;
-overflow: hidden;
+overflow: visible;
 }
-.card::before {
-content: '';
-position: absolute;
-inset: 0;
-background-image: url("data:image/svg+xml,%3Csvg width='200' height='200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='0.22'/%3E%3C/svg%3E");
-border-radius: 10px;
-pointer-events: none;
-z-index: 0;
-}
-.card > * {
-position: relative;
-z-index: 1;
-}
+.card::before { display: none; }
+.card > * { position: relative; }
 /* v1.26: microinteractions */
 button, [onclick] {
   transition: transform 0.12s ease, opacity 0.15s ease, box-shadow 0.15s ease;
@@ -466,44 +499,42 @@ input:focus-visible,
 font-family: var(--font-mono);
 font-size: 10px;
 font-weight: 500;
-text-transform: uppercase;
-letter-spacing: 0.15em;
+
+
 color: var(--text-dim);
 margin-bottom: 14px;
 }
 
 /* Tabs */
+/* Tab bar (v1.43, DESIGN.md s8): text tabs, Heartwood rule on the active one */
 .tabs {
 display: flex;
-gap: 2px;
-margin-bottom: 18px;
-background: linear-gradient(135deg, var(--surface) 0%, #2E2A22 100%);
-border-radius: 8px;
-padding: 3px;
-border: 1px solid var(--border);
-box-shadow: inset 0 1px 0 rgba(180,160,120,0.05);
+gap: 22px;
+margin: 2px 0 22px;
+padding: 0;
+background: none;
+border: none;
+border-radius: 0;
+box-shadow: none;
 }
 .tab {
-flex: 1;
-padding: 8px 6px;
-text-align: center;
-font-size: 10px;
-font-weight: 500;
-letter-spacing: 0.12em;
-text-transform: uppercase;
-border-radius: 4px;
-cursor: pointer;
-color: var(--text-dim);
-transition: all 0.25s ease;
-border: none;
+flex: 0 0 auto;
+min-height: 44px;
+padding: 0;
+font-family: var(--font-sans);
+font-size: 15px;
+font-weight: 400;
+color: #9A8E83;
 background: none;
-font-family: var(--font-mono);
+border: none;
+border-radius: 0;
+cursor: pointer;
 -webkit-tap-highlight-color: transparent;
 }
 .tab.active {
-background: rgba(95, 160, 82, 0.12);
-color: #5FA052;
-box-shadow: 0 0 0 1px rgba(95, 160, 82, 0.25);
+color: #EAD7BC;
+background: none;
+box-shadow: inset 0 -2px 0 #A4442B;
 }
 
 /* Expandable explainer */
@@ -519,7 +550,7 @@ opacity: 1;
 .rec-explainer {
 font-family: var(--font-sans);
 text-transform: none;
-letter-spacing: normal;
+
 padding: 0 2px 14px 40px;
 font-size: 14px;
 color: var(--text-mid);
@@ -550,8 +581,8 @@ font-size: 11px;
 font-weight: 500;
 padding: 10px 14px;
 background: var(--surface);
-text-transform: uppercase;
-letter-spacing: 0.12em;
+
+
 }
 .ex-row {
 display: flex;
@@ -568,8 +599,8 @@ flex: 1;
 min-width: 0;
 color: var(--text-mid);
 line-height: 1.3;
-text-transform: uppercase;
-letter-spacing: 0.06em;
+
+
 }
 .ex-prescription {
 font-family: var(--font-mono);
@@ -579,7 +610,7 @@ font-weight: 500;
 color: var(--accent);
 white-space: nowrap;
 flex-shrink: 0;
-letter-spacing: 0.05em;
+
 }
 
 /* ===================== */
@@ -611,8 +642,8 @@ margin-bottom: 8px;
 font-family: var(--font-mono);
 font-size: 12px;
 font-weight: 500;
-letter-spacing: 0.08em;
-text-transform: uppercase;
+
+
 }
 .muscle-detail {
 max-height: 0;
@@ -627,7 +658,7 @@ opacity: 1;
 .muscle-detail-inner {
 font-family: var(--font-sans);
 text-transform: none;
-letter-spacing: normal;
+
 padding: 14px;
 background: var(--surface2);
 border-radius: 6px;
@@ -666,7 +697,7 @@ font-family: var(--font-mono);
 font-variant-numeric: tabular-nums;
 font-size: 34px;
 font-weight: 700;
-letter-spacing: -1px;
+
 color: var(--accent);
 }
 .weight-delta {
@@ -690,14 +721,14 @@ margin-bottom: 14px;
 padding: 5px 10px;
 font-size: 13px;
 font-weight: 500;
-font-family: 'JetBrains Mono', monospace;
+font-family: -apple-system,system-ui,sans-serif;
 background: var(--surface2);
 color: var(--text-dim);
 border: 1px solid var(--border);
 border-radius: 4px;
 cursor: pointer;
-text-transform: uppercase;
-letter-spacing: 0.08em;
+
+
 -webkit-tap-highlight-color: transparent;
 transition: all 0.15s ease;
 user-select: none;
@@ -716,7 +747,7 @@ flex-wrap: wrap;
 gap: 4px 14px;
 margin-top: 12px;
 font-size: 12px;
-font-family: 'JetBrains Mono', monospace;
+font-family: -apple-system,system-ui,sans-serif;
 color: var(--text-mid);
 }
 .legend-dot {
@@ -738,7 +769,7 @@ color: var(--accent);
 border: 1px solid rgba(95,160,82,0.28);
 border-radius: 7px;
 cursor: pointer;
-font-family: 'JetBrains Mono', monospace;
+font-family: -apple-system,system-ui,sans-serif;
 -webkit-tap-highlight-color: transparent;
 transition: all 0.2s ease;
 }
@@ -757,7 +788,7 @@ gap: 3px;
 }
 .heatmap-label {
 font-size: 12px;
-font-family: 'JetBrains Mono', monospace;
+font-family: -apple-system,system-ui,sans-serif;
 color: var(--text-mid);
 display: flex;
 align-items: center;
@@ -767,8 +798,8 @@ position: sticky;
 left: 0;
 background: var(--surface);
 z-index: 2;
-text-transform: uppercase;
-letter-spacing: 0.08em;
+
+
 }
 .heatmap-cell {
 width: 18px;
@@ -783,7 +814,7 @@ opacity: 0.7;
 }
 .heatmap-day-labels {
 font-size: 10px;
-font-family: 'JetBrains Mono', monospace;
+font-family: -apple-system,system-ui,sans-serif;
 color: var(--text-dim);
 display: flex;
 align-items: flex-end;
@@ -805,7 +836,7 @@ margin-top: 12px;
 .heatmap-day-detail-inner {
 font-family: var(--font-sans);
 text-transform: none;
-letter-spacing: normal;
+
 padding: 14px;
 background: var(--surface2);
 border-radius: 6px;
@@ -817,7 +848,7 @@ line-height: 1.6;
 font-weight: 600;
 margin-bottom: 8px;
 font-size: 13px;
-font-family: 'JetBrains Mono', monospace;
+font-family: -apple-system,system-ui,sans-serif;
 color: var(--text-mid);
 }
 .heatmap-day-detail-inner .detail-exercise {
@@ -833,7 +864,7 @@ color: var(--text);
 }
 .heatmap-day-detail-inner .detail-sets {
 font-size: 12px;
-font-family: 'JetBrains Mono', monospace;
+font-family: -apple-system,system-ui,sans-serif;
 color: var(--accent);
 flex-shrink: 0;
 }
@@ -841,84 +872,48 @@ flex-shrink: 0;
 /* ===================== */
 /* LOADING & ERROR       */
 /* ===================== */
+/* Loader + boot stage (v1.43, DESIGN.md s7) */
 .loading {
+position: fixed;
+inset: 0;
+z-index: 40;
 display: flex;
 flex-direction: column;
 align-items: center;
 justify-content: center;
-min-height: 60vh;
 gap: 18px;
+background: #17120F;
 }
-.tree-ring-loader {
-  width: 72px;
-  height: 72px;
-  position: relative;
+.ls-stage { position: relative; width: 292px; height: 292px; }
+.ls-pith {
+position: absolute;
+left: 50%;
+top: 50%;
+width: 12px;
+height: 12px;
+margin: -6px 0 0 -6px;
+border-radius: 50%;
+background: #A4442B;
+animation: pithBreath 1600ms cubic-bezier(0.4, 0, 0.2, 1) infinite alternate;
 }
-.tree-ring-loader circle {
-  fill: none;
-  stroke-linecap: round;
-  transform-origin: center;
-}
-.tree-ring-loader .ring-1 {
-  stroke: #E8C44A;
-  stroke-width: 2.5;
-  stroke-dasharray: 176;
-  stroke-dashoffset: 176;
-  animation: ringDraw 1.1s cubic-bezier(0.4, 0, 0.2, 1) forwards, ringPulse 2.4s 1.1s ease-in-out infinite;
-}
-.tree-ring-loader .ring-2 {
-  stroke: #5FA052;
-  stroke-width: 2.2;
-  stroke-dasharray: 132;
-  stroke-dashoffset: 132;
-  animation: ringDraw 1.1s 0.18s cubic-bezier(0.4, 0, 0.2, 1) forwards, ringPulse 2.4s 1.3s ease-in-out infinite;
-}
-.tree-ring-loader .ring-3 {
-  stroke: #4E8A43;
-  stroke-width: 1.8;
-  stroke-dasharray: 88;
-  stroke-dashoffset: 88;
-  animation: ringDraw 1.1s 0.36s cubic-bezier(0.4, 0, 0.2, 1) forwards, ringPulse 2.4s 1.5s ease-in-out infinite;
-}
-.tree-ring-loader .heartwood {
-  fill: #D4983B;
-  opacity: 0;
-  animation: heartFade 0.5s 0.8s ease-out forwards;
-}
-@keyframes ringDraw {
-  to { stroke-dashoffset: 0; }
-}
-@keyframes ringPulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.55; }
-}
-@keyframes heartFade {
-  to { opacity: 1; }
-}
+@keyframes pithBreath { from { opacity: 0.6; } to { opacity: 1; } }
 .loading-brand {
-  font-family: var(--font-mono);
-  font-size: 20px;
-  font-weight: 700;
-  letter-spacing: 0.22em;
-  text-transform: uppercase;
-  color: #E8C44A;
-  opacity: 0;
-  animation: brandFade 0.6s 0.5s ease-out forwards;
-}
-@keyframes brandFade {
-  to { opacity: 1; }
+font-family: var(--font-num);
+font-style: italic;
+font-weight: 500;
+font-size: 22px;
+color: #EAD7BC;
 }
 .loading-text {
-font-size: 10px;
-color: var(--text-dim);
-font-family: 'JetBrains Mono', monospace;
-text-transform: uppercase;
-letter-spacing: 0.12em;
+font-family: var(--font-sans);
+font-size: 13px;
+color: #9A8E83;
 }
+@media (prefers-reduced-motion: reduce) { .ls-pith { animation: none; } }
 .error-msg {
 font-family: var(--font-sans);
 text-transform: none;
-letter-spacing: normal;
+
 background: var(--danger-dim);
 border: 1px solid rgba(248,113,113,0.2);
 border-radius: 6px;
@@ -947,8 +942,8 @@ overflow: hidden;
 font-family: var(--font-mono);
 font-size: 11px;
 font-weight: 600;
-text-transform: uppercase;
-letter-spacing: 1px;
+
+
 color: var(--text-dim);
 margin-bottom: 6px;
 }
@@ -968,7 +963,7 @@ margin-left: 2px;
 }
 .vital-context {
 font-size: 11px;
-font-family: 'JetBrains Mono', monospace;
+font-family: -apple-system,system-ui,sans-serif;
 color: var(--text-dim);
 margin-top: 4px;
 }
@@ -979,8 +974,7 @@ margin-top: 4px;
 
 /* HUD Aesthetic additions (body-level type rules removed in v1.22) */
 .app {
-  background-image: radial-gradient(rgba(255,255,255,0.025) 1px, transparent 1px);
-  background-size: 20px 20px;
+  background-image: none; /* v1.43: texture banned */
 }
 .divider, .header {
   border-image: none;
@@ -991,13 +985,13 @@ margin-top: 4px;
   font-variant-numeric: tabular-nums;
   font-size: 28px;
   font-weight: 600;
-  letter-spacing: -0.5px;
+  
   color: var(--accent);
 }
 .prose {
   font-family: var(--font-sans);
   text-transform: none;
-  letter-spacing: normal;
+  
   line-height: 1.55;
 }
 </style>
@@ -1009,12 +1003,7 @@ margin-top: 4px;
   <!-- Loading Screen -->
 
   <div id="loading-screen" class="loading">
-    <svg class="tree-ring-loader" viewBox="0 0 72 72" xmlns="http://www.w3.org/2000/svg">
-      <circle class="ring-1" cx="36" cy="36" r="28"/>
-      <circle class="ring-2" cx="36" cy="36" r="21"/>
-      <circle class="ring-3" cx="36" cy="36" r="14"/>
-      <circle class="heartwood" cx="36" cy="36" r="2.5"/>
-    </svg>
+    <div class="ls-stage"><div class="ls-pith"></div></div>
     <div class="loading-brand">LiftScript</div>
     <div class="loading-text" id="loading-text">Connecting to Hevy...</div>
   </div>
@@ -1022,22 +1011,21 @@ margin-top: 4px;
   <!-- Main Dashboard -->
 
   <div id="dashboard" class="hidden" style="position:relative;">
-    <div id="canopy-light" style="position:absolute;top:0;left:0;right:0;height:400px;pointer-events:none;z-index:0;"></div>
-    <div class="header" style="position:relative;z-index:1;">
-      <div style="display:flex;align-items:center;gap:10px;">
+    <div class="header">
+      <div class="hdr-id">
         <h1>LiftScript</h1>
-        <div class="subtitle" id="last-updated">v1.42</div>
-        <div id="power-score-wrap" role="button" aria-label="Toggle Power Score details" tabindex="0" style="margin-left:auto;display:flex;align-items:center;gap:6px;cursor:pointer;-webkit-tap-highlight-color:transparent;min-height:32px;" onclick="togglePowerScoreDetail()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();togglePowerScoreDetail();}">
-          <div id="power-score-ring"></div>
-        </div>
-        <button id="header-refresh-btn" onclick="refreshData()" title="Refresh data" aria-label="Refresh data from Hevy and health" style="background:none;border:none;cursor:pointer;padding:2px 4px;position:relative;top:1px;line-height:1;-webkit-tap-highlight-color:transparent;min-width:32px;min-height:32px;">
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style="display:block;">
-            <path d="M13.65 2.35A7.96 7.96 0 008 0C3.58 0 .01 3.58.01 8S3.58 16 8 16c3.73 0 6.84-2.55 7.73-6h-2.08A5.99 5.99 0 018 14 6 6 0 012 8a6 6 0 016-6c1.66 0 3.14.69 4.22 1.78L9 7h7V0l-2.35 2.35z" fill="#7A7262"/>
-          </svg>
-        </button>
+        <div class="subtitle" id="last-updated">v1.43</div>
+      </div>
+      <button id="header-refresh-btn" class="hdr-btn" onclick="refreshData()" title="Refresh data" aria-label="Refresh data from Hevy and health">
+        <svg width="17" height="17" viewBox="0 0 16 16" fill="none" style="display:block;">
+          <path d="M13.65 2.35A7.96 7.96 0 008 0C3.58 0 .01 3.58.01 8S3.58 16 8 16c3.73 0 6.84-2.55 7.73-6h-2.08A5.99 5.99 0 018 14 6 6 0 012 8a6 6 0 016-6c1.66 0 3.14.69 4.22 1.78L9 7h7V0l-2.35 2.35z" fill="#9A8E83"/>
+        </svg>
+      </button>
+      <div id="power-score-wrap" class="hdr-btn" role="button" aria-label="Show Power Score details" tabindex="0" onclick="togglePowerScoreDetail()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();togglePowerScoreDetail();}">
+        <div id="power-score-ring"></div>
       </div>
     </div>
-    <div id="power-score-detail" style="display:none;margin-top:10px;padding:12px 14px;border-radius:10px;background:var(--surface2);border:1px solid var(--border);"></div>
+    <div id="power-score-detail" style="display:none;margin:4px 0 16px;padding:20px 16px;border-radius:12px;background:#2A211C;"></div>
 
 <div class="tabs" role="tablist">
   <button class="tab active" data-tab="today" role="tab" aria-selected="true" onclick="switchTab('today')">Today</button>
@@ -1122,7 +1110,7 @@ margin-top: 4px;
   <div class="card" id="health-vitals-card" style="display:none;">
     <div class="card-title" style="display:flex;align-items:center;justify-content:space-between;">
       <span>Health Vitals</span>
-      <span class="health-sync-time" id="health-sync-time" style="font-size:11px;font-family:'JetBrains Mono',monospace;color:var(--text-dim);text-transform:none;letter-spacing:0;"></span>
+      <span class="health-sync-time" id="health-sync-time" style="font-size:11px;font-family:-apple-system,system-ui,sans-serif;color:var(--text-dim);text-transform:none;"></span>
     </div>
     <!-- Vitals Grid -->
     <div class="vitals-grid" id="vitals-grid"></div>
@@ -1140,7 +1128,7 @@ margin-top: 4px;
       <button class="btn-log-weight" onclick="document.getElementById('hevy-csv-input').click()" style="background:rgba(212,152,59,0.14);color:#D4983B;border-color:rgba(212,152,59,0.32);">Import Hevy</button>
     </div>
     <input type="file" id="hevy-csv-input" accept=".csv" style="display:none;" onchange="importHevyCSV(this)">
-    <div id="hevy-import-status" style="display:none;padding:10px 12px;border-radius:8px;margin-top:8px;font-size:13px;font-family:'JetBrains Mono',monospace;"></div>
+    <div id="hevy-import-status" style="display:none;padding:10px 12px;border-radius:8px;margin-top:8px;font-size:13px;font-family:-apple-system,system-ui,sans-serif;"></div>
   </div>
 </div>
 
@@ -1207,40 +1195,53 @@ function localDateStr(d) {
 // Hex values here match the CSS custom properties in <style>.
 // ============================================================
 const C = {
-  bg:        '#1E1C18',
-  surface:   '#2A2720',
-  surface2:  '#35312A',
-  surface3:  '#403B33',
-  border:    'rgba(180,160,120,0.10)',
-  text:      '#E8E0D0',
-  textMid:   '#A89E88',
-  textDim:   '#8B8270',  // v1.28: raised for WCAG AA
-  textDark:  '#5C5448',
-  textDark2: '#8C8470',
-  accent:    '#5FA052',
-  accentMid: '#4E8A43',
-  accentDim: 'rgba(95,160,82,0.14)',
-  accentBorder: 'rgba(95,160,82,0.28)',
-  warn:      '#D4983B',
-  warnDim:   'rgba(212,152,59,0.14)',
-  amber:     '#D4983B',
-  amberLt:   '#E0A84D',
-  danger:    '#CC4433',
-  dangerText: '#ED7960', // ember -- lifted red for small text, 4.62:1 on surface2 (v1.34)
-  dangerDim: 'rgba(204,68,51,0.12)',
-  blue:      '#7CBAD4',
-  blueDim:   'rgba(124,186,212,0.14)',
-  strength:  '#C084FC',
-  purple:    '#C084FC',
-  purpleLt:  '#D4A8FF',
-  pink:      '#D45A7A',
-  fuchsia:   '#C084FC',
-  cyan:      '#7AC4D4',
-  teal:      '#6DBF7B',
-  cardio:    '#D4983B',
-  gold:      '#E8C44A',
+  // v1.43 Growth Rings canonical tokens (docs/DESIGN.md s2)
+  char:      '#17120F',
+  bark:      '#2A211C',
+  line:      '#3A2E26',
+  sapwood:   '#EAD7BC',
+  ash:       '#9A8E83',
+  heartwood: '#A4442B',
+  lichen:    '#A9BD8B',
+  resin:     '#E0A440',
+  ember:     '#E5735A',
+  ringHeart: '#8E3B26',
+  ringSap:   '#D2A37A',
+  ringNew:   '#E3C29A',
+  // Transitional remap of pre-revamp keys (deleted after v1.47)
+  bg:        '#17120F',
+  surface:   '#2A211C',
+  surface2:  '#2A211C',
+  surface3:  '#2A211C',
+  border:    '#3A2E26',
+  text:      '#EAD7BC',
+  textMid:   '#9A8E83',
+  textDim:   '#9A8E83',
+  textDark:  '#9A8E83',
+  textDark2: '#9A8E83',
+  accent:    '#A9BD8B',
+  accentMid: '#A9BD8B',
+  accentDim: 'rgba(169,189,139,0.14)',
+  accentBorder: 'rgba(169,189,139,0.28)',
+  warn:      '#E0A440',
+  warnDim:   'rgba(224,164,64,0.14)',
+  amber:     '#E0A440',
+  amberLt:   '#E0A440',
+  danger:    '#E5735A',
+  dangerText: '#E5735A',
+  dangerDim: 'rgba(229,115,90,0.12)',
+  blue:      '#9A8E83',
+  blueDim:   'rgba(154,142,131,0.14)',
+  strength:  '#E0A440',
+  purple:    '#E0A440',
+  purpleLt:  '#E0A440',
+  pink:      '#E0A440',
+  fuchsia:   '#E0A440',
+  cyan:      '#9A8E83',
+  teal:      '#A9BD8B',
+  cardio:    '#E0A440',
+  gold:      '#E0A440',
 };
-
 
 // ============================================================
 // MICROINTERACTIONS (v1.26 / v1.26b haptic fix)
@@ -1292,11 +1293,11 @@ function haptic(ms) {
 // ============================================================
 
 // SVG noise filter for bark texture overlay (inline data URI)
-const BARK_TEXTURE_SVG = 'url("data:image/svg+xml,%3Csvg width=\'200\' height=\'200\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'n\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.65\' numOctaves=\'4\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'200\' height=\'200\' filter=\'url(%23n)\' opacity=\'0.22\'/%3E%3C/svg%3E")';
+const BARK_TEXTURE_SVG = 'none'; // v1.43: textures banned (DESIGN.md s10)
 
 // Branch divider SVG (organic wavy line with offshoots)
 function branchDividerHTML() {
-  return '<svg width="100%" height="18" viewBox="0 0 300 18" preserveAspectRatio="none" style="display:block;margin:12px 0;opacity:0.4;"><path d="M0,9 Q25,6 50,8.5 T100,7 T150,10 T200,7.5 T250,9 T300,8" fill="none" stroke="' + C.textMid + '" stroke-width="1.2"/><path d="M60,8 Q65,3.5 74,2" fill="none" stroke="' + C.textMid + '" stroke-width="0.9"/><path d="M145,9.5 Q150,14 158,15.5" fill="none" stroke="' + C.textMid + '" stroke-width="0.9"/><path d="M220,8 Q226,4 233,3.5" fill="none" stroke="' + C.textMid + '" stroke-width="0.7"/><circle cx="74" cy="2" r="1.2" fill="' + C.accent + '" opacity="0.5"/><circle cx="158" cy="15.5" r="1.2" fill="' + C.accent + '" opacity="0.5"/></svg>';
+  return ''; // v1.43: dividers banned (DESIGN.md s10)
 }
 
 // Moss progress bar (soft-edged gradient fill)
@@ -1339,7 +1340,7 @@ function crossSectionRingSvg(daysSince, idealDays, arcColor) {
     svg += '<path d="' + pts.join(' ') + '" fill="none" stroke="' + (isFilled ? arcColor : C.surface3) + '" stroke-width="' + strokeW + '" opacity="' + opacity + '"/>';
   }
   svg += '<circle cx="' + cx + '" cy="' + cy + '" r="8" fill="' + C.bg + '" opacity="0.85"/>';
-  svg += '<text x="' + cx + '" y="' + cy + '" text-anchor="middle" dominant-baseline="central" fill="' + C.text + '" font-family="JetBrains Mono,monospace" font-size="' + fontSize + '" font-weight="700">' + label + '</text>';
+  svg += '<text x="' + cx + '" y="' + cy + '" text-anchor="middle" dominant-baseline="central" fill="' + C.text + '" font-family="-apple-system,system-ui,sans-serif" font-size="' + fontSize + '" font-weight="700">' + label + '</text>';
   svg += '</svg>';
   return svg;
 }
@@ -3495,7 +3496,7 @@ function toggleCardioInstr(id) {
 function buildCardioBreakdownHTML(history) {
   const log = history.cardioLog || [];
   if (log.length === 0) {
-    return `<div style="font-size:12px;font-family:'JetBrains Mono',monospace;color:${C.textDark};">No cardio sessions this week.</div>`;
+    return `<div style="font-size:12px;font-family:-apple-system,system-ui,sans-serif;color:${C.textDark};">No cardio sessions this week.</div>`;
   }
 
   // Sort by date descending
@@ -3506,14 +3507,14 @@ function buildCardioBreakdownHTML(history) {
   if (history.hevySessions > 0) parts.push(`\u{1F3CB}\uFE0F Hevy: ${history.hevySessions} session${history.hevySessions > 1 ? 's' : ''}, ${Math.round(history.hevyMinutes)} min`);
   if (history.appleSessions > 0) parts.push(`\u231A Watch: ${history.appleSessions} session${history.appleSessions > 1 ? 's' : ''}, ${Math.round(history.appleMinutes)} min`);
 
-  let html = `<div style="font-size:11px;font-family:'JetBrains Mono',monospace;color:${C.textDim};margin-bottom:8px;">${parts.join(' \u00B7 ')}</div>`;
+  let html = `<div style="font-size:11px;font-family:-apple-system,system-ui,sans-serif;color:${C.textDim};margin-bottom:8px;">${parts.join(' \u00B7 ')}</div>`;
 
   // Per-session rows
   for (const s of sorted) {
     const dayStr = s.date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
     const icon = s.source === 'watch' ? '\u231A' : '\u{1F3CB}\uFE0F';
     const calStr = s.calories > 0 ? ` \u00B7 ${Math.round(s.calories)} cal` : '';
-    html += `<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;font-size:12px;font-family:'JetBrains Mono',monospace;">
+    html += `<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;font-size:12px;font-family:-apple-system,system-ui,sans-serif;">
       <span style="color:${C.textMid};">${icon} ${s.type}</span>
       <span style="color:${C.textDark};">${Math.round(s.minutes)} min${calStr} \u00B7 ${dayStr}</span>
     </div>`;
@@ -3536,20 +3537,20 @@ function renderCardioPlan(dayCardioMap) {
     <div style="margin-top:12px;padding-top:0;">
       ${branchDividerHTML()}
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
-        <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:1.2px;color:${C.textDim};">Cardio Plan</div>
-        ${result.weekComplete ? '' : '<button onclick="rerollCardio()" style="display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:5px;background:' + C.surface2 + ';border:1px solid ' + C.border + ';color:' + C.textMid + ';font-size:10px;font-weight:600;font-family:JetBrains Mono,monospace;cursor:pointer;-webkit-tap-highlight-color:transparent;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>Reroll</button>'}
+        <div style="font-size:11px;font-weight:600;color:${C.textDim};">Cardio Plan</div>
+        ${result.weekComplete ? '' : '<button onclick="rerollCardio()" style="display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:5px;background:' + C.surface2 + ';border:1px solid ' + C.border + ';color:' + C.textMid + ';font-size:10px;font-weight:600;font-family:-apple-system,system-ui,sans-serif;cursor:pointer;-webkit-tap-highlight-color:transparent;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>Reroll</button>'}
       </div>
       <div onclick="toggleCardioBreakdown()" style="cursor:pointer;display:flex;align-items:center;gap:10px;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid ${C.border};">
-        <div style="font-family:'JetBrains Mono',monospace;font-size:14px;color:${C.accent};font-weight:600;white-space:nowrap;">${Math.round(doneMin)}/${result.targetMin}m</div>
+        <div style="font-family:-apple-system,system-ui,sans-serif;font-size:14px;color:${C.accent};font-weight:600;white-space:nowrap;">${Math.round(doneMin)}/${result.targetMin}m</div>
         <div style="flex:1;">${mossBarHTML(donePct, 100, barColor, 7)}</div>
-        <div style="font-family:'JetBrains Mono',monospace;font-size:12px;color:${C.textDim};white-space:nowrap;">this week \u25BE</div>
+        <div style="font-family:-apple-system,system-ui,sans-serif;font-size:12px;color:${C.textDim};white-space:nowrap;">this week \u25BE</div>
       </div>
       <div id="cardio-breakdown" style="display:none;margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid ${C.border};">
         ${buildCardioBreakdownHTML(result.history)}
       </div>`;
 
   if (result.weekComplete) {
-    html += `<div style="font-size:14px;color:${C.accent};font-family:'JetBrains Mono',monospace;padding:8px 0;">\u2713 Weekly cardio target met. Active recovery or rest recommended.</div>`;
+    html += `<div style="font-size:14px;color:${C.accent};font-family:-apple-system,system-ui,sans-serif;padding:8px 0;">\u2713 Weekly cardio target met. Active recovery or rest recommended.</div>`;
   } else {
     const zoneStyles = {
       2: { bg: C.blueDim, color: C.blue, label: 'Zone 2' },
@@ -3566,21 +3567,21 @@ function renderCardioPlan(dayCardioMap) {
 
       html += `<div style="padding:10px 0;border-bottom:1px solid ${C.surface2};${hasInstr ? 'cursor:pointer;-webkit-tap-highlight-color:transparent;' : ''}" ${hasInstr ? 'onclick="toggleCardioInstr(\'' + instrId + '\')"' : ''}>
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
-          <span style="font-size:10px;font-weight:600;padding:2px 7px;border-radius:4px;font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:0.5px;background:${zs.bg};color:${zs.color};">${zs.label}</span>
+          <span style="font-size:10px;font-weight:600;padding:2px 7px;border-radius:4px;font-family:-apple-system,system-ui,sans-serif;background:${zs.bg};color:${zs.color};">${zs.label}</span>
           <span style="font-size:14px;font-weight:600;color:${C.text};flex:1;">${rx.name}</span>
-          <span style="font-family:'JetBrains Mono',monospace;font-size:13px;color:${C.accent};font-weight:600;">${rx.durationMin}m</span>
+          <span style="font-family:-apple-system,system-ui,sans-serif;font-size:13px;color:${C.accent};font-weight:600;">${rx.durationMin}m</span>
         </div>
         <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
-          <div style="font-size:12px;font-family:'JetBrains Mono',monospace;color:${C.textDim};line-height:1.4;flex:1;">${detailNote}</div>
-          <span style="font-size:11px;font-family:'JetBrains Mono',monospace;color:${zs.color};padding:2px 7px;border-radius:4px;background:${zs.bg};white-space:nowrap;">\u2661 ${rx.hrRange}</span>
+          <div style="font-size:12px;font-family:-apple-system,system-ui,sans-serif;color:${C.textDim};line-height:1.4;flex:1;">${detailNote}</div>
+          <span style="font-size:11px;font-family:-apple-system,system-ui,sans-serif;color:${zs.color};padding:2px 7px;border-radius:4px;background:${zs.bg};white-space:nowrap;">\u2661 ${rx.hrRange}</span>
         </div>
-        ${hasInstr ? '<div id="' + instrId + '" style="max-height:0;overflow:hidden;opacity:0;transition:max-height 0.3s ease,opacity 0.25s ease;"><div style="margin-top:8px;padding:8px 10px;border-radius:6px;background:' + C.surface + ';font-size:11px;font-family:JetBrains Mono,monospace;color:' + C.textMid + ';line-height:1.5;">' + rx.instructions + '</div></div>' : ''}
+        ${hasInstr ? '<div id="' + instrId + '" style="max-height:0;overflow:hidden;opacity:0;transition:max-height 0.3s ease,opacity 0.25s ease;"><div style="margin-top:8px;padding:8px 10px;border-radius:6px;background:' + C.surface + ';font-size:11px;font-family:-apple-system,system-ui,sans-serif;color:' + C.textMid + ';line-height:1.5;">' + rx.instructions + '</div></div>' : ''}
       </div>`;
     }
 
     // Surface HIIT gate block reason if applicable
     if (result.hiitBlockReason) {
-      html += `<div style="padding:6px 0;font-size:11px;font-family:'JetBrains Mono',monospace;color:${C.textDark};">HIIT gated: ${result.hiitBlockReason}</div>`;
+      html += `<div style="padding:6px 0;font-size:11px;font-family:-apple-system,system-ui,sans-serif;color:${C.textDark};">HIIT gated: ${result.hiitBlockReason}</div>`;
     }
   }
 
@@ -4152,7 +4153,7 @@ function showToast(msg, isError) {
   var border = isError ? C.danger : C.accent;
   var div = document.createElement('div');
   div.id = 'ls-toast';
-  div.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);padding:12px 20px;border-radius:10px;font-size:13px;font-weight:500;font-family:JetBrains Mono,monospace;color:#f4f4f6;z-index:9999;opacity:0;transition:opacity 0.3s ease;max-width:90vw;text-align:center;background:' + bg + ';border:1px solid ' + border + '40;';
+  div.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);padding:12px 20px;border-radius:10px;font-size:13px;font-weight:500;font-family:-apple-system,system-ui,sans-serif;color:#f4f4f6;z-index:9999;opacity:0;transition:opacity 0.3s ease;max-width:90vw;text-align:center;background:' + bg + ';border:1px solid ' + border + '40;';
   div.textContent = msg;
   document.body.appendChild(div);
   requestAnimationFrame(function() { div.style.opacity = '1'; });
@@ -4632,13 +4633,13 @@ function renderTimedSession(recs) {
   const todayStr = localDateStr(new Date());
   const liftedToday = heatmapDayWorkouts[todayStr] && heatmapDayWorkouts[todayStr].length > 0;
   var baseLabel = liftedToday ? 'Tomorrow\u2019s Session' : 'Today\u2019s Session';
-  const sessionLabel = _customSessionActive ? baseLabel + ' <span style="font-size:9px;padding:2px 5px;border-radius:3px;background:' + C.accentDim + ';color:' + C.accent + ';border:1px solid ' + C.accentBorder + ';margin-left:6px;vertical-align:middle;letter-spacing:0.5px;">CUSTOM</span>' : baseLabel;
+  const sessionLabel = _customSessionActive ? baseLabel + ' <span style="font-size:9px;padding:2px 5px;border-radius:3px;background:' + C.accentDim + ';color:' + C.accent + ';border:1px solid ' + C.accentBorder + ';margin-left:6px;vertical-align:middle;">CUSTOM</span>' : baseLabel;
 
   // Completed banner (subtle inline)
   let completedBanner = '';
   if (liftedToday) {
     const exCount = heatmapDayWorkouts[todayStr].length;
-    completedBanner = `<div style="display:flex;align-items:center;gap:6px;padding:6px 0 12px;margin-bottom:12px;border-bottom:1px solid ${C.border};font-size:12px;font-family:'JetBrains Mono',monospace;color:${C.accent};font-weight:500;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="${C.accent}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>Today done \u2014 ${exCount} exercise${exCount !== 1 ? 's' : ''} logged</div>`;
+    completedBanner = `<div style="display:flex;align-items:center;gap:6px;padding:6px 0 12px;margin-bottom:12px;border-bottom:1px solid ${C.border};font-size:12px;font-family:-apple-system,system-ui,sans-serif;color:${C.accent};font-weight:500;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="${C.accent}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>Today done \u2014 ${exCount} exercise${exCount !== 1 ? 's' : ''} logged</div>`;
   }
 
   // Rest-day chip (compact, inline)
@@ -4650,15 +4651,15 @@ function renderTimedSession(recs) {
     const chipText = isHigh
       ? `${_consecutiveTrainDays} days straight \u2014 rest day recommended`
       : `${_consecutiveTrainDays} days in a row \u2014 consider resting`;
-    restChip = `<div style="display:inline-flex;align-items:center;gap:5px;padding:5px 10px;border-radius:6px;background:${chipBg};border:1px solid ${chipColor}30;font-size:12px;font-family:'JetBrains Mono',monospace;color:${chipColor};font-weight:500;white-space:nowrap;">${chipText}</div>`;
+    restChip = `<div style="display:inline-flex;align-items:center;gap:5px;padding:5px 10px;border-radius:6px;background:${chipBg};border:1px solid ${chipColor}30;font-size:12px;font-family:-apple-system,system-ui,sans-serif;color:${chipColor};font-weight:500;white-space:nowrap;">${chipText}</div>`;
   }
 
   document.getElementById('today-hero').innerHTML = `
     <div style="margin-bottom:16px;">
       ${completedBanner}
       <div style="display:flex;align-items:baseline;justify-content:space-between;">
-        <div style="font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:${C.text};font-family:'JetBrains Mono',monospace;">${sessionLabel}</div>
-        <div style="font-family:'JetBrains Mono',monospace;font-size:22px;font-weight:700;color:${C.accent};">~${totalMin}<span style="font-size:14px;font-weight:500;color:${C.textDim};margin-left:2px;">min</span></div>
+        <div style="font-size:14px;font-weight:700;color:${C.text};font-family:-apple-system,system-ui,sans-serif;">${sessionLabel}</div>
+        <div style="font-family:-apple-system,system-ui,sans-serif;font-size:22px;font-weight:700;color:${C.accent};">~${totalMin}<span style="font-size:14px;font-weight:500;color:${C.textDim};margin-left:2px;">min</span></div>
       </div>
       ${restChip ? `<div style="margin-top:10px;">${restChip}</div>` : ''}
     </div>`;
@@ -4668,8 +4669,8 @@ function renderTimedSession(recs) {
     const current = sessionPrefs[def.key];
     const isNonDefault = current !== PREFS_DEFAULTS[def.key];
     const chipStyle = isNonDefault
-      ? `background:${C.accentDim};color:${C.accent};border:1px solid ${C.accentBorder};padding:4px 10px;font-size:11px;font-weight:600;font-family:JetBrains Mono,monospace;border-radius:6px;cursor:pointer;user-select:none;white-space:nowrap;-webkit-tap-highlight-color:transparent;`
-      : `background:${C.surface2};color:${C.textDim};border:1px solid ${C.border};padding:4px 10px;font-size:11px;font-weight:600;font-family:JetBrains Mono,monospace;border-radius:6px;cursor:pointer;user-select:none;white-space:nowrap;-webkit-tap-highlight-color:transparent;`;
+      ? `background:${C.accentDim};color:${C.accent};border:1px solid ${C.accentBorder};padding:4px 10px;font-size:11px;font-weight:600;font-family:-apple-system,system-ui,sans-serif;border-radius:6px;cursor:pointer;user-select:none;white-space:nowrap;-webkit-tap-highlight-color:transparent;`
+      : `background:${C.surface2};color:${C.textDim};border:1px solid ${C.border};padding:4px 10px;font-size:11px;font-weight:600;font-family:-apple-system,system-ui,sans-serif;border-radius:6px;cursor:pointer;user-select:none;white-space:nowrap;-webkit-tap-highlight-color:transparent;`;
     return `<div style="${chipStyle}" onclick="cycleChip('${def.key}')">${def.label(current)} <span style="opacity:0.35;font-size:9px;margin-left:1px;">\u21BB</span></div>`;
   }).join('');
 
@@ -4677,9 +4678,9 @@ function renderTimedSession(recs) {
   wrapper.innerHTML = `
     ${branchDividerHTML()}
     <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap;">
-      <button onclick="rerollLifts()" style="display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:6px;background:${C.surface2};border:1px solid ${C.border};color:${C.textMid};font-size:11px;font-weight:600;font-family:'JetBrains Mono',monospace;cursor:pointer;-webkit-tap-highlight-color:transparent;white-space:nowrap;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>Reroll</button>
-      ${_customSessionActive ? '<button onclick="resetToAutoSession()" style="display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:6px;background:' + C.dangerDim + ';border:1px solid ' + C.danger + '30;color:' + C.danger + ';font-size:11px;font-weight:600;font-family:JetBrains Mono,monospace;cursor:pointer;-webkit-tap-highlight-color:transparent;white-space:nowrap;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>Reset</button>' : ''}
-      <button id="send-to-hevy-btn" onclick="sendSessionToHevy()" style="display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:6px;background:${C.surface2};border:1px solid ${C.border};color:${C.textMid};font-size:11px;font-weight:600;font-family:'JetBrains Mono',monospace;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:all 0.2s ease;white-space:nowrap;">
+      <button onclick="rerollLifts()" style="display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:6px;background:${C.surface2};border:1px solid ${C.border};color:${C.textMid};font-size:11px;font-weight:600;font-family:-apple-system,system-ui,sans-serif;cursor:pointer;-webkit-tap-highlight-color:transparent;white-space:nowrap;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>Reroll</button>
+      ${_customSessionActive ? '<button onclick="resetToAutoSession()" style="display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:6px;background:' + C.dangerDim + ';border:1px solid ' + C.danger + '30;color:' + C.danger + ';font-size:11px;font-weight:600;font-family:-apple-system,system-ui,sans-serif;cursor:pointer;-webkit-tap-highlight-color:transparent;white-space:nowrap;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>Reset</button>' : ''}
+      <button id="send-to-hevy-btn" onclick="sendSessionToHevy()" style="display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:6px;background:${C.surface2};border:1px solid ${C.border};color:${C.textMid};font-size:11px;font-weight:600;font-family:-apple-system,system-ui,sans-serif;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:all 0.2s ease;white-space:nowrap;">
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
         Hevy
       </button>
@@ -4719,14 +4720,14 @@ function renderTimedSession(recs) {
       return '<div style="display:flex;align-items:flex-start;gap:8px;padding:6px 0;">' +
         '<div style="flex-shrink:0;width:14px;height:14px;border-radius:50%;background:' + iconColor + '22;border:1px solid ' + iconColor + ';display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:' + iconColor + ';font-family:var(--font-mono);margin-top:1px;">!</div>' +
         '<div style="flex:1;min-width:0;">' +
-          '<div style="font-family:var(--font-mono);font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:' + iconColor + ';">' + label + (e.skipped ? ' \u00b7 ' + e.skipped + ' skipped' : '') + '</div>' +
+          '<div style="font-family:var(--font-mono);font-size:10px;font-weight:600;color:' + iconColor + ';">' + label + (e.skipped ? ' \u00b7 ' + e.skipped + ' skipped' : '') + '</div>' +
           '<div style="font-family:var(--font-sans);font-size:12px;color:' + C.textMid + ';line-height:1.45;margin-top:2px;">' + e.reason + '</div>' +
         '</div>' +
       '</div>';
     }).join('');
     exHtml += '<div id="session-conflict-strip" style="margin-bottom:14px;padding:10px 12px 8px;border-radius:8px;background:' + C.surface2 + ';border:1px solid ' + C.border + ';border-left:3px solid ' + C.warn + ';">'
       + '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;cursor:pointer;" onclick="toggleConflictDetail()">'
-        + '<div style="font-family:var(--font-mono);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.12em;color:' + C.textDim + ';">Session Adjustments \u00b7 ' + uniqueLog.length + '</div>'
+        + '<div style="font-family:var(--font-mono);font-size:10px;font-weight:700;color:' + C.textDim + ';">Session Adjustments \u00b7 ' + uniqueLog.length + '</div>'
         + '<span id="conflict-chevron" style="font-size:10px;color:' + C.textDim + ';transition:transform 0.3s ease;">\u25BE</span>'
       + '</div>'
       + '<div id="conflict-detail" style="max-height:0;overflow:hidden;opacity:0;transition:max-height 0.3s ease, opacity 0.25s ease;">'
@@ -4787,7 +4788,7 @@ function renderTimedSession(recs) {
       // v1.39: stalled exercises surface a deload chip + amber prescription
       const isDeload = !!(ex.prescription && ex.prescription.deload);
       const deloadChip = isDeload
-        ? '<span style="font-family:var(--font-mono);font-size:8px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:' + C.warn + ';background:' + C.warnDim + ';border:1px solid rgba(212,152,59,0.32);padding:1px 5px;border-radius:3px;margin-left:6px;vertical-align:middle;">Deload</span>'
+        ? '<span style="font-family:var(--font-mono);font-size:8px;font-weight:700;color:' + C.warn + ';background:' + C.warnDim + ';border:1px solid rgba(212,152,59,0.32);padding:1px 5px;border-radius:3px;margin-left:6px;vertical-align:middle;">Deload</span>'
         : '';
       exHtml += `
         <div class="ex-row${isAnchor ? ' ex-row-anchor' : ''}">
@@ -4930,7 +4931,7 @@ function renderMuscleGrid(muscleStats, recs) {
 
     // Rested chip for the cell header
     const restedChip = isRested
-      ? '<span style="display:inline-block;font-family:var(--font-mono);font-size:8px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:' + C.gold + ';background:rgba(232,196,74,0.14);border:1px solid rgba(232,196,74,0.32);padding:1px 5px;border-radius:3px;margin-left:6px;vertical-align:middle;">Rested</span>'
+      ? '<span style="display:inline-block;font-family:var(--font-mono);font-size:8px;font-weight:700;color:' + C.gold + ';background:rgba(232,196,74,0.14);border:1px solid rgba(232,196,74,0.32);padding:1px 5px;border-radius:3px;margin-left:6px;vertical-align:middle;">Rested</span>'
       : '';
 
     return `
@@ -4941,7 +4942,7 @@ function renderMuscleGrid(muscleStats, recs) {
         </div>
         <div style="display:flex;align-items:center;gap:8px;">
           <div style="flex:1;">${mossBarHTML(volPct, 100, tierBarColor, 6)}</div>
-          <div style="font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:600;color:${tierTextColor};white-space:nowrap;">${volLabel}</div>
+          <div style="font-family:-apple-system,system-ui,sans-serif;font-size:11px;font-weight:600;color:${tierTextColor};white-space:nowrap;">${volLabel}</div>
         </div>
       </div>`;
   }).join('');
@@ -4950,7 +4951,7 @@ function renderMuscleGrid(muscleStats, recs) {
   const prevLegend = document.getElementById('muscle-grid-legend');
   if (prevLegend) prevLegend.remove();
   grid.insertAdjacentHTML('afterend',
-    `<div id="muscle-grid-legend" style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:10px;font-size:10px;font-family:'JetBrains Mono',monospace;color:${C.textDim};max-height:0;overflow:hidden;opacity:0;transition:max-height 0.3s ease,opacity 0.25s ease;">
+    `<div id="muscle-grid-legend" style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:10px;font-size:10px;font-family:-apple-system,system-ui,sans-serif;color:${C.textDim};max-height:0;overflow:hidden;opacity:0;transition:max-height 0.3s ease,opacity 0.25s ease;">
       <span style="display:flex;align-items:center;gap:3px;"><span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:${C.danger};"></span>Overdue</span>
       <span style="display:flex;align-items:center;gap:3px;"><span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:${C.warn};"></span>Due soon</span>
       <span style="display:flex;align-items:center;gap:3px;"><span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:${C.accent};"></span>On track</span>
@@ -4968,10 +4969,10 @@ function renderMuscleGrid(muscleStats, recs) {
     var btnBg = _muscleSelectMode ? C.dangerDim : C.surface2;
     var btnBorder = _muscleSelectMode ? C.danger + '30' : C.border;
     var btnColor = _muscleSelectMode ? C.dangerText : C.textMid;
-    selectControls.innerHTML = '<button onclick="toggleMuscleSelectMode()" style="display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:6px;background:' + btnBg + ';border:1px solid ' + btnBorder + ';color:' + btnColor + ';font-size:11px;font-weight:600;font-family:JetBrains Mono,monospace;cursor:pointer;-webkit-tap-highlight-color:transparent;white-space:nowrap;">'
+    selectControls.innerHTML = '<button onclick="toggleMuscleSelectMode()" style="display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:6px;background:' + btnBg + ';border:1px solid ' + btnBorder + ';color:' + btnColor + ';font-size:11px;font-weight:600;font-family:-apple-system,system-ui,sans-serif;cursor:pointer;-webkit-tap-highlight-color:transparent;white-space:nowrap;">'
       + (_muscleSelectMode ? '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>' : '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>')
       + btnLabel + '</button>'
-      + (_muscleSelectMode ? '<span style="font-size:10px;color:' + C.textDim + ';font-family:JetBrains Mono,monospace;">Tap muscles to select</span>' : '');
+      + (_muscleSelectMode ? '<span style="font-size:10px;color:' + C.textDim + ';font-family:-apple-system,system-ui,sans-serif;">Tap muscles to select</span>' : '');
   }
 
   // Render floating build button
@@ -4979,7 +4980,7 @@ function renderMuscleGrid(muscleStats, recs) {
   if (fab) {
     if (_muscleSelectMode && _selectedMuscles.size > 0) {
       fab.style.display = 'block';
-      fab.innerHTML = '<button onclick="buildCustomSession()" style="display:inline-flex;align-items:center;gap:6px;padding:8px 18px;border-radius:8px;background:' + C.accent + ';border:1px solid ' + C.accentBorder + ';color:' + C.text + ';font-size:13px;font-weight:700;font-family:JetBrains Mono,monospace;cursor:pointer;-webkit-tap-highlight-color:transparent;white-space:nowrap;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="13 17 18 12 13 7"/><polyline points="6 17 11 12 6 7"/></svg>Build Session (' + _selectedMuscles.size + ')</button>';
+      fab.innerHTML = '<button onclick="buildCustomSession()" style="display:inline-flex;align-items:center;gap:6px;padding:8px 18px;border-radius:8px;background:' + C.accent + ';border:1px solid ' + C.accentBorder + ';color:' + C.text + ';font-size:13px;font-weight:700;font-family:-apple-system,system-ui,sans-serif;cursor:pointer;-webkit-tap-highlight-color:transparent;white-space:nowrap;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="13 17 18 12 13 7"/><polyline points="6 17 11 12 6 7"/></svg>Build Session (' + _selectedMuscles.size + ')</button>';
     } else {
       fab.style.display = 'none';
       fab.innerHTML = '';
@@ -5102,7 +5103,7 @@ function renderWeeklySummary(dayWorkoutsMap, dayMuscleMap, dayCardioMap, workout
     const diff = curr - prev;
     if (diff === 0 || prev === 0) return '';
     const sign = diff > 0 ? '+' : '';
-    return `<span style="font-size:10px;font-family:'JetBrains Mono',monospace;color:${diff > 0 ? C.accent : C.warn};margin-left:4px;">${sign}${diff}</span>`;
+    return `<span style="font-size:10px;font-family:-apple-system,system-ui,sans-serif;color:${diff > 0 ? C.accent : C.warn};margin-left:4px;">${sign}${diff}</span>`;
   }
 
   // Cardio bar
@@ -5111,9 +5112,9 @@ function renderWeeklySummary(dayWorkoutsMap, dayMuscleMap, dayCardioMap, workout
   const cardioBarColor = cardioPct >= 100 ? C.accent : cardioPct >= 50 ? C.blue : C.warn;
 
   const statStyle = `padding:12px;border-radius:8px;border:1px solid ${C.border};background:${C.surface2};text-align:center;`;
-  const labelStyle = `font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:${C.textDim};font-family:'JetBrains Mono',monospace;margin-bottom:4px;`;
-  const valueStyle = `font-family:'JetBrains Mono',monospace;font-size:22px;font-weight:700;color:${C.text};line-height:1.2;`;
-  const subStyle = `font-size:11px;font-family:'JetBrains Mono',monospace;color:${C.textDark};`;
+  const labelStyle = `font-size:10px;font-weight:600;color:${C.textDim};font-family:-apple-system,system-ui,sans-serif;margin-bottom:4px;`;
+  const valueStyle = `font-family:-apple-system,system-ui,sans-serif;font-size:22px;font-weight:700;color:${C.text};line-height:1.2;`;
+  const subStyle = `font-size:11px;font-family:-apple-system,system-ui,sans-serif;color:${C.textDark};`;
 
   container.innerHTML = `
     <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px;">
@@ -5134,11 +5135,11 @@ function renderWeeklySummary(dayWorkoutsMap, dayMuscleMap, dayCardioMap, workout
       </div>
     </div>
     <div style="display:flex;align-items:center;gap:10px;">
-      <div style="font-family:'JetBrains Mono',monospace;font-size:13px;color:${cardioPct >= 100 ? C.accent : C.text};font-weight:600;white-space:nowrap;">${Math.round(thisWeek.cardioMin)}/${cardioTarget}m</div>
+      <div style="font-family:-apple-system,system-ui,sans-serif;font-size:13px;color:${cardioPct >= 100 ? C.accent : C.text};font-weight:600;white-space:nowrap;">${Math.round(thisWeek.cardioMin)}/${cardioTarget}m</div>
       <div style="flex:1;height:5px;border-radius:3px;background:${C.surface3};overflow:hidden;">
         <div style="height:100%;border-radius:3px;background:${cardioBarColor};width:${cardioPct}%;transition:width 0.4s ease;"></div>
       </div>
-      <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:${C.textDim};white-space:nowrap;">cardio</div>
+      <div style="font-family:-apple-system,system-ui,sans-serif;font-size:11px;color:${C.textDim};white-space:nowrap;">cardio</div>
     </div>`;
 }
 
@@ -5252,7 +5253,7 @@ function renderHeatmap(dayMuscleMap, dayWorkoutsMap, dayCardioMap) {
 
   html += '</div>';
   // v1.25: legend strip showing the 5-step volume scale
-  html += '<div style="display:flex;align-items:center;justify-content:center;gap:4px;margin-top:12px;font-family:var(--font-mono);font-size:9px;color:' + C.textDim + ';letter-spacing:0.08em;text-transform:uppercase;">'
+  html += '<div style="display:flex;align-items:center;justify-content:center;gap:4px;margin-top:12px;font-family:var(--font-mono);font-size:9px;color:' + C.textDim + ';">'
     + '<span style="margin-right:4px;">Less</span>'
     + '<div style="width:12px;height:12px;border-radius:2px;background:' + C.surface2 + ';"></div>'
     + '<div style="width:12px;height:12px;border-radius:2px;background:rgba(95,160,82,0.22);"></div>'
@@ -5388,7 +5389,7 @@ function showChartTooltip(canvas, pt) {
   // Clamp horizontal position
   const tipX = Math.max(40, Math.min(pt.x, parent.offsetWidth - 40));
   const above = pt.y > 60;
-  tip.style.cssText = `position:absolute;left:${tipX}px;${above ? 'top' : 'bottom'}:${above ? (pt.y - 44) + 'px' : (150 - pt.y + 12) + 'px'};transform:translateX(-50%);background:${C.surface3};border:1px solid ${C.border};border-radius:6px;padding:4px 8px;font-family:'JetBrains Mono',monospace;font-size:11px;color:${C.text};text-align:center;white-space:nowrap;pointer-events:none;z-index:10;opacity:1;transition:opacity 0.6s ease;line-height:1.4;`;
+  tip.style.cssText = `position:absolute;left:${tipX}px;${above ? 'top' : 'bottom'}:${above ? (pt.y - 44) + 'px' : (150 - pt.y + 12) + 'px'};transform:translateX(-50%);background:${C.surface3};border:1px solid ${C.border};border-radius:6px;padding:4px 8px;font-family:-apple-system,system-ui,sans-serif;font-size:11px;color:${C.text};text-align:center;white-space:nowrap;pointer-events:none;z-index:10;opacity:1;transition:opacity 0.6s ease;line-height:1.4;`;
   tip.innerHTML = `<div style="font-weight:600;">${label}</div><div style="font-size:10px;color:${C.textDim};">${dateStr}</div>`;
   parent.appendChild(tip);
 
@@ -5469,7 +5470,7 @@ function renderWeightChart() {
       var bg = isActive ? C.accentDim : C.surface2;
       var color = isActive ? C.accent : C.textDim;
       var border = isActive ? C.accentBorder : C.border;
-      return '<div onclick="setChartPeriod(\'' + p + '\')" style="padding:3px 10px;border-radius:5px;font-family:JetBrains Mono,monospace;font-size:11px;font-weight:600;cursor:pointer;-webkit-tap-highlight-color:transparent;background:' + bg + ';color:' + color + ';border:1px solid ' + border + ';">' + p + '</div>';
+      return '<div onclick="setChartPeriod(\'' + p + '\')" style="padding:3px 10px;border-radius:5px;font-family:-apple-system,system-ui,sans-serif;font-size:11px;font-weight:600;cursor:pointer;-webkit-tap-highlight-color:transparent;background:' + bg + ';color:' + color + ';border:1px solid ' + border + ';">' + p + '</div>';
     }).join('');
   }
 
@@ -5785,7 +5786,7 @@ function renderWeightChart() {
 
   // Date labels
   ctx.fillStyle = C.textDark2;
-  ctx.font = '10px JetBrains Mono, monospace';
+  ctx.font = '10px -apple-system,system-ui,sans-serif';
   ctx.textAlign = 'left';
   ctx.fillText(domStart.substring(5), pad.left, h - 4);
   ctx.textAlign = 'right';
@@ -5975,7 +5976,7 @@ function renderPRBoard() {
   }
 
   var html = '<div style="margin-top:10px;padding-top:0;">' + branchDividerHTML() +
-    '<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:' + C.textDim + ';font-family:JetBrains Mono,monospace;margin-bottom:10px;">Personal Records</div>';
+    '<div style="font-size:11px;font-weight:700;color:' + C.textDim + ';font-family:-apple-system,system-ui,sans-serif;margin-bottom:10px;">Personal Records</div>';
 
   var hasAny = false;
   for (var ki = 0; ki < liftKeys.length; ki++) {
@@ -5990,18 +5991,18 @@ function renderPRBoard() {
     var deltaStr = delta > 0 ? '+' + delta + ' lbs' : '';
 
     var prBadge = isAtPR
-      ? '<span style="font-size:9px;font-weight:600;color:' + C.accent + ';padding:1px 5px;border-radius:3px;background:' + C.accentDim + ';font-family:JetBrains Mono,monospace;letter-spacing:0.5px;margin-left:6px;">CURRENT</span>'
-      : '<span style="font-size:10px;color:' + C.textDim + ';font-family:JetBrains Mono,monospace;margin-left:6px;">' + Math.round((pr.current / pr.allTimePR) * 100) + '% of PR</span>';
+      ? '<span style="font-size:9px;font-weight:600;color:' + C.accent + ';padding:1px 5px;border-radius:3px;background:' + C.accentDim + ';font-family:-apple-system,system-ui,sans-serif;margin-left:6px;">CURRENT</span>'
+      : '<span style="font-size:10px;color:' + C.textDim + ';font-family:-apple-system,system-ui,sans-serif;margin-left:6px;">' + Math.round((pr.current / pr.allTimePR) * 100) + '% of PR</span>';
 
     html += '<div style="display:flex;align-items:center;gap:10px;padding:12px 0;border-bottom:none;">' +
-      '<div style="width:80px;font-size:13px;font-weight:600;color:' + C.text + ';font-family:JetBrains Mono,monospace;flex-shrink:0;">' + liftLabels[k] + '</div>' +
+      '<div style="width:80px;font-size:13px;font-weight:600;color:' + C.text + ';font-family:-apple-system,system-ui,sans-serif;flex-shrink:0;">' + liftLabels[k] + '</div>' +
       '<div style="flex:1;min-width:0;">' +
         '<div style="display:flex;align-items:baseline;gap:4px;">' +
-          '<span style="font-family:JetBrains Mono,monospace;font-size:16px;font-weight:700;color:' + (isAtPR ? C.accent : C.text) + ';">' + pr.allTimePR + '</span>' +
-          '<span style="font-size:10px;color:' + C.textDark + ';font-family:JetBrains Mono,monospace;">lbs</span>' +
+          '<span style="font-family:-apple-system,system-ui,sans-serif;font-size:16px;font-weight:700;color:' + (isAtPR ? C.accent : C.text) + ';">' + pr.allTimePR + '</span>' +
+          '<span style="font-size:10px;color:' + C.textDark + ';font-family:-apple-system,system-ui,sans-serif;">lbs</span>' +
           prBadge +
         '</div>' +
-        '<div style="font-family:JetBrains Mono,monospace;font-size:10px;color:' + C.textDim + ';">' +
+        '<div style="font-family:-apple-system,system-ui,sans-serif;font-size:10px;color:' + C.textDim + ';">' +
           prDateStr + (deltaStr ? ' \u00b7 ' + deltaStr : '') +
         '</div>' +
       '</div>' +
@@ -6010,7 +6011,7 @@ function renderPRBoard() {
   }
 
   if (!hasAny) {
-    html += '<div style="font-size:12px;color:' + C.textDim + ';font-family:JetBrains Mono,monospace;padding:8px 0;">No PR data yet \u2014 train the big 5 lifts to track records.</div>';
+    html += '<div style="font-size:12px;color:' + C.textDim + ';font-family:-apple-system,system-ui,sans-serif;padding:8px 0;">No PR data yet \u2014 train the big 5 lifts to track records.</div>';
   }
 
   html += '</div>';
@@ -6172,7 +6173,7 @@ function populateStrengthDetail() {
     const isCurrent = siVal >= seg.floor && (siVal < seg.ceil || (i === siTierSegs.length - 1 && siVal >= seg.floor));
     const labelColor = isCurrent ? C.text : C.textDim;
     const labelWeight = isCurrent ? '700' : '600';
-    labelHtml += '<div style="flex:' + segWidthPct + ';text-align:center;font-family:JetBrains Mono,monospace;font-size:9px;font-weight:' + labelWeight + ';letter-spacing:0.5px;color:' + labelColor + ';cursor:pointer;-webkit-tap-highlight-color:transparent;" onclick="showSITierTooltip(event,' + i + ')">' + seg.abbr + '</div>';
+    labelHtml += '<div style="flex:' + segWidthPct + ';text-align:center;font-family:-apple-system,system-ui,sans-serif;font-size:9px;font-weight:' + labelWeight + ';color:' + labelColor + ';cursor:pointer;-webkit-tap-highlight-color:transparent;" onclick="showSITierTooltip(event,' + i + ')">' + seg.abbr + '</div>';
   }
 
   // Pre-compute lift percentiles (0-1 range) for the concentric rings viz
@@ -6245,9 +6246,9 @@ function populateStrengthDetail() {
 
   // Column labels
   html += `<div style="display:flex;align-items:center;gap:10px;padding:0 0 6px 0;">
-    <div style="width:80px;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:${C.textDim};font-family:'JetBrains Mono',monospace;flex-shrink:0;">Lift</div>
-    <div style="flex:1;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:${C.textDim};font-family:'JetBrains Mono',monospace;text-align:center;">Percentile</div>
-    <div style="width:72px;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:${C.textDim};font-family:'JetBrains Mono',monospace;text-align:right;flex-shrink:0;">Est 1RM</div>
+    <div style="width:80px;font-size:11px;font-weight:700;color:${C.textDim};font-family:-apple-system,system-ui,sans-serif;flex-shrink:0;">Lift</div>
+    <div style="flex:1;font-size:11px;font-weight:700;color:${C.textDim};font-family:-apple-system,system-ui,sans-serif;text-align:center;">Percentile</div>
+    <div style="width:72px;font-size:11px;font-weight:700;color:${C.textDim};font-family:-apple-system,system-ui,sans-serif;text-align:right;flex-shrink:0;">Est 1RM</div>
   </div>`;
 
   // Lift rows (unified with PR data)
@@ -6272,19 +6273,19 @@ function populateStrengthDetail() {
     // Right column: current 1RM + PR context
     let rightHtml;
     if (!hasData) {
-      rightHtml = `<span style="font-family:'JetBrains Mono',monospace;font-size:13px;color:${C.textDim};">--</span>`;
+      rightHtml = `<span style="font-family:-apple-system,system-ui,sans-serif;font-size:13px;color:${C.textDim};">--</span>`;
     } else if (isAtPR) {
-      rightHtml = `<span style="font-family:'JetBrains Mono',monospace;font-size:15px;font-weight:700;color:${C.accent};">${currentRM}</span>`
-        + `<span style="font-size:10px;color:${C.textDark};font-family:'JetBrains Mono',monospace;"> lbs</span>`
-        + `<div style="margin-top:1px;"><span style="font-size:9px;font-weight:600;color:${C.accent};padding:1px 5px;border-radius:3px;background:${C.accentDim};font-family:'JetBrains Mono',monospace;letter-spacing:0.5px;">PR</span></div>`;
+      rightHtml = `<span style="font-family:-apple-system,system-ui,sans-serif;font-size:15px;font-weight:700;color:${C.accent};">${currentRM}</span>`
+        + `<span style="font-size:10px;color:${C.textDark};font-family:-apple-system,system-ui,sans-serif;"> lbs</span>`
+        + `<div style="margin-top:1px;"><span style="font-size:9px;font-weight:600;color:${C.accent};padding:1px 5px;border-radius:3px;background:${C.accentDim};font-family:-apple-system,system-ui,sans-serif;">PR</span></div>`;
     } else if (pr) {
       const pctOfPR = Math.round((currentRM / pr.rm) * 100);
-      rightHtml = `<span style="font-family:'JetBrains Mono',monospace;font-size:15px;font-weight:700;color:${C.text};">${currentRM}</span>`
-        + `<span style="font-size:10px;color:${C.textDark};font-family:'JetBrains Mono',monospace;"> lbs</span>`
-        + `<div style="margin-top:1px;font-family:'JetBrains Mono',monospace;font-size:9px;color:${C.textDim};">${pr.rm} PR \u00b7 ${pctOfPR}%</div>`;
+      rightHtml = `<span style="font-family:-apple-system,system-ui,sans-serif;font-size:15px;font-weight:700;color:${C.text};">${currentRM}</span>`
+        + `<span style="font-size:10px;color:${C.textDark};font-family:-apple-system,system-ui,sans-serif;"> lbs</span>`
+        + `<div style="margin-top:1px;font-family:-apple-system,system-ui,sans-serif;font-size:9px;color:${C.textDim};">${pr.rm} PR \u00b7 ${pctOfPR}%</div>`;
     } else {
-      rightHtml = `<span style="font-family:'JetBrains Mono',monospace;font-size:15px;font-weight:700;color:${C.text};">${currentRM}</span>`
-        + `<span style="font-size:10px;color:${C.textDark};font-family:'JetBrains Mono',monospace;"> lbs</span>`;
+      rightHtml = `<span style="font-family:-apple-system,system-ui,sans-serif;font-size:15px;font-weight:700;color:${C.text};">${currentRM}</span>`
+        + `<span style="font-size:10px;color:${C.textDark};font-family:-apple-system,system-ui,sans-serif;"> lbs</span>`;
     }
 
     // Source exercise detail (hidden by default, toggled on tap)
@@ -6294,7 +6295,7 @@ function populateStrengthDetail() {
       const srcDate = new Date(s.date + 'T12:00:00');
       const srcDateStr = srcDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
       srcHtml = `<div data-si-src style="max-height:0;overflow:hidden;opacity:0;transition:max-height 0.25s ease,opacity 0.2s ease;padding-left:80px;">
-        <div style="padding:4px 0 2px;font-family:'JetBrains Mono',monospace;font-size:11px;color:${C.textDim};">via ${s.ex} \u00b7 ${s.reps}@${s.wt}lbs \u00b7 ${srcDateStr}</div>
+        <div style="padding:4px 0 2px;font-family:-apple-system,system-ui,sans-serif;font-size:11px;color:${C.textDim};">via ${s.ex} \u00b7 ${s.reps}@${s.wt}lbs \u00b7 ${srcDateStr}</div>
       </div>`;
     }
 
@@ -6302,11 +6303,11 @@ function populateStrengthDetail() {
       <div style="display:flex;align-items:center;gap:10px;padding:9px 0;">
         <div style="width:80px;flex-shrink:0;">
           <div style="font-size:14px;font-weight:600;color:${C.text};">${info.label}</div>
-          ${(() => { const tr = _trends[key]; if (!tr || tr.diff === 0) return ''; const arrow = tr.diff > 0 ? '\u2191' : '\u2193'; const tColor = tr.diff > 0 ? C.accent : C.dangerText; return '<div style="font-family:JetBrains Mono,monospace;font-size:10px;font-weight:600;color:' + tColor + ';">' + arrow + (tr.diff > 0 ? '+' : '') + tr.diff + '<span style="font-weight:500;color:' + C.textDim + ';font-size:9px;"> 30d</span></div>'; })()}</div>
+          ${(() => { const tr = _trends[key]; if (!tr || tr.diff === 0) return ''; const arrow = tr.diff > 0 ? '\u2191' : '\u2193'; const tColor = tr.diff > 0 ? C.accent : C.dangerText; return '<div style="font-family:-apple-system,system-ui,sans-serif;font-size:10px;font-weight:600;color:' + tColor + ';">' + arrow + (tr.diff > 0 ? '+' : '') + tr.diff + '<span style="font-weight:500;color:' + C.textDim + ';font-size:9px;"> 30d</span></div>'; })()}</div>
         <div data-str-bar style="flex:1;height:14px;border-radius:3px;background:${C.surface3};position:relative;overflow:visible;" onclick="event.stopPropagation();showStrengthPctile(this)">
           <div style="position:absolute;top:4px;left:0;right:0;height:6px;border-radius:3px;background:linear-gradient(90deg,${C.danger} 0%,${C.warn} 40%,${C.accent} 100%);opacity:0.3;"></div>
           ${hasData ? `<div style="position:absolute;top:50%;left:${markerLeft}%;width:10px;height:10px;border-radius:50%;background:${markerColor};transform:translate(-50%,-50%);border:1.5px solid ${C.surface};pointer-events:none;"></div>` : ''}
-          ${hasData ? `<div data-pctile-tip style="position:absolute;top:50%;left:${markerLeft}%;background:${pctColor};color:${C.bg};font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:700;padding:2px 6px;border-radius:4px;pointer-events:none;white-space:nowrap;opacity:0;transform:translate(-50%,-50%) scale(0.7);transition:opacity 0.2s ease,transform 0.2s ease;z-index:5;">${pctile}th</div>` : ''}
+          ${hasData ? `<div data-pctile-tip style="position:absolute;top:50%;left:${markerLeft}%;background:${pctColor};color:${C.bg};font-family:-apple-system,system-ui,sans-serif;font-size:11px;font-weight:700;padding:2px 6px;border-radius:4px;pointer-events:none;white-space:nowrap;opacity:0;transform:translate(-50%,-50%) scale(0.7);transition:opacity 0.2s ease,transform 0.2s ease;z-index:5;">${pctile}th</div>` : ''}
         </div>
         <div style="width:72px;text-align:right;flex-shrink:0;">${rightHtml}</div>
       </div>
@@ -6564,7 +6565,7 @@ function renderMeasurementsDisplay() {
   const latest = latestMeasurements;
 
   if (!latest) {
-    container.innerHTML = `<div style="font-size:13px;color:${C.textDim};font-family:'JetBrains Mono',monospace;padding:4px 0;">No measurements yet. Use Import Hevy to start tracking.</div>`;
+    container.innerHTML = `<div style="font-size:13px;color:${C.textDim};font-family:-apple-system,system-ui,sans-serif;padding:4px 0;">No measurements yet. Use Import Hevy to start tracking.</div>`;
     return;
   }
 
@@ -6588,9 +6589,9 @@ function renderMeasurementsDisplay() {
     const borderStyle = isSelected ? `border:1px solid ${C.accent}` : `border:1px solid ${C.border}`;
 
     html += `<div style="padding:10px;border-radius:8px;${borderStyle};background:${C.surface2};cursor:pointer;-webkit-tap-highlight-color:transparent;transition:border-color 0.2s ease;" onclick="toggleMeasSparkline('${field.key}')">
-      <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:${C.textDim};font-family:'JetBrains Mono',monospace;margin-bottom:4px;">${field.label}</div>
-      <div style="font-family:'JetBrains Mono',monospace;font-size:20px;font-weight:700;color:${C.text};line-height:1.2;">${val.toFixed(1)}<span style="font-size:11px;font-weight:400;color:${C.textDim};margin-left:2px;">${field.unit}</span></div>
-      <div style="font-size:10px;font-family:'JetBrains Mono',monospace;color:${ageColor};margin-top:2px;">${ageLabel}</div>
+      <div style="font-size:10px;font-weight:600;color:${C.textDim};font-family:-apple-system,system-ui,sans-serif;margin-bottom:4px;">${field.label}</div>
+      <div style="font-family:-apple-system,system-ui,sans-serif;font-size:20px;font-weight:700;color:${C.text};line-height:1.2;">${val.toFixed(1)}<span style="font-size:11px;font-weight:400;color:${C.textDim};margin-left:2px;">${field.unit}</span></div>
+      <div style="font-size:10px;font-family:-apple-system,system-ui,sans-serif;color:${ageColor};margin-top:2px;">${ageLabel}</div>
     </div>`;
   }
   html += `</div>`;
@@ -6599,7 +6600,7 @@ function renderMeasurementsDisplay() {
   html += `<div id="meas-sparkline-container" style="max-height:0;overflow:hidden;opacity:0;transition:max-height 0.4s ease,opacity 0.3s ease;margin-top:8px;"></div>`;
 
   if (!hasAny) {
-    container.innerHTML = `<div style="font-size:13px;color:${C.textDim};font-family:'JetBrains Mono',monospace;padding:4px 0;">No measurements yet. Use Import Hevy to start tracking.</div>`;
+    container.innerHTML = `<div style="font-size:13px;color:${C.textDim};font-family:-apple-system,system-ui,sans-serif;padding:4px 0;">No measurements yet. Use Import Hevy to start tracking.</div>`;
     return;
   }
   container.innerHTML = html;
@@ -6648,7 +6649,7 @@ function toggleMeasSparkline(fieldKey) {
   points.sort((a, b) => (a.date || '').localeCompare(b.date || ''));
 
   if (points.length < 2) {
-    sparkContainer.innerHTML = `<div style="padding:12px;text-align:center;font-size:12px;font-family:'JetBrains Mono',monospace;color:${C.textDim};">Need 2+ entries to chart ${field.label}.</div>`;
+    sparkContainer.innerHTML = `<div style="padding:12px;text-align:center;font-size:12px;font-family:-apple-system,system-ui,sans-serif;color:${C.textDim};">Need 2+ entries to chart ${field.label}.</div>`;
     sparkContainer.style.opacity = '1';
     sparkContainer.style.maxHeight = '60px';
     return;
@@ -6697,8 +6698,8 @@ function toggleMeasSparkline(fieldKey) {
 
   // Labels at first and last points
   const firstPt = points[0], lastPt = points[points.length - 1];
-  svg += `<text x="${pad}" y="${scaleY(firstPt.value) - 6}" fill="${C.textDim}" font-size="9" font-family="JetBrains Mono,monospace" text-anchor="start">${firstPt.value.toFixed(1)}</text>`;
-  svg += `<text x="${w - pad}" y="${scaleY(lastPt.value) - 6}" fill="${C.text}" font-size="9" font-family="JetBrains Mono,monospace" text-anchor="end">${lastPt.value.toFixed(1)}</text>`;
+  svg += `<text x="${pad}" y="${scaleY(firstPt.value) - 6}" fill="${C.textDim}" font-size="9" font-family="-apple-system,system-ui,sans-serif" text-anchor="start">${firstPt.value.toFixed(1)}</text>`;
+  svg += `<text x="${w - pad}" y="${scaleY(lastPt.value) - 6}" fill="${C.text}" font-size="9" font-family="-apple-system,system-ui,sans-serif" text-anchor="end">${lastPt.value.toFixed(1)}</text>`;
 
   svg += `</svg>`;
 
@@ -6706,7 +6707,7 @@ function toggleMeasSparkline(fieldKey) {
   const dateRange = `${points[0].date || ''} -> ${points[points.length-1].date || ''}`;
   sparkContainer.innerHTML = `<div style="background:${C.surface2};border-radius:8px;border:1px solid ${C.border};padding:10px 8px 6px;">
     ${svg}
-    <div style="text-align:center;font-size:10px;font-family:'JetBrains Mono',monospace;color:${C.textDark};margin-top:2px;">${dateRange} \u00b7 ${points.length} entries</div>
+    <div style="text-align:center;font-size:10px;font-family:-apple-system,system-ui,sans-serif;color:${C.textDark};margin-top:2px;">${dateRange} \u00b7 ${points.length} entries</div>
   </div>`;
   sparkContainer.style.opacity = '1';
   sparkContainer.style.maxHeight = sparkContainer.scrollHeight + 'px';
@@ -6743,10 +6744,10 @@ function renderProportionsDisplay() {
     return a.pct - b.pct;
   });
   let html = '<div style="padding-top:12px;border-top:1px solid ' + C.border + ';">' +
-    '<div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:1.2px;color:' + C.textDim + ';margin-bottom:10px;font-family:JetBrains Mono,monospace;">Frame-Adjusted Targets</div>';
+    '<div style="font-size:11px;font-weight:600;color:' + C.textDim + ';margin-bottom:10px;font-family:-apple-system,system-ui,sans-serif;">Frame-Adjusted Targets</div>';
   for (const bar of bars) {
     if (bar.target == null) {
-      html += '<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 0;font-family:JetBrains Mono,monospace;">' +
+      html += '<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 0;font-family:-apple-system,system-ui,sans-serif;">' +
         '<span style="font-size:12px;font-weight:600;color:' + C.textMid + ';min-width:70px;">' + bar.label + '</span>' +
         '<span style="font-size:12px;color:' + C.textDim + ';">' + bar.current.toFixed(1) + ' in</span></div>';
       continue;
@@ -6769,7 +6770,7 @@ function renderProportionsDisplay() {
       detailLabel = bar.current.toFixed(1) + ' / ' + bar.target.toFixed(1) + ' in <span style="color:' + labelColor + ';font-weight:600;">(' + pct + '%)</span>';
     }
     html += '<div style="margin-bottom:8px;">' +
-      '<div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:3px;font-family:JetBrains Mono,monospace;">' +
+      '<div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:3px;font-family:-apple-system,system-ui,sans-serif;">' +
       '<span style="font-size:12px;font-weight:600;color:' + C.textMid + ';">' + bar.label + '</span>' +
       '<span style="font-size:11px;color:' + C.textDim + ';">' + detailLabel + '</span>' +
       '</div>' +
@@ -6777,7 +6778,7 @@ function renderProportionsDisplay() {
       '<div style="height:100%;width:' + fillW + '%;background:' + barColor + ';border-radius:3px;transition:width 0.4s ease;"></div>' +
       '</div></div>';
   }
-  html += '<div style="display:flex;justify-content:space-between;margin-top:6px;font-size:9px;font-family:JetBrains Mono,monospace;color:' + C.textDark + ';">' +
+  html += '<div style="display:flex;justify-content:space-between;margin-top:6px;font-size:9px;font-family:-apple-system,system-ui,sans-serif;color:' + C.textDark + ';">' +
     '<span>100% natural max (Casey Butt, wrist: ' + PROFILE.wristIn + '")</span></div></div>';
   container.innerHTML = html;
 }
@@ -6790,7 +6791,7 @@ function renderBodyCompDisplay() {
 
   let hasAny = false;
   let html = '<div style="padding-top:12px;border-top:1px solid ' + C.border + ';">' +
-    '<div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:1.2px;color:' + C.textDim + ';margin-bottom:10px;font-family:JetBrains Mono,monospace;">Body Composition</div>' +
+    '<div style="font-size:10px;font-weight:600;color:' + C.textDim + ';margin-bottom:10px;font-family:-apple-system,system-ui,sans-serif;">Body Composition</div>' +
     '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">';
 
   // Body Fat %
@@ -6802,9 +6803,9 @@ function renderBodyCompDisplay() {
       : bf <= 25 ? { label: 'Fair', color: C.warn }
       : { label: 'Low', color: C.danger };
     html += '<div style="padding:10px;border-radius:8px;border:1px solid ' + C.border + ';background:' + C.surface2 + ';">' +
-      '<div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:' + C.textDim + ';font-family:JetBrains Mono,monospace;margin-bottom:4px;">Body Fat</div>' +
-      '<div style="font-family:JetBrains Mono,monospace;font-size:20px;font-weight:700;color:' + C.text + ';line-height:1.2;">' + bf.toFixed(1) + '<span style="font-size:11px;font-weight:400;color:' + C.textDim + ';margin-left:2px;">%</span></div>' +
-      '<div style="font-size:10px;font-family:JetBrains Mono,monospace;color:' + bfCat.color + ';margin-top:2px;">' + bfCat.label + '</div></div>';
+      '<div style="font-size:10px;font-weight:600;color:' + C.textDim + ';font-family:-apple-system,system-ui,sans-serif;margin-bottom:4px;">Body Fat</div>' +
+      '<div style="font-family:-apple-system,system-ui,sans-serif;font-size:20px;font-weight:700;color:' + C.text + ';line-height:1.2;">' + bf.toFixed(1) + '<span style="font-size:11px;font-weight:400;color:' + C.textDim + ';margin-left:2px;">%</span></div>' +
+      '<div style="font-size:10px;font-family:-apple-system,system-ui,sans-serif;color:' + bfCat.color + ';margin-top:2px;">' + bfCat.label + '</div></div>';
     hasAny = true;
   }
 
@@ -6812,9 +6813,9 @@ function renderBodyCompDisplay() {
   var lbm = healthData.lean_body_mass_lbs;
   if (lbm && lbm > 0) {
     html += '<div style="padding:10px;border-radius:8px;border:1px solid ' + C.border + ';background:' + C.surface2 + ';">' +
-      '<div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:' + C.textDim + ';font-family:JetBrains Mono,monospace;margin-bottom:4px;">Lean Mass</div>' +
-      '<div style="font-family:JetBrains Mono,monospace;font-size:20px;font-weight:700;color:' + C.text + ';line-height:1.2;">' + Math.round(lbm) + '<span style="font-size:11px;font-weight:400;color:' + C.textDim + ';margin-left:2px;">lbs</span></div>' +
-      '<div style="font-size:10px;font-family:JetBrains Mono,monospace;color:' + C.textDim + ';margin-top:2px;">Apple Health</div></div>';
+      '<div style="font-size:10px;font-weight:600;color:' + C.textDim + ';font-family:-apple-system,system-ui,sans-serif;margin-bottom:4px;">Lean Mass</div>' +
+      '<div style="font-family:-apple-system,system-ui,sans-serif;font-size:20px;font-weight:700;color:' + C.text + ';line-height:1.2;">' + Math.round(lbm) + '<span style="font-size:11px;font-weight:400;color:' + C.textDim + ';margin-left:2px;">lbs</span></div>' +
+      '<div style="font-size:10px;font-family:-apple-system,system-ui,sans-serif;color:' + C.textDim + ';margin-top:2px;">Apple Health</div></div>';
     hasAny = true;
   }
 
@@ -6827,9 +6828,9 @@ function renderBodyCompDisplay() {
     var waistTarget = PROFILE.heightIn * 0.45;
     var waistStatus = waistAH <= waistTarget ? { label: 'On target', color: C.accent } : { label: '+' + (waistAH - waistTarget).toFixed(1) + ' in', color: C.warn };
     html += '<div style="padding:10px;border-radius:8px;border:1px solid ' + C.border + ';background:' + C.surface2 + ';">' +
-      '<div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:' + C.textDim + ';font-family:JetBrains Mono,monospace;margin-bottom:4px;">Waist</div>' +
-      '<div style="font-family:JetBrains Mono,monospace;font-size:20px;font-weight:700;color:' + C.text + ';line-height:1.2;">' + waistAH.toFixed(1) + '<span style="font-size:11px;font-weight:400;color:' + C.textDim + ';margin-left:2px;">in</span></div>' +
-      '<div style="font-size:10px;font-family:JetBrains Mono,monospace;color:' + waistStatus.color + ';margin-top:2px;">' + waistStatus.label + '</div></div>';
+      '<div style="font-size:10px;font-weight:600;color:' + C.textDim + ';font-family:-apple-system,system-ui,sans-serif;margin-bottom:4px;">Waist</div>' +
+      '<div style="font-family:-apple-system,system-ui,sans-serif;font-size:20px;font-weight:700;color:' + C.text + ';line-height:1.2;">' + waistAH.toFixed(1) + '<span style="font-size:11px;font-weight:400;color:' + C.textDim + ';margin-left:2px;">in</span></div>' +
+      '<div style="font-size:10px;font-family:-apple-system,system-ui,sans-serif;color:' + waistStatus.color + ';margin-top:2px;">' + waistStatus.label + '</div></div>';
     hasAny = true;
   }
 
@@ -6994,7 +6995,7 @@ function renderHealthVitals() {
   let html = '';
 
   // Sub-header: Cardiac
-  html += `<div style="grid-column:1/-1;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:1.2px;color:${C.textDim};font-family:'JetBrains Mono',monospace;padding:2px 0;">Cardiac</div>`;
+  html += `<div style="grid-column:1/-1;font-size:10px;font-weight:600;color:${C.textDim};font-family:-apple-system,system-ui,sans-serif;padding:2px 0;">Cardiac</div>`;
 
   // Helper: build mini SVG sparkline from points array [{label, value}]
   // lowerBetter: true for RHR/walking HR (lower = good), false for recovery/VO2 (higher = good)
@@ -7030,17 +7031,17 @@ function renderHealthVitals() {
     for (const p of pts) {
       svg += `<circle cx="${p.x}" cy="${p.y}" r="3" fill="${color}"/>`;
       const valY = p.y < padY + 14 ? p.y + 14 : p.y - 8;
-      svg += `<text x="${p.x}" y="${valY}" text-anchor="middle" fill="${C.text}" font-family="JetBrains Mono,monospace" font-size="9" font-weight="600">${Number.isInteger(p.value) ? p.value : p.value.toFixed(1)}</text>`;
+      svg += `<text x="${p.x}" y="${valY}" text-anchor="middle" fill="${C.text}" font-family="-apple-system,system-ui,sans-serif" font-size="9" font-weight="600">${Number.isInteger(p.value) ? p.value : p.value.toFixed(1)}</text>`;
     }
     svg += `</svg>`;
 
     // Time labels + delta
     let labelsHtml = `<div style="display:flex;justify-content:space-between;padding:0 ${padX}px;margin-top:2px;">`;
     for (const p of pts) {
-      labelsHtml += `<span style="font-size:9px;color:${C.textDim};font-family:'JetBrains Mono',monospace;">${p.label}</span>`;
+      labelsHtml += `<span style="font-size:9px;color:${C.textDim};font-family:-apple-system,system-ui,sans-serif;">${p.label}</span>`;
     }
     labelsHtml += `</div>`;
-    labelsHtml += `<div style="text-align:center;margin-top:4px;font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:600;color:${deltaColor};">${deltaSign}${deltaStr} over 12mo</div>`;
+    labelsHtml += `<div style="text-align:center;margin-top:4px;font-family:-apple-system,system-ui,sans-serif;font-size:10px;font-weight:600;color:${deltaColor};">${deltaSign}${deltaStr} over 12mo</div>`;
 
     return svg + labelsHtml;
   }
@@ -7115,7 +7116,7 @@ function renderHealthVitals() {
   }
 
   // Sub-header: Activity
-  html += `<div style="grid-column:1/-1;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:1.2px;color:${C.textDim};font-family:'JetBrains Mono',monospace;padding:2px 0;margin-top:4px;">Activity</div>`;
+  html += `<div style="grid-column:1/-1;font-size:10px;font-weight:600;color:${C.textDim};font-family:-apple-system,system-ui,sans-serif;padding:2px 0;margin-top:4px;">Activity</div>`;
 
   // Steps (7-day avg)
   const steps = healthData.steps;
@@ -7201,13 +7202,201 @@ function switchTab(tab) {
 }
 
 // ============================================================
+// GROWTH RINGS: MOTION, CROSS-SECTION, BOOT (v1.43, docs/DESIGN.md)
+// ============================================================
+// All motion goes through motion() (Web Animations API), so the review
+// harness can pause and seek every animation. Count-ups read the progress of
+// a no-op animation. Durations, easings, and the stagger rule are the only
+// ones allowed (DESIGN.md s5).
+var MOTION = {
+  fast: 160, base: 320, slow: 640,
+  grow: 'cubic-bezier(0.22, 1, 0.36, 1)',
+  settle: 'cubic-bezier(0.4, 0, 0.2, 1)',
+  exit: 'cubic-bezier(0.4, 0, 1, 1)'
+};
+function reducedMotion() {
+  try { return window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (_) { return false; }
+}
+function stagger(i, n) { return i * Math.min(40, 320 / Math.max(1, n)); }
+function motion(el, keyframes, duration, easing, delay, fill) {
+  if (!el || !el.animate) return null;
+  var rm = reducedMotion();
+  return el.animate(keyframes, {
+    duration: rm ? 0 : duration, easing: easing || MOTION.settle,
+    delay: rm ? 0 : (delay || 0), fill: fill || 'backwards'
+  });
+}
+function countUp(el, to, decimals, duration, delay) {
+  if (!el) return null;
+  var fmt = function(v) { return decimals ? v.toFixed(decimals) : String(Math.round(v)); };
+  if (reducedMotion() || !el.animate) { el.textContent = fmt(to); return null; }
+  var a = el.animate([{ outlineOffset: '0px' }, { outlineOffset: '0px' }],
+    { duration: duration, delay: delay || 0, easing: MOTION.grow, fill: 'both' });
+  var tick = function() {
+    var p = a.effect ? a.effect.getComputedTiming().progress : 1;
+    el.textContent = fmt(to * (p == null ? 1 : p));
+    if (a.playState !== 'finished' && a.playState !== 'idle') requestAnimationFrame(tick);
+  };
+  tick();
+  a.finished.then(function() { el.textContent = fmt(to); a.cancel(); }).catch(function() {});
+  return a;
+}
+function hapticTick() { haptic(6); }
+function hapticDouble() { haptic(6); setTimeout(function() { haptic(6); }, 90); }
+
+// Working sets per local week, oldest first (display only; no effect on scores)
+var _weeklySets = [];
+function weeklyWorkingSets(workouts, nWeeks) {
+  var weeks = [];
+  for (var i = 0; i < nWeeks; i++) weeks.push(0);
+  var now = Date.now();
+  (workouts || []).forEach(function(w) {
+    var t = new Date(w.start_time).getTime();
+    var age = Math.floor((now - t) / 86400000);
+    if (!(age >= 0 && age < nWeeks * 7)) return;
+    var n = 0;
+    (w.exercises || []).forEach(function(e) {
+      getWorkingSets(e).forEach(function(s) { if (s.reps) n++; });
+    });
+    weeks[nWeeks - 1 - Math.floor(age / 7)] += n;
+  });
+  return weeks;
+}
+
+// The cross-section: one ring per week, width = working sets (DESIGN.md s8)
+function crossSectionHTML(weeks, size, score) {
+  var n = weeks.length || 1;
+  var cx = size / 2, ro = cx / 1.025;
+  var detailed = size >= 120;
+  var pith = ro * (detailed ? 0.32 : 0.55), band = ro - pith;
+  var mx = 1, i;
+  for (i = 0; i < weeks.length; i++) mx = Math.max(mx, weeks[i]);
+  var raw = [], tot = 0;
+  for (i = 0; i < n; i++) { raw.push(1 + 2.2 * (weeks[i] || 0) / mx); tot += raw[i]; }
+  var radii = [], r = pith;
+  for (i = 0; i < n; i++) { r += raw[i] / tot * band; radii.push(r); }
+  var ringPath = function(rad, k0, pts) {
+    var d = '';
+    for (var k = 0; k <= pts; k++) {
+      var a = 2 * Math.PI * k / pts;
+      var j = 1 + 0.012 * Math.sin(3 * a + k0 * 0.7) + 0.007 * Math.sin(5 * a + k0 * 1.3);
+      d += (k ? 'L' : 'M') + (cx + rad * j * Math.cos(a)).toFixed(1) + ',' + (cx + rad * j * Math.sin(a)).toFixed(1);
+    }
+    return d + 'Z';
+  };
+  var tone = function(k) { return k >= n - 4 ? C.ringNew : (k >= n - 8 ? C.ringSap : C.ringHeart); };
+  var svg = '<svg width="' + size + '" height="' + size + '" viewBox="0 0 ' + size + ' ' + size + '" style="display:block;overflow:visible;" aria-hidden="true">';
+  if (detailed) {
+    for (i = n - 1; i >= 0; i--) {
+      var op = (0.55 + 0.45 * (weeks[i] || 0) / mx).toFixed(2);
+      var s0 = ((i ? radii[i - 1] : pith) / radii[i]).toFixed(3);
+      svg += '<path data-i="' + i + '" data-s0="' + s0 + '" d="' + ringPath(radii[i], i, 120) + '" fill="' + tone(i) +
+        '" fill-opacity="' + op + '" stroke="' + C.char + '" stroke-width="' + (weeks[i] ? 0.6 : 1.4) +
+        '" style="transform-origin:' + cx + 'px ' + cx + 'px;"/>';
+    }
+  } else {
+    [[n - 1, C.ringNew], [n - 5, C.ringSap], [n - 9, C.ringHeart]].forEach(function(b) {
+      if (b[0] >= 0) svg += '<path d="' + ringPath(radii[b[0]], b[0], 48) + '" fill="' + b[1] + '"/>';
+    });
+  }
+  svg += '<circle cx="' + cx + '" cy="' + cx + '" r="' + pith.toFixed(1) + '" fill="' + C.char + '"/></svg>';
+  var fs = size >= 250 ? 50 : (size >= 120 ? 34 : 15);
+  return '<div class="cs" style="position:relative;width:' + size + 'px;height:' + size + 'px;">' + svg +
+    '<div class="cs-score" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;' +
+    'font-family:Newsreader,Georgia,serif;font-weight:500;font-size:' + fs + 'px;line-height:1;color:' + C.sapwood + ';">' +
+    score + '</div></div>';
+}
+
+// Rings lay down outward from the pith, oldest first (stagger rule)
+function growRings(wrap, baseDelay) {
+  var out = [];
+  if (!wrap) return out;
+  var paths = wrap.querySelectorAll('[data-s0]');
+  var n = paths.length;
+  for (var i = 0; i < n; i++) {
+    var idx = +paths[i].getAttribute('data-i');
+    out.push(motion(paths[i], [
+      { transform: 'scale(' + paths[i].getAttribute('data-s0') + ')', opacity: 0 },
+      { transform: 'scale(1)', opacity: 1 }
+    ], MOTION.base, MOTION.grow, (baseDelay || 0) + stagger(idx, n)));
+  }
+  return out;
+}
+
+// Boot sequence, cold start only (DESIGN.md s7). Every animation is created at
+// t=0 with its delay, so the harness can seek the whole sequence.
+var _bootPlayed = false;
+function maybePlayBoot() {
+  if (_bootPlayed) return;
+  _bootPlayed = true;
+  var wrap = document.getElementById('power-score-wrap');
+  var slot = document.getElementById('power-score-ring');
+  var ps = window._powerScoreData;
+  if (reducedMotion() || !document.body.animate || !wrap || !slot || !ps || wrap.style.display === 'none') return;
+  var slotCs = slot.querySelector('.cs') || slot;
+  var status = document.getElementById('loading-text');
+  var ov = document.createElement('div');
+  ov.id = 'boot-overlay';
+  ov.className = 'loading';
+  ov.style.zIndex = '60';
+  ov.style.background = 'transparent';
+  ov.innerHTML = '<div id="boot-backdrop" style="position:absolute;inset:0;background:' + C.char + ';"></div>' +
+    '<div class="ls-stage" id="boot-stage">' + crossSectionHTML(_weeklySets, 292, ps.score) +
+    '<div id="boot-pith" class="ls-pith" style="animation:none;"></div></div>' +
+    '<div class="loading-brand" id="boot-brand" style="position:relative;">LiftScript</div>' +
+    '<div class="loading-text" id="boot-status" style="position:relative;">' + (status ? status.textContent : '') + '</div>';
+  document.body.appendChild(ov);
+
+  var A = [];
+  var stage = document.getElementById('boot-stage');
+  var cs = stage.querySelector('.cs');
+  ['boot-brand', 'boot-status', 'boot-pith'].forEach(function(id) {
+    A.push(motion(document.getElementById(id), [{ opacity: 1 }, { opacity: 0 }], MOTION.fast, MOTION.exit, 0, 'both'));
+  });
+  A = A.concat(growRings(cs, 0));
+  var cu = countUp(cs.querySelector('.cs-score'), ps.score, 0, MOTION.slow, 0);
+  if (cu) { A.push(cu); cu.finished.then(hapticTick).catch(function() {}); }
+  var sr = stage.getBoundingClientRect(), tr = slotCs.getBoundingClientRect();
+  var dx = (tr.left + tr.width / 2) - (sr.left + sr.width / 2);
+  var dy = (tr.top + tr.height / 2) - (sr.top + sr.height / 2);
+  var sc = tr.width / sr.width;
+  A.push(motion(stage, [{ transform: 'none' },
+    { transform: 'translate(' + dx.toFixed(1) + 'px,' + dy.toFixed(1) + 'px) scale(' + sc.toFixed(4) + ')' }],
+    MOTION.slow, MOTION.grow, 640, 'both'));
+  A.push(motion(document.getElementById('boot-backdrop'), [{ opacity: 1 }, { opacity: 0 }], MOTION.base, MOTION.settle, 640, 'both'));
+  ['.header h1', '#last-updated', '#header-refresh-btn', '.tabs'].forEach(function(sel) {
+    A.push(motion(document.querySelector(sel), [{ opacity: 0, transform: 'translateY(6px)' }, { opacity: 1, transform: 'none' }],
+      MOTION.base, MOTION.settle, 800));
+  });
+  var hand = motion(cs, [{ opacity: 1 }, { opacity: 0 }], MOTION.fast, MOTION.exit, 1280, 'both');
+  A.push(hand);
+  A.push(motion(wrap, [{ opacity: 0 }, { opacity: 1 }], MOTION.fast, MOTION.settle, 1280));
+  var items = [].slice.call(document.querySelectorAll('#tab-today > *')).filter(function(el) { return el.offsetParent !== null; });
+  items.forEach(function(el, i) {
+    A.push(motion(el, [{ opacity: 0, transform: 'translateY(12px)' }, { opacity: 1, transform: 'none' }],
+      MOTION.base, MOTION.grow, 960 + stagger(i, items.length)));
+  });
+  A = A.filter(Boolean);
+  var done = function() { if (ov.parentNode) ov.parentNode.removeChild(ov); };
+  if (hand) hand.finished.then(done).catch(done); else done();
+  ov.addEventListener('pointerdown', function() {
+    A.forEach(function(a) { try { a.finish(); } catch (_) {} });
+  });
+}
+
+// ============================================================
 // APP LIFECYCLE
 // ============================================================
 function showScreen(screen) {
+  var wasLoading = !document.getElementById('loading-screen').classList.contains('hidden');
   ['loading-screen', 'dashboard'].forEach(id => {
     document.getElementById(id).classList.toggle('hidden', id !== screen);
   });
-  if (screen === 'dashboard') updateCanopyLight();
+  if (screen === 'dashboard') {
+    updateCanopyLight();
+    // v1.43: after the boot has played once, returning from the loader is a quiet fade
+    if (_bootPlayed && wasLoading) motion(document.getElementById('dashboard'), [{ opacity: 0 }, { opacity: 1 }], MOTION.fast, MOTION.settle);
+  }
 }
 
 function updateLoading(text) {
@@ -7390,40 +7579,8 @@ function renderPowerScore() {
   // Store for detail panel
   window._powerScoreData = ps;
 
-  const size = 38;
-  const r = 14;
-  const cx = size / 2;
-  const cy = size / 2;
-  const stroke = 3.5;
-  const circumference = 2 * Math.PI * r;
-  const fillLen = (ps.score / 100) * circumference;
-  const gapLen = circumference - fillLen;
-
-  // Color based on score
-  const scoreColor = ps.score >= 70 ? C.accent : ps.score >= 45 ? C.warn : C.danger;
-
-  // Organic tree-ring power score indicator
-  var ringCount = 5;
-  var filledRings = Math.round((ps.score / 100) * ringCount);
-  var ringSvg = `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">`;
-  for (var ri = 0; ri < ringCount; ri++) {
-    var rr = 3 + ri * 2.8;
-    var isFilled = ri < filledRings;
-    var ringPts = [];
-    for (var rj = 0; rj < 24; rj++) {
-      var rAngle = (rj / 24) * Math.PI * 2;
-      var rNoise = Math.sin(rAngle * 3 + ri * 2.1) * 0.8 + Math.cos(rAngle * 5 + ri * 1.3) * 0.4;
-      var rrx = cx + (rr + rNoise) * Math.cos(rAngle);
-      var rry = cy + (rr + rNoise) * Math.sin(rAngle);
-      ringPts.push(`${rj === 0 ? 'M' : 'L'}${rrx.toFixed(1)},${rry.toFixed(1)}`);
-    }
-    ringPts.push('Z');
-    var rOpacity = isFilled ? (0.4 + (ri / ringCount) * 0.6).toFixed(2) : '0.15';
-    ringSvg += `<path d="${ringPts.join(' ')}" fill="none" stroke="${isFilled ? scoreColor : C.surface3}" stroke-width="${isFilled ? '1.5' : '0.6'}" opacity="${rOpacity}"/>`;
-  }
-  ringSvg += `<circle cx="${cx}" cy="${cy}" r="7" fill="${C.bg}" opacity="0.85"/>`;
-  ringSvg += `<text x="${cx}" y="${cy}" text-anchor="middle" dominant-baseline="central" fill="${C.text}" font-family="JetBrains Mono,monospace" font-size="11" font-weight="700">${ps.score}</text></svg>`;
-  ring.innerHTML = ringSvg;
+  // v1.43: header cross-section (rings = weeks, DESIGN.md s8)
+  ring.innerHTML = crossSectionHTML(_weeklySets, 40, ps.score);
 }
 
 function togglePowerScoreDetail() {
@@ -7437,27 +7594,34 @@ function togglePowerScoreDetail() {
     return;
   }
 
-  const scoreColor = ps.score >= 70 ? C.accent : ps.score >= 45 ? C.warn : C.danger;
-  let html = `<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
-    <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:${C.textDim};font-family:'JetBrains Mono',monospace;">Power Score</div>
-    <div style="font-family:'JetBrains Mono',monospace;font-size:20px;font-weight:700;color:${scoreColor};">${ps.score}<span style="font-size:12px;font-weight:500;color:${C.textDim};">/100</span></div>
-  </div>`;
-
-  for (const c of ps.components) {
-    const barColor = c.value >= 70 ? C.accent : c.value >= 45 ? C.warn : C.danger;
-    const valColor = c.value >= 70 ? C.accent : c.value >= 45 ? C.warn : C.dangerText; // v1.34: lifted red for 11px value
-    const weightPct = Math.round((c.normalizedWeight || 0) * 100);
-    html += `<div style="margin-bottom:8px;">
-      <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:3px;font-family:'JetBrains Mono',monospace;">
-        <span style="font-size:12px;font-weight:600;color:${C.text};">${c.label} <span style="font-size:10px;font-weight:400;color:${C.textDim};">${weightPct}%</span></span>
-        <span style="font-size:11px;color:${C.textDim};">${c.detail} <span style="font-weight:600;color:${valColor};">${c.value}</span></span>
-      </div>
-      ${mossBarHTML(c.value, 100, barColor, 4)}
-    </div>`;
+  // v1.43: Power Score sheet (DESIGN.md s7): the 220 px cross-section regrows,
+  // pillar values count up, bars grow.
+  var html = '<div style="display:flex;flex-direction:column;align-items:center;">' +
+    crossSectionHTML(_weeklySets, 220, ps.score) +
+    '<div style="font-size:13px;line-height:1.3;color:' + C.ash + ';margin-top:12px;text-align:center;">' +
+    'Power score, out of 100. Each ring is one week; its width is working sets.</div></div>';
+  for (var pi = 0; pi < ps.components.length; pi++) {
+    var pc = ps.components[pi];
+    var weightPct = Math.round((pc.normalizedWeight || 0) * 100);
+    html += '<div style="margin-top:16px;">' +
+      '<div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px;">' +
+      '<div><div style="font-size:15px;line-height:1.35;color:' + C.sapwood + ';">' + pc.label + '</div>' +
+      '<div style="font-size:13px;line-height:1.3;color:' + C.ash + ';">' + (pc.detail ? pc.detail + ', ' : '') + weightPct + '% of score</div></div>' +
+      '<div class="ps-val" style="font-family:Newsreader,Georgia,serif;font-size:24px;font-weight:500;line-height:1.1;color:' + C.sapwood + ';">' + pc.value + '</div></div>' +
+      '<div style="height:4px;border-radius:999px;background:' + C.line + ';margin-top:8px;overflow:hidden;">' +
+      '<div class="ps-bar" style="height:100%;width:' + Math.max(0, Math.min(100, pc.value)) + '%;background:' + C.sapwood + ';border-radius:999px;transform-origin:left center;"></div></div></div>';
   }
-
   panel.innerHTML = html;
   panel.style.display = 'block';
+  hapticTick();
+  motion(panel, [{ opacity: 0, transform: 'translateY(-16px)' }, { opacity: 1, transform: 'none' }], MOTION.base, MOTION.grow);
+  growRings(panel.querySelector('.cs'), 0);
+  countUp(panel.querySelector('.cs-score'), ps.score, 0, MOTION.slow, 0);
+  var vals = panel.querySelectorAll('.ps-val'), bars = panel.querySelectorAll('.ps-bar');
+  for (var vi = 0; vi < vals.length; vi++) {
+    countUp(vals[vi], ps.components[vi].value, 0, MOTION.slow, 160);
+    motion(bars[vi], [{ transform: 'scaleX(0)' }, { transform: 'scaleX(1)' }], MOTION.slow, MOTION.grow, 160 + stagger(vi, bars.length));
+  }
 }
 
 // Dismiss power score detail on outside click
@@ -7495,6 +7659,7 @@ function renderDashboard(workouts) {
 
   // v1.1 Task 6: unified preprocess pipeline
   const pp = preprocessWorkouts(workouts, PROFILE.bodyweightLbs, WEIGHT_DATA);
+  _weeklySets = weeklyWorkingSets(workouts, 26); // v1.43: cross-section rings (display only)
 
   exerciseHistory = pp.exerciseHistory;
   _templateIdMap = pp.templateIdMap || {};
@@ -7517,10 +7682,10 @@ function renderDashboard(workouts) {
   showScreen('dashboard');
 
   const now = new Date();
-  const syncColor = (hevyStatus === 'error' || healthStatus === 'missing') ? C.textDim
-    : (healthStatus === 'stale') ? C.warn : C.accent;
+  const syncColor = (hevyStatus === 'error' || healthStatus === 'missing') ? C.ember
+    : (healthStatus === 'stale') ? C.resin : C.lichen; // v1.43
   document.getElementById('last-updated').innerHTML =
-    `v1.42<br>${now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }).replace(/\u202f/g, ' ')} <span id="sync-dot" style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${syncColor};margin-left:5px;vertical-align:middle;position:relative;top:-1px;"></span>`;
+    `v1.43, ${now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }).replace(/\u202f/g, ' ')} <span id="sync-dot" style="display:inline-block;width:6px;height:6px;border-radius:50%;background:${syncColor};margin-left:4px;vertical-align:middle;position:relative;top:-1px;"></span>`;
 
   // Populate globals BEFORE renderTimedSession so lifted-today detection works
   heatmapDayWorkouts = pp.heatmapDayWorkouts || {};
@@ -7544,6 +7709,7 @@ function renderDashboard(workouts) {
   renderHealthVitals();
   renderMeasurementsCard();
   renderPowerScore();
+  maybePlayBoot(); // v1.43: cold-start boot sequence
 }
 
 async function refreshData() {

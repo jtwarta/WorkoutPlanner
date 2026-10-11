@@ -1,6 +1,6 @@
 # LiftScript — Master Documentation
 
-**Version: v1.42** · **Reconstructed July 10, 2026 · updated to v1.42 October 11, 2026**
+**Version: v1.43** · **Reconstructed July 10, 2026 · updated to v1.43 October 11, 2026**
 
 > **Provenance note:** the original `Master_documentation.md` (last at v1.34 +
 > pending v1.35–v1.39 deltas) was deleted from the project before patching. This
@@ -51,7 +51,7 @@ Scientific foundation (as documented in the code header):
 
 ## 2. Architecture & Development Rules
 
-- **Single file:** all HTML/CSS/JS in `index.html` (~7,718 lines at v1.42).
+- **Single file:** all HTML/CSS/JS in `index.html` (~7,885 lines at v1.43).
   Assets: `manifest.json`, `icon-180/192/512.png`, `health-data.json`
   (written by the iOS Shortcut, not by hand).
 - **Pure ASCII in index.html.** Special characters use `\uXXXX` escapes.
@@ -565,6 +565,7 @@ cross-references.
 
 | Version | Key changes |
 |---|---|
+| v1.43 | Growth Rings foundation: tokens + transitional C remap, Newsreader + SF Pro (mono/uppercase/tracking removed), WAAPI motion system, 26-week cross-section (header + Power Score sheet), cold-start boot sequence, header/tab bar/loader rebuilt, cards flattened, texture/dividers/canopy removed |
 | v1.42 | Chart time domain = selected period ending today (overlays no longer clipped at last weigh-in; renders without weigh-ins; overlay tooltip anchors) |
 | v1.41 | Hevy 429 hardening: `fetchHevy()` backoff wrapper (Retry-After or 2/5/10 s, 3 retries) on all call sites; template pageSize 10→100 (~47→~5 requests); readable terminal-429 message |
 | v1.40 | WAIST tile source-of-truth fix: merged `getLatestMeasurements()` value instead of raw Apple Health |
@@ -602,8 +603,8 @@ cross-references.
   components, bans, build plan). Implement against it only.
 - Parity baseline: git tag `pre-revamp-v1.42`. Earlier baseline
   `pre-revamp-v1.41` predates the v1.42 chart fix.
-- Build plan: v1.43 foundation + boot, v1.44 Today, v1.45 Muscles, v1.46
-  History, v1.47 Body. Presentation only: scoring, prescription, and data
+- Build plan: v1.43 foundation + boot (shipped Oct 11, 2026), v1.44 Today,
+  v1.45 Muscles, v1.46 History, v1.47 Body. Presentation only: scoring, prescription, and data
   logic do not change.
 - Review tooling: `tools/render.py` (fixture record/replay, frozen clock,
   iPhone viewport, Hevy writes blocked) and `tools/compose.py` (contact
