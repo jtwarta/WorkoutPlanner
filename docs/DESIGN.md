@@ -295,8 +295,9 @@ range as caption text ("132 to 145 bpm"). No pills.
 
 **Muscles list.** Replaces the 12-card grid. Grouped by the existing urgency
 tiers: "Due now" (high), "Coming due" (med), "On track" (others), "Rested"
-(trained within 24 h). Row: name SF 17; days since as Newsreader figure + "d
-since" caption; under the name a 4 px volume bar (Line track, Sapwood fill,
+(trained within 24 h). Section title "What's due" (caption "By priority"). Row: name SF 17;
+days since as Newsreader figure + "days since" caption ("no data" when
+unknown); under the name a 4 px volume bar (Line track, Sapwood fill,
 capped at target) and caption "0.9 of 10 weekly sets". Tap expands the detail
 explainer inline. "Build a custom session" is a quiet button at the top;
 select mode shows a 20 px rounded-square check (radius 4) per row.

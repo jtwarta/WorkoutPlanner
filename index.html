@@ -1,7 +1,20 @@
 <!DOCTYPE html>
 
 <!--
-  LiftScript v1.44
+  LiftScript v1.45
+  Changes from v1.44 (v1.45 - Muscles rebuilt to docs/DESIGN.md):
+  - The 12-card grid becomes a list grouped by the existing urgency tiers:
+    Due now (high), Coming due (med), On track, Rested (trained within 24 h).
+    Score order kept inside each group.
+  - Row: name, 4 px volume bar, "N of M weekly sets"; days since as a
+    Newsreader figure. Recency rings, per-urgency borders, Rested chip, and
+    the legend are gone (rings mean weeks).
+  - Detail explainer opens inline under the tapped row (FLIP); select mode
+    is a quiet "Build a custom session" control with rounded-square checks;
+    the build button is the screen's one filled button.
+  - First visit: rows rise in with the stagger rule, then bars grow.
+  - Focus ring is Heartwood.
+
   Changes from v1.43 (v1.44 - Today rebuilt to docs/DESIGN.md):
   - Session title in Newsreader with "About N min"; done / custom / rest
     notes as captions. Settings become three quiet text toggles plus Reroll.
@@ -475,8 +488,9 @@ button:focus-visible,
 input:focus-visible,
 .tab:focus-visible,
 .muscle-cell:focus-visible,
+.mu-row:focus-visible,
 .heatmap-cell:focus-visible {
-  outline: 2px solid var(--accent);
+  outline: 2px solid #A4442B; /* v1.45: Heartwood focus ring (DESIGN.md s2) */
   outline-offset: 2px;
   border-radius: 5px;
 }
@@ -614,64 +628,15 @@ font-family: -apple-system, system-ui, sans-serif; font-size: 17px; font-weight:
 .cd-bar > div { height: 100%; border-radius: 999px; background: #EAD7BC; }
 .cd-item { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding: 12px 0; }
 
-/* ===================== */
-/* MUSCLE GRID (v1.2: tappable with explainers) */
-/* ===================== */
-.muscle-grid {
-display: grid;
-grid-template-columns: 1fr 1fr;
-gap: 10px;
-}
-.muscle-cell {
-border-radius: 6px;
-padding: 10px 12px;
-transition: all 0.3s ease;
-border: 1px solid var(--border);
-cursor: pointer;
--webkit-tap-highlight-color: transparent;
-background-image: radial-gradient(rgba(255,255,255,0.03) 1px, transparent 1px);
-background-size: 16px 16px;
-}
-.muscle-cell:active { opacity: 0.85; }
-.muscle-cell-header {
-display: flex;
-align-items: center;
-justify-content: space-between;
-margin-bottom: 8px;
-}
-.muscle-name {
-font-family: var(--font-mono);
-font-size: 12px;
-font-weight: 500;
-
-
-}
-.muscle-detail {
-max-height: 0;
-overflow: hidden;
-transition: max-height 0.3s ease, opacity 0.25s ease;
-opacity: 0;
-grid-column: 1 / -1;
-}
-.muscle-detail.open {
-opacity: 1;
-}
-.muscle-detail-inner {
-font-family: var(--font-sans);
-text-transform: none;
-
-padding: 14px;
-background: var(--surface2);
-border-radius: 6px;
-border: 1px solid var(--border);
-font-size: 14px;
-color: var(--text-mid);
-line-height: 1.55;
-}
-.muscle-detail-inner strong {
-color: var(--text);
-font-weight: 600;
-}
+/* Muscles (v1.45, DESIGN.md s8): grouped list, one surface level */
+.mu-group + .mu-group .mu-glabel { border-top: 1px solid #3A2E26; }
+.mu-glabel { display: flex; align-items: center; min-height: 44px; margin-top: 8px; font-family: -apple-system, system-ui, sans-serif; font-size: 13px; }
+.mu-row { display: flex; align-items: center; gap: 12px; min-height: 56px; padding: 8px 0; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.mu-main { flex: 1; min-width: 0; }
+.mu-bar { height: 4px; border-radius: 999px; background: #3A2E26; overflow: hidden; margin-top: 6px; max-width: 220px; }
+.mu-bar > div { height: 100%; border-radius: 999px; background: #EAD7BC; transform-origin: left center; }
+.mu-check { flex-shrink: 0; width: 20px; height: 20px; border-radius: 4px; border: 1.5px solid #9A8E83; display: flex; align-items: center; justify-content: center; }
+.muscle-detail { margin: 0 0 8px; }
 
 /* ===================== */
 /* WEIGHT TAB            */
@@ -1015,7 +980,7 @@ margin-top: 4px;
     <div class="header">
       <div class="hdr-id">
         <h1>LiftScript</h1>
-        <div class="subtitle" id="last-updated">v1.44</div>
+        <div class="subtitle" id="last-updated">v1.45</div>
       </div>
       <button id="header-refresh-btn" class="hdr-btn" onclick="refreshData()" title="Refresh data" aria-label="Refresh data from Hevy and health">
         <svg width="17" height="17" viewBox="0 0 16 16" fill="none" style="display:block;">
@@ -1050,16 +1015,11 @@ margin-top: 4px;
 
 <div id="tab-muscles" class="hidden">
   <div class="card">
-    <div class="card-title" style="cursor:pointer;display:flex;align-items:center;justify-content:space-between;" onclick="toggleSectionExplainer('muscle-grid-legend',this)">
-      <span>Muscle Group Status</span>
-      <span class="section-chevron" style="font-size:10px;color:var(--text-dim);transition:transform 0.3s ease;display:inline-block;">&#9662;</span>
-    </div>
-    <div id="muscle-select-controls" style="display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap;"></div>
-    <div id="muscle-grid" class="muscle-grid"></div>
-    <div class="muscle-detail" id="muscle-detail">
-      <div class="muscle-detail-inner" id="muscle-detail-inner"></div>
-    </div>
-    <div id="muscle-build-fab" style="display:none;margin-top:12px;text-align:center;"></div>
+    <div class="td-titlerow td-in"><div class="td-title">What&#8217;s due</div><div class="td-cap">By priority</div></div>
+    <div id="muscle-select-controls" class="td-in"></div>
+    <div id="muscle-grid"></div>
+    <div class="muscle-detail" id="muscle-detail" style="display:none;"><div class="muscle-detail-inner rec-explainer" id="muscle-detail-inner"></div></div>
+    <div id="muscle-build-fab" style="display:none;margin-top:16px;"></div>
   </div>
 </div>
 
@@ -3438,6 +3398,7 @@ function toggleMuscleSelectMode() {
 
 function toggleMuscleSelection(key, evt) {
   if (evt) evt.stopPropagation();
+  hapticTick(); // v1.45
   if (_selectedMuscles.has(key)) {
     _selectedMuscles.delete(key);
   } else {
@@ -4765,175 +4726,98 @@ function renderMuscleGrid(muscleStats, recs) {
     return scoreB - scoreA;
   });
 
-  // Cross-section ring indicator for recency (Redwood aesthetic)
-  function recencyRingSvg(daysSince, idealDays) {
-    var remaining;
-    if (daysSince === Infinity) remaining = 0;
-    else remaining = Math.max(0, 1 - (daysSince / idealDays));
-    var arcColor;
-    if (remaining >= 0.6) arcColor = C.accent;
-    else if (remaining >= 0.2) arcColor = C.warn;
-    else arcColor = C.danger;
-    return crossSectionRingSvg(daysSince, idealDays, arcColor);
+  // v1.45: the detail panel may be parked inside the list; move it out
+  // before the list is re-rendered so it survives.
+  var det = document.getElementById('muscle-detail');
+  if (det && grid.contains(det)) {
+    det.style.display = 'none';
+    grid.parentNode.insertBefore(det, grid.nextSibling);
+    selectedMuscleKey = null;
   }
 
-  grid.innerHTML = entries.map(([key, stat]) => {
-    const weeklyVol = parseFloat((stat.totalSets30d / 4.3).toFixed(1));
-    const rec = recMap[key];
-    const urgency = rec ? rec.urgency : 'low';
-
-    // Volume bar color
-    const volRatio = stat.idealSetsPerWeek > 0 ? weeklyVol / stat.idealSetsPerWeek : 1;
-    const volPct = Math.min(100, Math.round(volRatio * 100));
-
-    // Recency ring
-    const daysSrc = stat.daysSincePrimary;
-    const ring = recencyRingSvg(daysSrc, stat.idealFreqDays);
-
-    // Volume label
-    const volLabel = `${weeklyVol % 1 === 0 ? weeklyVol.toFixed(0) : weeklyVol.toFixed(1)}/${stat.idealSetsPerWeek}`;
-
-    // v1.25: recovery guard - muscles trained today get "RESTED" treatment
-    const isRested = stat.daysSincePrimary === 0;
-
-    // Left border uses urgency color (softer "low" tone in v1.25)
-    const urgencyColors = { high: C.danger, med: C.warn, low: C.textDim };
-    let uColor = urgencyColors[urgency] || C.textDim;
-    // Rested muscles get sap-gold border as a distinct visual channel
-    if (isRested) uColor = C.gold;
-
-    // v1.34: bar + fraction follow urgency tier so the grid ranks visually
-    // when many groups are behind (the old volume-ratio scale collapsed to
-    // flat red whenever everything was <50%). >=80% volume keeps green.
-    const tierBarColor = volRatio >= 0.8 ? C.accent : uColor;
-    const tierTextColor = volRatio >= 0.8 ? C.accent
-      : isRested ? C.gold
-      : urgency === 'high' ? C.dangerText
-      : urgency === 'med' ? C.warn
-      : C.textMid;
-
-    // Rested chip for the cell header
-    const restedChip = isRested
-      ? '<span style="display:inline-block;font-family:var(--font-mono);font-size:8px;font-weight:700;color:' + C.gold + ';background:rgba(232,196,74,0.14);border:1px solid rgba(232,196,74,0.32);padding:1px 5px;border-radius:3px;margin-left:6px;vertical-align:middle;">Rested</span>'
+  // v1.45: grouped by the existing urgency tiers (DESIGN.md s8). Score order
+  // is kept inside each group. Presentation only.
+  var GROUPS = [['high', 'Due now', C.resin], ['med', 'Coming due', C.sapwood], ['low', 'On track', C.lichen], ['rested', 'Rested', C.ash]];
+  var buckets = { high: [], med: [], low: [], rested: [] };
+  entries.forEach(function(en) {
+    var key = en[0], stat = en[1], rec = recMap[key];
+    var urgency = rec ? rec.urgency : 'low';
+    var b = stat.daysSincePrimary === 0 ? 'rested' : (urgency === 'high' ? 'high' : (urgency === 'med' ? 'med' : 'low'));
+    buckets[b].push(en);
+  });
+  var CHECK = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="' + C.char + '" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>';
+  function rowHTML(key, stat) {
+    var weeklyVol = parseFloat((stat.totalSets30d / 4.3).toFixed(1));
+    var volRatio = stat.idealSetsPerWeek > 0 ? weeklyVol / stat.idealSetsPerWeek : 1;
+    var volPct = Math.min(100, Math.round(volRatio * 100));
+    var volTxt = weeklyVol % 1 === 0 ? weeklyVol.toFixed(0) : weeklyVol.toFixed(1);
+    var d = stat.daysSincePrimary;
+    var daysTxt = d === Infinity ? '\u2014' : String(d);
+    var daysCap = d === Infinity ? 'no data' : (d === 1 ? 'day since' : 'days since');
+    var sel = _muscleSelectMode && _selectedMuscles.has(key);
+    var check = _muscleSelectMode
+      ? '<span class="mu-check" style="background:' + (sel ? C.sapwood : 'transparent') + ';border-color:' + (sel ? C.sapwood : C.ash) + ';">' + (sel ? CHECK : '') + '</span>'
       : '';
-
-    return `
-      <div class="muscle-cell" style="background:${_muscleSelectMode && _selectedMuscles.has(key) ? C.accentDim : C.surface2};border-color:${_muscleSelectMode && _selectedMuscles.has(key) ? C.accentBorder : C.border};border-left:3px solid ${uColor};${_muscleSelectMode && _selectedMuscles.has(key) ? 'outline:2px solid ' + C.accent + ';outline-offset:-2px;' : ''}${isRested ? 'opacity:0.82;' : ''}" onclick="${_muscleSelectMode ? 'toggleMuscleSelection(\'' + key + '\',event)' : 'toggleMuscleDetail(\'' + key + '\')'}">
-        <div class="muscle-cell-header">
-          <div class="muscle-name" style="color:${isRested ? C.textMid : C.text}">${stat.name}${_muscleSelectMode && _selectedMuscles.has(key) ? ' <span style="font-size:10px;color:' + C.accent + ';">\u2713</span>' : ''}${restedChip}</div>
-          ${ring}
-        </div>
-        <div style="display:flex;align-items:center;gap:8px;">
-          <div style="flex:1;">${mossBarHTML(volPct, 100, tierBarColor, 6)}</div>
-          <div style="font-family:-apple-system,system-ui,sans-serif;font-size:11px;font-weight:600;color:${tierTextColor};white-space:nowrap;">${volLabel}</div>
-        </div>
-      </div>`;
+    var tap = _muscleSelectMode ? "toggleMuscleSelection('" + key + "',event)" : "toggleMuscleDetail('" + key + "')";
+    return '<div class="mu-row td-in" id="mu-row-' + key + '" role="button" tabindex="0" onclick="' + tap + '">' + check +
+      '<div class="mu-main"><div class="ex-name">' + stat.name + '</div>' +
+      '<div class="mu-bar"><div style="width:' + volPct + '%;"></div></div>' +
+      '<div class="ex-sub">' + volTxt + ' of ' + stat.idealSetsPerWeek + ' weekly sets</div></div>' +
+      '<div class="ex-rx"><div class="ex-num">' + daysTxt + '</div><div class="ex-sub">' + daysCap + '</div></div></div>';
+  }
+  grid.innerHTML = GROUPS.filter(function(g) { return buckets[g[0]].length > 0; }).map(function(g) {
+    return '<div class="mu-group"><div class="mu-glabel td-in" style="color:' + g[2] + ';">' + g[1] + '</div>' +
+      buckets[g[0]].map(function(en) { return rowHTML(en[0], en[1]); }).join('') + '</div>';
   }).join('');
-
-  // Legend (remove stale from prior render, then add fresh)
-  const prevLegend = document.getElementById('muscle-grid-legend');
-  if (prevLegend) prevLegend.remove();
-  grid.insertAdjacentHTML('afterend',
-    `<div id="muscle-grid-legend" style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:10px;font-size:10px;font-family:-apple-system,system-ui,sans-serif;color:${C.textDim};max-height:0;overflow:hidden;opacity:0;transition:max-height 0.3s ease,opacity 0.25s ease;">
-      <span style="display:flex;align-items:center;gap:3px;"><span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:${C.danger};"></span>Overdue</span>
-      <span style="display:flex;align-items:center;gap:3px;"><span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:${C.warn};"></span>Due soon</span>
-      <span style="display:flex;align-items:center;gap:3px;"><span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:${C.accent};"></span>On track</span>
-      <span style="display:flex;align-items:center;gap:3px;"><svg width="16" height="16" viewBox="0 0 16 16"><circle cx="8" cy="8" r="5" fill="none" stroke="${C.textDim}" stroke-width="1.5"/></svg>Ring = days since</span>
-      <span style="display:flex;align-items:center;gap:3px;"><span style="display:inline-block;width:12px;height:3px;border-radius:1px;background:${C.textDim};"></span>Bar = sets/wk</span>
-    </div>`);
 
   // Store recs for detail panel
   _muscleRecMap = recMap;
 
-  // Render select mode controls
+  // Select mode: quiet text control at the top (DESIGN.md s8)
   var selectControls = document.getElementById('muscle-select-controls');
   if (selectControls) {
-    var btnLabel = _muscleSelectMode ? 'Cancel' : 'Build Custom';
-    var btnBg = _muscleSelectMode ? C.dangerDim : C.surface2;
-    var btnBorder = _muscleSelectMode ? C.danger + '30' : C.border;
-    var btnColor = _muscleSelectMode ? C.dangerText : C.textMid;
-    selectControls.innerHTML = '<button onclick="toggleMuscleSelectMode()" style="display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:6px;background:' + btnBg + ';border:1px solid ' + btnBorder + ';color:' + btnColor + ';font-size:11px;font-weight:600;font-family:-apple-system,system-ui,sans-serif;cursor:pointer;-webkit-tap-highlight-color:transparent;white-space:nowrap;">'
-      + (_muscleSelectMode ? '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>' : '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>')
-      + btnLabel + '</button>'
-      + (_muscleSelectMode ? '<span style="font-size:10px;color:' + C.textDim + ';font-family:-apple-system,system-ui,sans-serif;">Tap muscles to select</span>' : '');
+    selectControls.innerHTML = '<div class="td-set"><button class="td-quiet" onclick="toggleMuscleSelectMode()">' +
+      (_muscleSelectMode ? 'Cancel' : 'Build a custom session') + '</button>' +
+      (_muscleSelectMode ? '<span class="td-cap">Tap muscles to include</span>' : '') + '</div>';
   }
 
-  // Render floating build button
+  // Build button: the one filled button on this screen, only while selecting
   var fab = document.getElementById('muscle-build-fab');
   if (fab) {
     if (_muscleSelectMode && _selectedMuscles.size > 0) {
+      var nSel = _selectedMuscles.size;
       fab.style.display = 'block';
-      fab.innerHTML = '<button onclick="buildCustomSession()" style="display:inline-flex;align-items:center;gap:6px;padding:8px 18px;border-radius:8px;background:' + C.accent + ';border:1px solid ' + C.accentBorder + ';color:' + C.text + ';font-size:13px;font-weight:700;font-family:-apple-system,system-ui,sans-serif;cursor:pointer;-webkit-tap-highlight-color:transparent;white-space:nowrap;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="13 17 18 12 13 7"/><polyline points="6 17 11 12 6 7"/></svg>Build Session (' + _selectedMuscles.size + ')</button>';
+      fab.innerHTML = '<button class="send-btn" onclick="buildCustomSession()">Build session from ' + nSel + ' muscle' + (nSel !== 1 ? 's' : '') + '</button>';
     } else {
       fab.style.display = 'none';
       fab.innerHTML = '';
     }
   }
-
-  // Click outside any cell to deselect (attach once)
-  if (!grid.dataset.clickOutside) {
-    grid.dataset.clickOutside = '1';
-    grid.addEventListener('click', function(e) {
-      if (!e.target.closest('.muscle-cell')) {
-        const detailEl = document.getElementById('muscle-detail');
-        if (detailEl && detailEl.classList.contains('open')) {
-          detailEl.style.maxHeight = '0';
-          detailEl.classList.remove('open');
-          selectedMuscleKey = null;
-          document.querySelectorAll('.muscle-cell').forEach(c => c.style.outline = 'none');
-        }
-      }
-    });
-  }
 }
-
 
 let selectedMuscleKey = null;
 let _muscleRecMap = {};
 
 function toggleMuscleDetail(key) {
-  if (_muscleSelectMode) return; // Suppress detail panel in select mode
-  const detailEl = document.getElementById('muscle-detail');
-  const innerEl = document.getElementById('muscle-detail-inner');
-
-  if (selectedMuscleKey === key && detailEl.classList.contains('open')) {
-    detailEl.style.maxHeight = '0';
-    detailEl.classList.remove('open');
+  // v1.45: detail opens inline under the tapped row (FLIP expander)
+  if (_muscleSelectMode) return;
+  var detailEl = document.getElementById('muscle-detail');
+  var innerEl = document.getElementById('muscle-detail-inner');
+  var row = document.getElementById('mu-row-' + key);
+  if (!detailEl || !innerEl || !row) return;
+  var isOpen = detailEl.style.display === 'block';
+  if (isOpen && selectedMuscleKey === key) {
+    flipToggle(detailEl, false);
     selectedMuscleKey = null;
-    document.querySelectorAll('.muscle-cell').forEach(c => c.style.outline = 'none');
     return;
   }
-
+  if (isOpen) detailEl.style.display = 'none';
   selectedMuscleKey = key;
-  const rec = _muscleRecMap[key] || null;
-
-  if (rec) {
-    innerEl.innerHTML = rec.explainer;
-  } else {
-    innerEl.innerHTML = 'No analysis available.';
-  }
-
-  detailEl.classList.add('open');
-  detailEl.style.maxHeight = innerEl.scrollHeight + 24 + 'px';
-
-  // v1.34: bring the explainer into view -- top-row taps otherwise look inert
-  setTimeout(function() {
-    var reduce = false;
-    try { reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) {}
-    try { detailEl.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'nearest' }); } catch (e) {}
-  }, 200);
-
-  // Highlight selected cell
-  document.querySelectorAll('.muscle-cell').forEach(c => c.style.outline = 'none');
-  const cells = document.querySelectorAll('.muscle-cell');
-  const entries = Object.entries(muscleAnalysis || {}).sort((a, b) => {
-    const rm = _muscleRecMap;
-    return (rm[b[0]] ? rm[b[0]].score : 0) - (rm[a[0]] ? rm[a[0]].score : 0);
-  });
-  const idx = entries.findIndex(([k]) => k === key);
-  if (idx >= 0 && cells[idx]) {
-    cells[idx].style.outline = `1.5px solid ${C.accent}`;
-  }
+  var rec = _muscleRecMap[key] || null;
+  innerEl.innerHTML = rec ? rec.explainer : 'No analysis available.';
+  row.parentNode.insertBefore(detailEl, row.nextSibling);
+  hapticTick();
+  flipToggle(detailEl, true);
 }
 
 // ============================================================
@@ -7323,18 +7207,24 @@ function setSendBtnState(btn, state, origHTML) {
 // Tab entrances: full storyboard on the first visit per app session, a quiet
 // fade after that (DESIGN.md s5). Boot counts as Today's first visit.
 var _tabVisited = { today: true };
-function todayEntranceItems() {
-  return [].slice.call(document.querySelectorAll('#tab-today .td-in')).filter(function(e) { return e.offsetParent !== null; });
+function entranceItems(tab, sel) {
+  return [].slice.call(document.querySelectorAll('#tab-' + tab + ' ' + (sel || '.td-in'))).filter(function(e) { return e.offsetParent !== null; });
 }
+function todayEntranceItems() { return entranceItems('today'); }
 function tabEntrance(tab) {
   var el = document.getElementById('tab-' + tab);
   if (!el) return;
   if (_tabVisited[tab]) { motion(el, [{ opacity: 0 }, { opacity: 1 }], MOTION.fast, MOTION.settle); return; }
   _tabVisited[tab] = true;
-  var items = tab === 'today' ? todayEntranceItems() : [];
+  var items = entranceItems(tab);
   if (!items.length) { motion(el, [{ opacity: 0 }, { opacity: 1 }], MOTION.base, MOTION.grow); return; }
   items.forEach(function(it, i) {
     motion(it, [{ opacity: 0, transform: 'translateY(12px)' }, { opacity: 1, transform: 'none' }], MOTION.base, MOTION.grow, stagger(i, items.length));
+  });
+  // v1.45: Muscles volume bars grow after the rows start (DESIGN.md s7)
+  var bars = tab === 'muscles' ? entranceItems('muscles', '.mu-bar > div') : [];
+  bars.forEach(function(b, i) {
+    motion(b, [{ transform: 'scaleX(0)' }, { transform: 'scaleX(1)' }], MOTION.slow, MOTION.grow, 160 + stagger(i, bars.length));
   });
 }
 
@@ -7639,7 +7529,7 @@ function renderDashboard(workouts) {
   const syncColor = (hevyStatus === 'error' || healthStatus === 'missing') ? C.ember
     : (healthStatus === 'stale') ? C.resin : C.lichen; // v1.43
   document.getElementById('last-updated').innerHTML =
-    `v1.44, ${now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }).replace(/\u202f/g, ' ')} <span id="sync-dot" style="display:inline-block;width:6px;height:6px;border-radius:50%;background:${syncColor};margin-left:4px;vertical-align:middle;position:relative;top:-1px;"></span>`;
+    `v1.45, ${now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }).replace(/\u202f/g, ' ')} <span id="sync-dot" style="display:inline-block;width:6px;height:6px;border-radius:50%;background:${syncColor};margin-left:4px;vertical-align:middle;position:relative;top:-1px;"></span>`;
 
   // Populate globals BEFORE renderTimedSession so lifted-today detection works
   heatmapDayWorkouts = pp.heatmapDayWorkouts || {};

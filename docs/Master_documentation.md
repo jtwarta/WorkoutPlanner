@@ -1,6 +1,6 @@
 # LiftScript — Master Documentation
 
-**Version: v1.44** · **Reconstructed July 10, 2026 · updated to v1.44 October 11, 2026**
+**Version: v1.45** · **Reconstructed July 10, 2026 · updated to v1.45 October 11, 2026**
 
 > **Provenance note:** the original `Master_documentation.md` (last at v1.34 +
 > pending v1.35–v1.39 deltas) was deleted from the project before patching. This
@@ -51,7 +51,7 @@ Scientific foundation (as documented in the code header):
 
 ## 2. Architecture & Development Rules
 
-- **Single file:** all HTML/CSS/JS in `index.html` (~7,839 lines at v1.44).
+- **Single file:** all HTML/CSS/JS in `index.html` (~7,729 lines at v1.45).
   Assets: `manifest.json`, `icon-180/192/512.png`, `health-data.json`
   (written by the iOS Shortcut, not by hand).
 - **Pure ASCII in index.html.** Special characters use `\uXXXX` escapes.
@@ -565,6 +565,7 @@ cross-references.
 
 | Version | Key changes |
 |---|---|
+| v1.45 | Muscles rebuilt: grid to list grouped by urgency tier (Due now / Coming due / On track / Rested), volume bar + weekly-sets caption, days-since figure, inline FLIP detail, quiet select mode, Heartwood focus ring; recency rings and legend removed; parity 41/41 |
 | v1.44 | Today rebuilt: Newsreader session title + prescriptions, quiet settings toggles, anchor Heartwood rule, Resin deload, FLIP explainers, Send to Hevy as the single filled button (no spinner, double haptic), cardio plan rows, tab exit/entrance via motion(); parity: all 88 Today numbers match incl. collapsed content |
 | v1.43 | Growth Rings foundation: tokens + transitional C remap, Newsreader + SF Pro (mono/uppercase/tracking removed), WAAPI motion system, 26-week cross-section (header + Power Score sheet), cold-start boot sequence, header/tab bar/loader rebuilt, cards flattened, texture/dividers/canopy removed |
 | v1.42 | Chart time domain = selected period ending today (overlays no longer clipped at last weigh-in; renders without weigh-ins; overlay tooltip anchors) |
@@ -604,8 +605,8 @@ cross-references.
   components, bans, build plan). Implement against it only.
 - Parity baseline: git tag `pre-revamp-v1.42`. Earlier baseline
   `pre-revamp-v1.41` predates the v1.42 chart fix.
-- Build plan: v1.43 foundation + boot and v1.44 Today (shipped Oct 11, 2026),
-  v1.45 Muscles, v1.46 History, v1.47 Body. Presentation only: scoring, prescription, and data
+- Build plan: v1.43 foundation + boot, v1.44 Today, v1.45 Muscles (shipped Oct 11, 2026),
+  v1.46 History, v1.47 Body. Presentation only: scoring, prescription, and data
   logic do not change.
 - Review tooling: `tools/render.py` (fixture record/replay, frozen clock,
   iPhone viewport, Hevy writes blocked) and `tools/compose.py` (contact
