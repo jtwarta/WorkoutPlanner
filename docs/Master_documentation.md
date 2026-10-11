@@ -1,6 +1,6 @@
 # LiftScript — Master Documentation
 
-**Version: v1.39** · **Reconstructed July 10, 2026**
+**Version: v1.41** · **Reconstructed July 10, 2026 · updated to v1.41 October 11, 2026**
 
 > **Provenance note:** the original `Master_documentation.md` (last at v1.34 +
 > pending v1.35–v1.39 deltas) was deleted from the project before patching. This
@@ -13,6 +13,10 @@
 > of the sections between those anchors is reconstructed and may not match the
 > original ordering. All technical content is grounded in the current code — no
 > section content has been invented.
+>
+> **v1.40–v1.41 update (Oct 11, 2026):** patched in from the `index.html`
+> changelog and verified against the 7,675-line v1.41 code. Touches §2, §3,
+> §5, §22, §28 (#23–24), §29, Appendix.
 
 ---
 
@@ -44,7 +48,7 @@ Scientific foundation (as documented in the code header):
 
 ## 2. Architecture & Development Rules
 
-- **Single file:** all HTML/CSS/JS in `index.html` (~7,600 lines at v1.39).
+- **Single file:** all HTML/CSS/JS in `index.html` (~7,675 lines at v1.41).
   Assets: `manifest.json`, `icon-180/192/512.png`, `health-data.json`
   (written by the iOS Shortcut, not by hand).
 - **Pure ASCII in index.html.** Special characters use `\uXXXX` escapes.
@@ -74,8 +78,10 @@ Scientific foundation (as documented in the code header):
   the sandbox), sets `git config user.email/user.name` explicitly, commits
   per phase, and pushes at the end of every session. Jon never runs git.
 - Push auth: HTTPS with a classic repo-scope token embedded in the clone
-  URL. The token value lives in Claude's project memory (deliberately not
-  written into this document since a copy is committed to the repo).
+  URL. The token value is deliberately not written into this document (a
+  copy is committed to the public repo). As of Oct 2026 it is not in the
+  project memory files either; Claude retrieves it from past project chats
+  (last used in the Aug 2026 v1.41 session) or asks Jon at session start.
 - The iOS Shortcut commits `health-data.json` to the repo directly (the
   frequent "Update health data" commits).
 
@@ -100,14 +106,24 @@ embedded baseline, deduped by date (`getMergedWeightData`).
 - `GET /workouts?page=N&pageSize=10` — newest first; terminate on
   `page_count`. Fetch caps: `maxPages 16`, `HARD_CAP 155` workouts
   (~6 months at 6 days/week). 15 s fetch timeout (`fetchWithTimeout`).
+  `/workouts` rejects `pageSize` > 10 with HTTP 400 (live-verified Aug 2026).
+- **Rate limiting (v1.41):** every Hevy call (workouts, both template
+  loops, routine search + save) routes through `fetchHevy()`, which wraps
+  `fetchWithTimeout`. On HTTP 429 it waits `Retry-After` seconds when the
+  header is numeric (capped at 30 s), else 2 s / 5 s / 10 s, retrying up to
+  3x (4 calls max) with a "Hevy rate limit -- retrying in Ns" loading
+  message. A terminal 429 in `fetchWorkouts` throws a readable "wait a
+  minute, then refresh" error. Pre-v1.41 a cold refresh could burst ~16
+  workout pages + ~47 template pages with no 429 handling (§28 #24).
 - **GET /workouts set kind field is `type`, NOT `set_type`** (live-verified
   July 2026; values: `normal`, `warmup`, `failure`, `dropset`).
   `getWorkingSets` (v1.35) reads `s.type || s.set_type` and counts
   `normal` + `failure` as working sets. Pre-v1.35 it checked only
   `set_type` — vacuously true, all sets counted (latent bug, §28 #19).
 - `GET /exercise_templates` — supports `pageSize=100`; ~473 templates total
-  (live-verified). App fetches at pageSize=10 up to 50 pages with early stop
-  once all needed names are matched; result cached 7 days.
+  (live-verified). App fetches at `pageSize=100` (v1.41; was 10) with
+  `maxPages 8` (~5 pages for the full library; was 50/30), early stop once
+  all needed names are matched; result cached 7 days.
 - `GET /routines`, `POST /routines`, `PUT /routines/{id}` — see §26.
   Quirk: `folder_id` is required by POST but rejected by PUT.
 - Weight display quirk: Hevy shows lbs as `floor(kg × 2.20462, 2dp)` —
@@ -381,6 +397,12 @@ re-normalized across available pillars. Tap to expand the pillar breakdown.
   validated wrist formula). Deficits feed recommendation signal 4 (§13) and
   the Frame-Adjusted Targets bars (sorted worst-first). Latest Apple Health
   waist merges in when newer than manual entries.
+- **Source-of-truth rule (v1.40):** every measurement tile, including the
+  Body Composition WAIST tile, reads the merged value from
+  `getLatestMeasurements()`, never raw `healthData` fields. Pre-v1.40 the
+  WAIST tile read raw Apple Health, so a newer manual/Hevy-imported entry
+  was shadowed by a stale HealthKit value (§28 #23). The target-delta label
+  (distance from height×0.45) is unchanged.
 
 ## 23. Weight & Trends Chart
 
@@ -473,6 +495,7 @@ by construction; see the §6 sanitizer.
 Items 1–17 below are **reconstructed** from the code changelog and inline
 comments — the original ordering/wording is lost; the set is believed
 complete. Items 18–22 are preserved verbatim from the v1.35–v1.39 deltas.
+Items 23–24 come from the v1.40–v1.41 changelog.
 
 1. Classification priority: specific patterns before generic (Tricep Dip vs
    /dip/, RDL vs /deadlift/, upright row vs /row/) — v1.1.
@@ -510,6 +533,13 @@ complete. Items 18–22 are preserved verbatim from the v1.35–v1.39 deltas.
     on all historical dates.
 22. **SI pseudo-rolling window (v1.38):** cumulative high-water mark gated
     at now−183d instead of per-date trailing window.
+23. **Waist tile shadowing (v1.40):** Body Composition WAIST tile read raw
+    Apple Health, hiding newer manual/Hevy-imported waist entries. Fix: read
+    `getLatestMeasurements()`.
+24. **No 429 handling (v1.41):** the first Hevy rate-limit response killed
+    the whole refresh with a raw error; template paging at pageSize=10 made
+    cold-refresh bursts large enough to trigger it. Fix: `fetchHevy()`
+    backoff wrapper + template pageSize=100.
 
 ## 29. Version History
 
@@ -520,6 +550,8 @@ cross-references.
 
 | Version | Key changes |
 |---|---|
+| v1.41 | Hevy 429 hardening: `fetchHevy()` backoff wrapper (Retry-After or 2/5/10 s, 3 retries) on all call sites; template pageSize 10→100 (~47→~5 requests); readable terminal-429 message |
+| v1.40 | WAIST tile source-of-truth fix: merged `getLatestMeasurements()` value instead of raw Apple Health |
 | v1.39 | Stall detection + ~10% deload (reps[] history; ≥4-session run, max(last 3 reps) ≤ baseline; DELOAD chip; Hevy note) |
 | v1.38 | SI true 183-day rolling window (per-lift event lists; SI can decline; timeline 95→159 pts at change; current SI unchanged 1.20) |
 | v1.37 | Body Comp timeline per-date from measurement history (was constant); dead weight_history branch removed |
@@ -554,3 +586,7 @@ cross-references.
 - Node unit harnesses extract functions from index.html via regex and run
   scenario matrices before push (15 scenarios for the v1.39 deload rule).
 - Master doc updated with version deltas after each sprint.
+- v1.41 (Aug 2026): 5-scenario unit test of `fetchHevy` (clean 200; 429×2
+  then 200; 429 forever = 4 calls; Retry-After capped at 30 s; non-numeric
+  Retry-After falls back to 2 s) before push. Live `curl -D` header capture
+  confirmed the pageSize limits before patching.
