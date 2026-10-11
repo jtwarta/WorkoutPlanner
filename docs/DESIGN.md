@@ -267,8 +267,10 @@ session"), caption right ("About 50 min"). Custom sessions add "Custom" in
 caption, Ash.
 
 **Settings row.** The 60m / Gym / Auto cycles become three quiet text toggles
-(SF 15, Ash, 44 px tall, no background). Reroll is a quiet icon + word button
-on the right. These never look like the primary action.
+(SF 15, Ash, 44 px tall, no background, underlined in Line; Sapwood when
+changed from the default). Reroll is a quiet icon + word button on the
+right; a custom session adds "Back to auto". These never look like the
+primary action.
 
 **Send to Hevy.** The only filled button in the app: Sapwood fill, Char text,
 SF 17 / 500, radius 6, full content width, placed after the last exercise and

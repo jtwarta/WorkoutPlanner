@@ -1,7 +1,22 @@
 <!DOCTYPE html>
 
 <!--
-  LiftScript v1.43
+  LiftScript v1.44
+  Changes from v1.43 (v1.44 - Today rebuilt to docs/DESIGN.md):
+  - Session title in Newsreader with "About N min"; done / custom / rest
+    notes as captions. Settings become three quiet text toggles plus Reroll.
+  - Exercise rows: name + equipment on the left, Newsreader prescription +
+    unit + sets x reps on the right; anchors get a Heartwood edge rule;
+    deloads read "Deload" in Resin. No per-muscle colors, no nested cards.
+  - Why this? explainers, session adjustments, cardio details and
+    instructions are FLIP expanders (transform/opacity only).
+  - Send to Hevy is the one filled button (Sapwood), after the last lift;
+    states Sending / Sent to Hevy, double haptic on success, no spinner.
+  - Cardio plan: "Cardio this week", N of 150 min with a 4 px bar, rows with
+    zone + heart-rate caption; emoji badges and middle dots removed.
+  - Tab switching: outgoing fade + per-tab entrance (stagger on first
+    visit); boot staggers the real Today rows. Reroll rows enter left to right.
+
   Changes from v1.42 (v1.43 - Growth Rings foundation, docs/DESIGN.md):
   - Tokens: Growth Rings palette in C and :root (char, bark, line, sapwood,
     ash, heartwood, lichen, resin, ember, ring tones) with a transitional
@@ -538,80 +553,66 @@ box-shadow: inset 0 -2px 0 #A4442B;
 }
 
 /* Expandable explainer */
-.rec-expand {
-max-height: 0;
-overflow: hidden;
-transition: max-height 0.3s ease, opacity 0.25s ease;
-opacity: 0;
-}
-.rec-expand.open {
-opacity: 1;
-}
+/* Today (v1.44, DESIGN.md s8). Literal hex: these rules style innerHTML content. */
+.rec-expand { margin: 4px 0 8px; }
 .rec-explainer {
-font-family: var(--font-sans);
-text-transform: none;
-
-padding: 0 2px 14px 40px;
-font-size: 14px;
-color: var(--text-mid);
-line-height: 1.55;
+font-family: -apple-system, system-ui, sans-serif;
+font-size: 13px;
+line-height: 1.5;
+color: #9A8E83;
+padding: 16px;
+border-radius: 12px;
+background: #2A211C;
 }
-.rec-explainer strong {
-color: var(--text);
-font-weight: 600;
+.rec-explainer b, .rec-explainer strong { color: #EAD7BC; font-weight: 500; }
+.td-done { font-size: 13px; line-height: 1.3; margin-bottom: 8px; }
+.td-titlerow { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.td-title { font-family: 'Newsreader', Georgia, serif; font-size: 24px; font-weight: 500; line-height: 1.2; color: #EAD7BC; }
+.td-cap { font-size: 13px; line-height: 1.3; color: #9A8E83; }
+.td-set { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; margin-top: 2px; }
+.td-tog {
+min-height: 44px; padding: 0; background: none; border: none; cursor: pointer;
+font-family: -apple-system, system-ui, sans-serif; font-size: 15px;
+text-decoration: underline; text-decoration-color: #3A2E26; text-underline-offset: 5px;
+-webkit-tap-highlight-color: transparent;
 }
-
-/* ===================== */
-/* EXERCISE PRESCRIPTIONS */
-/* ===================== */
-
-.ex-group {
-margin-bottom: 20px;
-background: var(--surface2);
-border-radius: 6px;
-padding: 0;
-overflow: hidden;
-border: 1px solid var(--border);
-border-left: 2px solid var(--accent);
+.td-quiet {
+display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0;
+background: none; border: none; cursor: pointer; color: #9A8E83;
+font-family: -apple-system, system-ui, sans-serif; font-size: 15px;
+-webkit-tap-highlight-color: transparent;
 }
-.ex-group:last-child { margin-bottom: 0; }
+.td-adj { margin: 4px 0 0; }
+.td-adj-head { display: flex; align-items: center; justify-content: space-between; min-height: 44px; font-size: 13px; color: #9A8E83; cursor: pointer; }
+.ex-group { margin: 0; padding: 0; background: none; border: none; border-radius: 0; overflow: visible; }
+.ex-group + .ex-group .ex-group-title { border-top: 1px solid #3A2E26; }
 .ex-group-title {
-font-family: var(--font-mono);
-font-size: 11px;
-font-weight: 500;
-padding: 10px 14px;
-background: var(--surface);
-
-
+display: flex; align-items: center; justify-content: space-between; min-height: 44px; margin-top: 8px; padding: 0;
+background: none; font-family: -apple-system, system-ui, sans-serif; font-size: 13px; font-weight: 400; color: #9A8E83;
+cursor: pointer; -webkit-tap-highlight-color: transparent;
 }
 .ex-row {
-display: flex;
-align-items: center;
-padding: 10px 14px;
-border-top: 1px solid var(--border);
-gap: 8px;
+display: flex; align-items: center; justify-content: space-between; gap: 12px;
+min-height: 56px; padding: 6px 0 6px 12px; border: none; border-left: 2px solid transparent;
 }
-.ex-name {
-font-family: var(--font-mono);
-font-size: 11px;
-font-weight: 400;
-flex: 1;
-min-width: 0;
-color: var(--text-mid);
-line-height: 1.3;
-
-
+.ex-main { flex: 1; min-width: 0; }
+.ex-name { font-family: -apple-system, system-ui, sans-serif; font-size: 17px; font-weight: 500; line-height: 1.3; color: #EAD7BC; }
+.ex-sub { font-size: 13px; line-height: 1.3; color: #9A8E83; margin-top: 2px; }
+.ex-rx { text-align: right; flex-shrink: 0; white-space: nowrap; }
+.ex-num { font-family: 'Newsreader', Georgia, serif; font-size: 24px; font-weight: 500; line-height: 1.1; color: #EAD7BC; }
+.ex-unit { font-size: 13px; color: #9A8E83; }
+.send-btn {
+display: block; width: 100%; min-height: 50px; border: none; border-radius: 6px;
+background: #EAD7BC; color: #17120F; cursor: pointer;
+font-family: -apple-system, system-ui, sans-serif; font-size: 17px; font-weight: 500;
+-webkit-tap-highlight-color: transparent;
 }
-.ex-prescription {
-font-family: var(--font-mono);
-font-variant-numeric: tabular-nums;
-font-size: 12px;
-font-weight: 500;
-color: var(--accent);
-white-space: nowrap;
-flex-shrink: 0;
-
-}
+.cd-head { display: flex; align-items: center; justify-content: space-between; margin-top: 40px; }
+.cd-prog { padding-top: 8px; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.cd-progrow { display: flex; align-items: baseline; justify-content: space-between; }
+.cd-bar { height: 4px; border-radius: 999px; background: #3A2E26; overflow: hidden; margin-top: 8px; }
+.cd-bar > div { height: 100%; border-radius: 999px; background: #EAD7BC; }
+.cd-item { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding: 12px 0; }
 
 /* ===================== */
 /* MUSCLE GRID (v1.2: tappable with explainers) */
@@ -1014,7 +1015,7 @@ margin-top: 4px;
     <div class="header">
       <div class="hdr-id">
         <h1>LiftScript</h1>
-        <div class="subtitle" id="last-updated">v1.43</div>
+        <div class="subtitle" id="last-updated">v1.44</div>
       </div>
       <button id="header-refresh-btn" class="hdr-btn" onclick="refreshData()" title="Refresh data" aria-label="Refresh data from Hevy and health">
         <svg width="17" height="17" viewBox="0 0 16 16" fill="none" style="display:block;">
@@ -1037,7 +1038,7 @@ margin-top: 4px;
 <!-- Today Tab -->
 
 <div id="tab-today">
-  <div class="card card-hero" style="border:1px solid rgba(180,160,120,0.14);">
+  <div class="card">
     <div id="today-hero"></div>
     <div id="today-chips-wrapper"></div>
     <div id="suggested-exercises"></div>
@@ -2371,7 +2372,7 @@ const CHIP_DEFS = [
 function cycleChip(key) {
   const def = CHIP_DEFS.find(d => d.key === key);
   if (!def) return;
-  haptic(4);
+  hapticTick();
   const current = sessionPrefs[key];
   const idx = def.values.indexOf(current);
   const next = def.values[(idx + 1) % def.values.length];
@@ -3379,9 +3380,12 @@ function generateCardioRecommendations(dayCardioMap, rerollOffset) {
 // RENDER CARDIO PLAN
 // ============================================================
 function toggleCardioBreakdown() {
-  const el = document.getElementById('cardio-breakdown');
+  // v1.44: FLIP expander
+  var el = document.getElementById('cardio-breakdown');
   if (!el) return;
-  el.style.display = el.style.display === 'none' ? 'block' : 'none';
+  var opening = el.style.display === 'none';
+  flipToggle(el, opening);
+  rotateChevron(document.getElementById('cardio-chev'), opening);
 }
 
 let _cardioRerollOffset = 0;
@@ -3395,29 +3399,26 @@ let _selectedMuscles = new Set();
 
 function rerollLifts() {
   _liftRerollOffset++;
-  haptic(12);
+  hapticTick();
   var activeRecs = _customSessionActive && _customSessionRecs ? _customSessionRecs : LAST_RECS;
   if (activeRecs) {
     renderTimedSession(activeRecs);
-    // v1.26: shuffle non-anchor rows into place with stagger
-    try {
-      var rows = document.querySelectorAll('#suggested-exercises .ex-row:not(.ex-row-anchor)');
-      rows.forEach(function(r, i) {
-        r.style.animationDelay = (i * 45) + 'ms';
-        r.classList.add('reroll-shuffle');
-        setTimeout(function() {
-          r.classList.remove('reroll-shuffle');
-          r.style.animationDelay = '';
-        }, 420 + (i * 45) + 60);
-      });
-    } catch(_) {}
+    // v1.44: new rows enter left to right (stagger rule, DESIGN.md s7)
+    var rrows = document.querySelectorAll('#suggested-exercises .ex-row, #suggested-exercises .ex-group-title');
+    for (var ri = 0; ri < rrows.length; ri++) {
+      motion(rrows[ri], [{ opacity: 0, transform: 'translateX(-8px)' }, { opacity: 1, transform: 'none' }], MOTION.base, MOTION.grow, stagger(ri, rrows.length));
+    }
   }
 }
 
 function rerollCardio() {
   _cardioRerollOffset++;
-  haptic(10);
+  hapticTick();
   renderCardioPlan(heatmapDayCardio);
+  var cdi = document.querySelectorAll('#cardio-section .cd-item');
+  for (var ci = 0; ci < cdi.length; ci++) {
+    motion(cdi[ci], [{ opacity: 0, transform: 'translateX(-8px)' }, { opacity: 1, transform: 'none' }], MOTION.base, MOTION.grow, stagger(ci, cdi.length));
+  }
 }
 
 function resetToAutoSession() {
@@ -3481,45 +3482,33 @@ function buildCustomSession() {
 }
 
 function toggleCardioInstr(id) {
+  // v1.44: FLIP expander
   var el = document.getElementById(id);
   if (!el) return;
-  var isOpen = el.style.maxHeight && el.style.maxHeight !== '0px';
-  if (isOpen) {
-    el.style.maxHeight = '0';
-    el.style.opacity = '0';
-  } else {
-    el.style.maxHeight = el.scrollHeight + 'px';
-    el.style.opacity = '1';
-  }
+  flipToggle(el, el.style.display === 'none');
 }
 
 function buildCardioBreakdownHTML(history) {
   const log = history.cardioLog || [];
   if (log.length === 0) {
-    return `<div style="font-size:12px;font-family:-apple-system,system-ui,sans-serif;color:${C.textDark};">No cardio sessions this week.</div>`;
+    return 'No cardio sessions this week.';
   }
 
   // Sort by date descending
   const sorted = [...log].sort((a, b) => b.date - a.date);
 
-  // Source summary line
+  // v1.44: words instead of emoji badges and middle-dot strings
   const parts = [];
-  if (history.hevySessions > 0) parts.push(`\u{1F3CB}\uFE0F Hevy: ${history.hevySessions} session${history.hevySessions > 1 ? 's' : ''}, ${Math.round(history.hevyMinutes)} min`);
-  if (history.appleSessions > 0) parts.push(`\u231A Watch: ${history.appleSessions} session${history.appleSessions > 1 ? 's' : ''}, ${Math.round(history.appleMinutes)} min`);
-
-  let html = `<div style="font-size:11px;font-family:-apple-system,system-ui,sans-serif;color:${C.textDim};margin-bottom:8px;">${parts.join(' \u00B7 ')}</div>`;
-
-  // Per-session rows
+  if (history.hevySessions > 0) parts.push('Hevy: ' + history.hevySessions + ' session' + (history.hevySessions > 1 ? 's' : '') + ', ' + Math.round(history.hevyMinutes) + ' min');
+  if (history.appleSessions > 0) parts.push('Watch: ' + history.appleSessions + ' session' + (history.appleSessions > 1 ? 's' : '') + ', ' + Math.round(history.appleMinutes) + ' min');
+  let html = '<div style="margin-bottom:8px;">' + parts.join('. ') + '</div>';
   for (const s of sorted) {
     const dayStr = s.date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
-    const icon = s.source === 'watch' ? '\u231A' : '\u{1F3CB}\uFE0F';
-    const calStr = s.calories > 0 ? ` \u00B7 ${Math.round(s.calories)} cal` : '';
-    html += `<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;font-size:12px;font-family:-apple-system,system-ui,sans-serif;">
-      <span style="color:${C.textMid};">${icon} ${s.type}</span>
-      <span style="color:${C.textDark};">${Math.round(s.minutes)} min${calStr} \u00B7 ${dayStr}</span>
-    </div>`;
+    const calStr = s.calories > 0 ? ', ' + Math.round(s.calories) + ' cal' : '';
+    html += '<div style="display:flex;justify-content:space-between;gap:12px;padding:4px 0;">' +
+      '<span style="color:' + C.sapwood + ';">' + s.type + (s.source === 'watch' ? ', Watch' : ', Hevy') + '</span>' +
+      '<span style="text-align:right;">' + Math.round(s.minutes) + ' min' + calStr + ', ' + dayStr + '</span></div>';
   }
-
   return html;
 }
 
@@ -3533,59 +3522,38 @@ function renderCardioPlan(dayCardioMap) {
   const doneMin = result.completedMin;
   const barColor = donePct >= 100 ? C.accent : donePct >= 50 ? C.blue : C.warn;
 
-  let html = `
-    <div style="margin-top:12px;padding-top:0;">
-      ${branchDividerHTML()}
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
-        <div style="font-size:11px;font-weight:600;color:${C.textDim};">Cardio Plan</div>
-        ${result.weekComplete ? '' : '<button onclick="rerollCardio()" style="display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:5px;background:' + C.surface2 + ';border:1px solid ' + C.border + ';color:' + C.textMid + ';font-size:10px;font-weight:600;font-family:-apple-system,system-ui,sans-serif;cursor:pointer;-webkit-tap-highlight-color:transparent;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>Reroll</button>'}
-      </div>
-      <div onclick="toggleCardioBreakdown()" style="cursor:pointer;display:flex;align-items:center;gap:10px;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid ${C.border};">
-        <div style="font-family:-apple-system,system-ui,sans-serif;font-size:14px;color:${C.accent};font-weight:600;white-space:nowrap;">${Math.round(doneMin)}/${result.targetMin}m</div>
-        <div style="flex:1;">${mossBarHTML(donePct, 100, barColor, 7)}</div>
-        <div style="font-family:-apple-system,system-ui,sans-serif;font-size:12px;color:${C.textDim};white-space:nowrap;">this week \u25BE</div>
-      </div>
-      <div id="cardio-breakdown" style="display:none;margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid ${C.border};">
-        ${buildCardioBreakdownHTML(result.history)}
-      </div>`;
+  // v1.44: cardio plan rebuilt to DESIGN.md s8
+  let html = '<div class="cd-head td-in"><div class="td-title">Cardio this week</div>' +
+    (result.weekComplete ? '' : '<button class="td-quiet" onclick="rerollCardio()">' + REROLL_ICON + 'Reroll</button>') + '</div>' +
+    '<div class="cd-prog td-in" onclick="toggleCardioBreakdown()">' +
+      '<div class="cd-progrow"><div><span class="ex-num">' + Math.round(doneMin) + '</span> <span class="ex-unit">of ' + result.targetMin + ' min</span></div>' +
+      '<div class="td-cap" style="display:flex;align-items:center;gap:6px;">Details ' + chevronSVG('cardio-chev') + '</div></div>' +
+      '<div class="cd-bar"><div style="width:' + donePct + '%;"></div></div></div>' +
+    '<div id="cardio-breakdown" style="display:none;"><div class="rec-explainer" style="margin-top:12px;">' + buildCardioBreakdownHTML(result.history) + '</div></div>';
 
   if (result.weekComplete) {
-    html += `<div style="font-size:14px;color:${C.accent};font-family:-apple-system,system-ui,sans-serif;padding:8px 0;">\u2713 Weekly cardio target met. Active recovery or rest recommended.</div>`;
+    html += '<div class="td-cap td-in" style="color:' + C.lichen + ';padding:12px 0;">Weekly cardio target met. Active recovery or rest recommended.</div>';
   } else {
-    const zoneStyles = {
-      2: { bg: C.blueDim, color: C.blue, label: 'Zone 2' },
-      4: { bg: C.warnDim, color: C.warn, label: 'Zone 4' },
-      5: { bg: C.dangerDim, color: C.danger, label: 'Zone 5' },
-    };
-
+    const zoneLabels = { 2: 'Zone 2', 4: 'Zone 4', 5: 'Zone 5' };
     for (let rxIdx = 0; rxIdx < result.prescriptions.length; rxIdx++) {
       const rx = result.prescriptions[rxIdx];
-      const zs = zoneStyles[rx.zone] || zoneStyles[2];
-      const detailNote = [rx.detail, rx.notes].filter(Boolean).join(' \u00b7 ');
+      const zoneLabel = zoneLabels[rx.zone] || 'Zone 2';
+      const detailNote = [rx.detail, rx.notes].filter(Boolean).join('. ');
       const instrId = 'cardio-instr-' + rxIdx;
       const hasInstr = rx.instructions && rx.instructions.length > 0;
-
-      html += `<div style="padding:10px 0;border-bottom:1px solid ${C.surface2};${hasInstr ? 'cursor:pointer;-webkit-tap-highlight-color:transparent;' : ''}" ${hasInstr ? 'onclick="toggleCardioInstr(\'' + instrId + '\')"' : ''}>
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
-          <span style="font-size:10px;font-weight:600;padding:2px 7px;border-radius:4px;font-family:-apple-system,system-ui,sans-serif;background:${zs.bg};color:${zs.color};">${zs.label}</span>
-          <span style="font-size:14px;font-weight:600;color:${C.text};flex:1;">${rx.name}</span>
-          <span style="font-family:-apple-system,system-ui,sans-serif;font-size:13px;color:${C.accent};font-weight:600;">${rx.durationMin}m</span>
-        </div>
-        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
-          <div style="font-size:12px;font-family:-apple-system,system-ui,sans-serif;color:${C.textDim};line-height:1.4;flex:1;">${detailNote}</div>
-          <span style="font-size:11px;font-family:-apple-system,system-ui,sans-serif;color:${zs.color};padding:2px 7px;border-radius:4px;background:${zs.bg};white-space:nowrap;">\u2661 ${rx.hrRange}</span>
-        </div>
-        ${hasInstr ? '<div id="' + instrId + '" style="max-height:0;overflow:hidden;opacity:0;transition:max-height 0.3s ease,opacity 0.25s ease;"><div style="margin-top:8px;padding:8px 10px;border-radius:6px;background:' + C.surface + ';font-size:11px;font-family:-apple-system,system-ui,sans-serif;color:' + C.textMid + ';line-height:1.5;">' + rx.instructions + '</div></div>' : ''}
-      </div>`;
+      const hr = String(rx.hrRange).replace('-', '\u2013');
+      html += '<div class="cd-item td-in"' + (hasInstr ? ' style="cursor:pointer;-webkit-tap-highlight-color:transparent;" onclick="toggleCardioInstr(\'' + instrId + '\')"' : '') + '>' +
+        '<div class="ex-main"><div class="ex-name">' + rx.name + '</div>' +
+        '<div class="ex-sub">' + zoneLabel + ', ' + hr + ' bpm</div>' +
+        (detailNote ? '<div class="ex-sub">' + detailNote + '</div>' : '') + '</div>' +
+        '<div class="ex-rx"><span class="ex-num">' + rx.durationMin + '</span> <span class="ex-unit">min</span></div></div>' +
+        (hasInstr ? '<div id="' + instrId + '" style="display:none;"><div class="rec-explainer">' + rx.instructions + '</div></div>' : '');
     }
-
-    // Surface HIIT gate block reason if applicable
     if (result.hiitBlockReason) {
-      html += `<div style="padding:6px 0;font-size:11px;font-family:-apple-system,system-ui,sans-serif;color:${C.textDark};">HIIT gated: ${result.hiitBlockReason}</div>`;
+      html += '<div class="td-cap td-in" style="padding:4px 0;">HIIT on hold: ' + result.hiitBlockReason + '</div>';
     }
   }
 
-  html += `</div>`;
   sectionEl.innerHTML = html;
 }
 
@@ -4395,8 +4363,7 @@ async function sendSessionToHevy() {
   // Disable button and show loading
   btn.disabled = true;
   var origHTML = btn.innerHTML;
-  btn.innerHTML = '<span style="display:inline-flex;align-items:center;gap:5px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="animation:spin 1s linear infinite;"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg> Sending...</span>';
-  btn.style.opacity = '0.6';
+  setSendBtnState(btn, 'sending'); // v1.44
 
   try {
     // Get all exercise names in session
@@ -4413,9 +4380,7 @@ async function sendSessionToHevy() {
 
     if (resolvedExercises.length === 0) {
       showToast('Could not find any Hevy IDs for these exercises', true);
-      btn.innerHTML = origHTML;
-      btn.style.opacity = '1';
-      btn.disabled = false;
+      setSendBtnState(btn, 'idle', origHTML);
       return;
     }
 
@@ -4523,9 +4488,7 @@ async function sendSessionToHevy() {
         try { putErr = await resp.text(); } catch(_) {}
         console.error('PUT failed:', resp.status, putErr);
         showToast('Hevy update error ' + resp.status + ': ' + (putErr || resp.statusText), true);
-        btn.innerHTML = origHTML;
-        btn.style.opacity = '1';
-        btn.disabled = false;
+        setSendBtnState(btn, 'idle', origHTML);
         return;
       }
     }
@@ -4556,31 +4519,20 @@ async function sendSessionToHevy() {
         : '';
       var verb = existingId ? 'updated' : 'created';
       showToast('\u2714 \"' + routineTitle + '\" ' + verb + ' in Hevy!' + skipMsg, false);
-      haptic(15);
-      btn.innerHTML = '<span style="display:inline-flex;align-items:center;gap:5px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="' + C.accent + '" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> <span style="color:' + C.accent + ';">Sent!</span></span>';
-      btn.style.opacity = '1';
-      btn.disabled = true;
-      btn.classList.add('send-pulse');
-      setTimeout(function() { btn.classList.remove('send-pulse'); }, 600);
-      setTimeout(function() {
-        btn.innerHTML = origHTML;
-        btn.disabled = false;
-      }, 10000);
+      hapticDouble(); // v1.44
+      setSendBtnState(btn, 'sent');
+      setTimeout(function() { setSendBtnState(btn, 'idle', origHTML); }, 10000);
     } else {
       var errBody = '';
       try { errBody = await resp.text(); } catch(_) {}
       console.error('Hevy routine send failed:', resp.status, errBody);
       showToast('Hevy API error ' + resp.status + ': ' + (errBody || resp.statusText), true);
-      btn.innerHTML = origHTML;
-      btn.style.opacity = '1';
-      btn.disabled = false;
+      setSendBtnState(btn, 'idle', origHTML);
     }
   } catch (e) {
     console.error('sendSessionToHevy error:', e);
     showToast('Network error: ' + e.message, true);
-    btn.innerHTML = origHTML;
-    btn.style.opacity = '1';
-    btn.disabled = false;
+    setSendBtnState(btn, 'idle', origHTML);
   }
 }
 
@@ -4632,61 +4584,33 @@ function renderTimedSession(recs) {
   // Detect if user already lifted today
   const todayStr = localDateStr(new Date());
   const liftedToday = heatmapDayWorkouts[todayStr] && heatmapDayWorkouts[todayStr].length > 0;
-  var baseLabel = liftedToday ? 'Tomorrow\u2019s Session' : 'Today\u2019s Session';
-  const sessionLabel = _customSessionActive ? baseLabel + ' <span style="font-size:9px;padding:2px 5px;border-radius:3px;background:' + C.accentDim + ';color:' + C.accent + ';border:1px solid ' + C.accentBorder + ';margin-left:6px;vertical-align:middle;">CUSTOM</span>' : baseLabel;
-
-  // Completed banner (subtle inline)
-  let completedBanner = '';
+  // v1.44: Today rebuilt to DESIGN.md s8 (presentation only; every value unchanged)
+  var baseLabel = liftedToday ? 'Tomorrow\u2019s session' : 'Today\u2019s session';
+  var heroHtml = '<div class="td-in">';
   if (liftedToday) {
-    const exCount = heatmapDayWorkouts[todayStr].length;
-    completedBanner = `<div style="display:flex;align-items:center;gap:6px;padding:6px 0 12px;margin-bottom:12px;border-bottom:1px solid ${C.border};font-size:12px;font-family:-apple-system,system-ui,sans-serif;color:${C.accent};font-weight:500;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="${C.accent}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>Today done \u2014 ${exCount} exercise${exCount !== 1 ? 's' : ''} logged</div>`;
+    var exCount = heatmapDayWorkouts[todayStr].length;
+    heroHtml += '<div class="td-done" style="color:' + C.lichen + ';">Done today: ' + exCount + ' exercise' + (exCount !== 1 ? 's' : '') + ' logged</div>';
   }
-
-  // Rest-day chip (compact, inline)
-  let restChip = '';
+  heroHtml += '<div class="td-titlerow"><div class="td-title">' + baseLabel + '</div><div class="td-cap">About ' + totalMin + ' min</div></div>';
+  if (_customSessionActive) heroHtml += '<div class="td-cap" style="margin-top:2px;">Custom session</div>';
   if (_consecutiveTrainDays >= 3) {
-    const isHigh = _consecutiveTrainDays >= 5;
-    const chipColor = isHigh ? C.dangerText : C.warn;
-    const chipBg = isHigh ? C.dangerDim : C.warnDim;
-    const chipText = isHigh
-      ? `${_consecutiveTrainDays} days straight \u2014 rest day recommended`
-      : `${_consecutiveTrainDays} days in a row \u2014 consider resting`;
-    restChip = `<div style="display:inline-flex;align-items:center;gap:5px;padding:5px 10px;border-radius:6px;background:${chipBg};border:1px solid ${chipColor}30;font-size:12px;font-family:-apple-system,system-ui,sans-serif;color:${chipColor};font-weight:500;white-space:nowrap;">${chipText}</div>`;
+    var restText = _consecutiveTrainDays >= 5
+      ? _consecutiveTrainDays + ' days straight. A rest day is recommended.'
+      : _consecutiveTrainDays + ' days in a row. Consider resting.';
+    heroHtml += '<div class="td-cap" style="color:' + C.resin + ';margin-top:4px;">' + restText + '</div>';
   }
+  heroHtml += '</div>';
+  document.getElementById('today-hero').innerHTML = heroHtml;
 
-  document.getElementById('today-hero').innerHTML = `
-    <div style="margin-bottom:16px;">
-      ${completedBanner}
-      <div style="display:flex;align-items:baseline;justify-content:space-between;">
-        <div style="font-size:14px;font-weight:700;color:${C.text};font-family:-apple-system,system-ui,sans-serif;">${sessionLabel}</div>
-        <div style="font-family:-apple-system,system-ui,sans-serif;font-size:22px;font-weight:700;color:${C.accent};">~${totalMin}<span style="font-size:14px;font-weight:500;color:${C.textDim};margin-left:2px;">min</span></div>
-      </div>
-      ${restChip ? `<div style="margin-top:10px;">${restChip}</div>` : ''}
-    </div>`;
-
-  // --- SESSION CONTROLS (single row) ---
-  const chipDefs = CHIP_DEFS.map(def => {
-    const current = sessionPrefs[def.key];
-    const isNonDefault = current !== PREFS_DEFAULTS[def.key];
-    const chipStyle = isNonDefault
-      ? `background:${C.accentDim};color:${C.accent};border:1px solid ${C.accentBorder};padding:4px 10px;font-size:11px;font-weight:600;font-family:-apple-system,system-ui,sans-serif;border-radius:6px;cursor:pointer;user-select:none;white-space:nowrap;-webkit-tap-highlight-color:transparent;`
-      : `background:${C.surface2};color:${C.textDim};border:1px solid ${C.border};padding:4px 10px;font-size:11px;font-weight:600;font-family:-apple-system,system-ui,sans-serif;border-radius:6px;cursor:pointer;user-select:none;white-space:nowrap;-webkit-tap-highlight-color:transparent;`;
-    return `<div style="${chipStyle}" onclick="cycleChip('${def.key}')">${def.label(current)} <span style="opacity:0.35;font-size:9px;margin-left:1px;">\u21BB</span></div>`;
+  // Settings row: three quiet toggles + reroll, never styled like the primary action
+  var togs = CHIP_DEFS.map(function(def) {
+    var cur = sessionPrefs[def.key];
+    var changed = cur !== PREFS_DEFAULTS[def.key];
+    return '<button class="td-tog" style="color:' + (changed ? C.sapwood : C.ash) + ';" onclick="cycleChip(\'' + def.key + '\')">' + todayChipLabel(def, cur) + '</button>';
   }).join('');
-
-  const wrapper = document.getElementById('today-chips-wrapper');
-  wrapper.innerHTML = `
-    ${branchDividerHTML()}
-    <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap;">
-      <button onclick="rerollLifts()" style="display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:6px;background:${C.surface2};border:1px solid ${C.border};color:${C.textMid};font-size:11px;font-weight:600;font-family:-apple-system,system-ui,sans-serif;cursor:pointer;-webkit-tap-highlight-color:transparent;white-space:nowrap;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>Reroll</button>
-      ${_customSessionActive ? '<button onclick="resetToAutoSession()" style="display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:6px;background:' + C.dangerDim + ';border:1px solid ' + C.danger + '30;color:' + C.danger + ';font-size:11px;font-weight:600;font-family:-apple-system,system-ui,sans-serif;cursor:pointer;-webkit-tap-highlight-color:transparent;white-space:nowrap;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>Reset</button>' : ''}
-      <button id="send-to-hevy-btn" onclick="sendSessionToHevy()" style="display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:6px;background:${C.surface2};border:1px solid ${C.border};color:${C.textMid};font-size:11px;font-weight:600;font-family:-apple-system,system-ui,sans-serif;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:all 0.2s ease;white-space:nowrap;">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
-        Hevy
-      </button>
-      ${chipDefs}
-    </div>
-    ${branchDividerHTML()}`;
+  document.getElementById('today-chips-wrapper').innerHTML = '<div class="td-set td-in">' + togs + '<span style="flex:1;"></span>' +
+    (_customSessionActive ? '<button class="td-quiet" onclick="resetToAutoSession()">Back to auto</button>' : '') +
+    '<button class="td-quiet" onclick="rerollLifts()">' + REROLL_ICON + 'Reroll</button></div>';
 
   // --- EXERCISE LIST ---
   const exContainer = document.getElementById('suggested-exercises');
@@ -4705,35 +4629,22 @@ function renderTimedSession(recs) {
 
   let exHtml = '';
 
-  // v1.29: Conflict resolution strip - surface algorithm decisions
+  // v1.29: Session adjustments (algorithm decisions), collapsed to one line
   if (conflictLog.length > 0) {
-    // Deduplicate reasons (multiple rerolls can produce same entry)
     var seenReasons = {};
     var uniqueLog = [];
     for (var cli = 0; cli < conflictLog.length; cli++) {
       var key_cl = conflictLog[cli].reason;
       if (!seenReasons[key_cl]) { seenReasons[key_cl] = true; uniqueLog.push(conflictLog[cli]); }
     }
-    var items = uniqueLog.map(function(e) {
+    var adjItems = uniqueLog.map(function(e, ei) {
       var label = e.type === 'cap' ? 'Over cap' : (e.type === 'block' ? 'Conflict' : 'Caution');
-      var iconColor = e.type === 'cap' ? C.textMid : (e.type === 'block' ? C.warn : C.textDim);
-      return '<div style="display:flex;align-items:flex-start;gap:8px;padding:6px 0;">' +
-        '<div style="flex-shrink:0;width:14px;height:14px;border-radius:50%;background:' + iconColor + '22;border:1px solid ' + iconColor + ';display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:' + iconColor + ';font-family:var(--font-mono);margin-top:1px;">!</div>' +
-        '<div style="flex:1;min-width:0;">' +
-          '<div style="font-family:var(--font-mono);font-size:10px;font-weight:600;color:' + iconColor + ';">' + label + (e.skipped ? ' \u00b7 ' + e.skipped + ' skipped' : '') + '</div>' +
-          '<div style="font-family:var(--font-sans);font-size:12px;color:' + C.textMid + ';line-height:1.45;margin-top:2px;">' + e.reason + '</div>' +
-        '</div>' +
-      '</div>';
+      var col = e.type === 'block' ? C.resin : C.sapwood;
+      return '<div style="' + (ei ? 'margin-top:10px;' : '') + '"><div style="color:' + col + ';">' + label + (e.skipped ? ', ' + e.skipped + ' skipped' : '') + '</div><div>' + e.reason + '</div></div>';
     }).join('');
-    exHtml += '<div id="session-conflict-strip" style="margin-bottom:14px;padding:10px 12px 8px;border-radius:8px;background:' + C.surface2 + ';border:1px solid ' + C.border + ';border-left:3px solid ' + C.warn + ';">'
-      + '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;cursor:pointer;" onclick="toggleConflictDetail()">'
-        + '<div style="font-family:var(--font-mono);font-size:10px;font-weight:700;color:' + C.textDim + ';">Session Adjustments \u00b7 ' + uniqueLog.length + '</div>'
-        + '<span id="conflict-chevron" style="font-size:10px;color:' + C.textDim + ';transition:transform 0.3s ease;">\u25BE</span>'
-      + '</div>'
-      + '<div id="conflict-detail" style="max-height:0;overflow:hidden;opacity:0;transition:max-height 0.3s ease, opacity 0.25s ease;">'
-        + '<div style="padding-top:8px;">' + items + '</div>'
-      + '</div>'
-    + '</div>';
+    exHtml += '<div id="session-conflict-strip" class="td-adj td-in">' +
+      '<div class="td-adj-head" onclick="toggleConflictDetail()"><span>' + uniqueLog.length + ' session adjustment' + (uniqueLog.length !== 1 ? 's' : '') + '</span>' + chevronSVG('conflict-chevron') + '</div>' +
+      '<div id="conflict-detail" style="display:none;"><div class="rec-explainer">' + adjItems + '</div></div></div>';
   }
 
   for (const key of groupKeys) {
@@ -4742,61 +4653,47 @@ function renderTimedSession(recs) {
     if (!meta) continue;
     const rec = recMap[key];
 
-    exHtml += `<div class="ex-group" style="border-left:3px solid ${meta.color};">
-      <div class="ex-group-title" style="color:${meta.color};cursor:pointer;display:flex;align-items:center;justify-content:space-between;" onclick="toggleSessionExplainer('exp-${key}')">
-        <span>${meta.name}</span>
-        <svg width="12" height="12" viewBox="0 0 12 12" fill="none" style="transition:transform 0.2s ease;"><path d="M2.5 4.5L6 8L9.5 4.5" stroke="${C.textMid}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      </div>`;
+    exHtml += '<div class="ex-group"><div class="ex-group-title td-in" onclick="toggleSessionExplainer(\'exp-' + key + '\')"><span>' + meta.name + '</span>' + chevronSVG('chev-exp-' + key) + '</div>';
 
-    // B1: Collapsible "Why this?" explainer
+    // B1: "Why this?" explainer, inline under the group label
     if (rec) {
       const daysSince = rec.daysSince === Infinity ? '\u221E' : rec.daysSince;
       const idealFreq = (muscleAnalysis && muscleAnalysis[key]) ? muscleAnalysis[key].idealFreqDays : '?';
       const volActual = rec.weeklyActual;
       const volIdeal = rec.weeklyIdeal;
       const propDef = proportionDeficits[key];
-
-      let bullets = [];
-      bullets.push(`<span style="color:${C.textDim};">Days since:</span> <strong>${daysSince}</strong> <span style="color:${C.textDark};">vs ideal ${idealFreq}d</span>`);
+      const lines = [];
+      lines.push('Days since trained: <b>' + daysSince + '</b> (ideal every ' + idealFreq + ')');
       const deficit = Math.max(0, volIdeal - volActual);
       if (deficit > 0) {
-        bullets.push(`<span style="color:${C.textDim};">Volume gap:</span> <strong>${deficit.toFixed(1)} sets/wk</strong> <span style="color:${C.textDark};">below ${volIdeal}</span>`);
+        lines.push('Volume gap: <b>' + deficit.toFixed(1) + ' sets/wk</b> below ' + volIdeal);
       } else {
-        bullets.push(`<span style="color:${C.textDim};">Volume:</span> <strong>${volActual} / ${volIdeal}</strong> <span style="color:${C.accent};">\u2714</span>`);
+        lines.push('Volume: <b>' + volActual + ' of ' + volIdeal + '</b>, on target');
       }
       if (propDef && propDef > 0.05) {
         const ft = Object.entries(FRAME_TARGETS).find(([k, v]) => v.muscle === key);
-        if (ft) bullets.push(`<span style="color:${C.textDim};">Frame target:</span> <strong>${ft[1].label}</strong> <span style="color:${C.warn};">${Math.round(propDef * 100)}% below potential</span>`);
+        if (ft) lines.push('Frame target: <b>' + ft[1].label + '</b>, <span style="color:' + C.resin + ';">' + Math.round(propDef * 100) + '% below potential</span>');
       }
-
-      exHtml += `<div class="rec-expand" id="exp-${key}" style="max-height:0;overflow:hidden;opacity:0;transition:max-height 0.3s ease,opacity 0.25s ease;border-top:1px solid ${C.border};">
-        <div class="rec-explainer" style="padding:8px 14px;font-size:12px;line-height:1.7;">
-          ${bullets.map(b => `<div>${b}</div>`).join('')}
-        </div>
-      </div>`;
+      exHtml += '<div class="rec-expand" id="exp-' + key + '" style="display:none;"><div class="rec-explainer">' +
+        lines.map(function(l) { return '<div>' + l + '</div>'; }).join('') + '</div></div>';
     }
 
     for (const ex of exes) {
-      const rx = formatPrescription(ex.prescription);
-      // v1.25: compound anchor promotion - U+25C9 fisheye glyph + stronger weight
       const isAnchor = COMPOUND_ANCHORS[key] === ex.name;
-      const anchorPrefix = isAnchor
-        ? '<span style="color:' + C.gold + ';margin-right:6px;font-size:10px;vertical-align:middle;">\u25C9</span>'
-        : '';
-      const nameColor = isAnchor ? C.text : C.textMid;
-      const nameWeight = isAnchor ? '600' : '400';
-      // v1.39: stalled exercises surface a deload chip + amber prescription
       const isDeload = !!(ex.prescription && ex.prescription.deload);
-      const deloadChip = isDeload
-        ? '<span style="font-family:var(--font-mono);font-size:8px;font-weight:700;color:' + C.warn + ';background:' + C.warnDim + ';border:1px solid rgba(212,152,59,0.32);padding:1px 5px;border-radius:3px;margin-left:6px;vertical-align:middle;">Deload</span>'
-        : '';
-      exHtml += `
-        <div class="ex-row${isAnchor ? ' ex-row-anchor' : ''}">
-          <div class="ex-name" style="color:${nameColor};font-weight:${nameWeight};">${anchorPrefix}${ex.name}${deloadChip}</div>
-          <div class="ex-prescription" style="color:${isDeload ? C.warn : C.accent}">${rx}</div>
-        </div>`;
+      const nm = splitExName(ex.name);
+      const rp = rxParts(ex.prescription);
+      exHtml += '<div class="ex-row td-in' + (isAnchor ? ' ex-row-anchor' : '') + '" style="border-left-color:' + (isAnchor ? C.heartwood : 'transparent') + ';">' +
+        '<div class="ex-main"><div class="ex-name">' + nm.name + '</div>' + (nm.eq ? '<div class="ex-sub">' + nm.eq + '</div>' : '') + '</div>' +
+        '<div class="ex-rx"><div><span class="ex-num" style="color:' + (isDeload ? C.resin : C.sapwood) + ';">' + rp.num + '</span>' +
+        (rp.unit ? ' <span class="ex-unit">' + rp.unit + '</span>' : '') + '</div>' +
+        '<div class="ex-sub"' + (isDeload ? ' style="color:' + C.resin + ';"' : '') + '>' + (isDeload ? 'Deload, ' : '') + rp.sub + '</div></div></div>';
     }
-    exHtml += `</div>`;
+    exHtml += '</div>';
+  }
+  // The one filled button in the app (DESIGN.md s8)
+  if (exercises.length > 0) {
+    exHtml += '<div id="send-row" class="td-in" style="margin-top:24px;"><button id="send-to-hevy-btn" class="send-btn" onclick="sendSessionToHevy()">Send to Hevy</button></div>';
   }
   exContainer.innerHTML = exHtml;
 }
@@ -4826,41 +4723,27 @@ function toggleSectionExplainer(id, triggerEl) {
 
 // v1.29: Toggle the conflict resolution detail strip
 function toggleConflictDetail() {
+  // v1.44: FLIP expander
   var el = document.getElementById('conflict-detail');
-  var chev = document.getElementById('conflict-chevron');
   if (!el) return;
-  if (el.dataset.open === '1') {
-    el.style.maxHeight = '0';
-    el.style.opacity = '0';
-    el.dataset.open = '0';
-    if (chev) chev.style.transform = 'rotate(0deg)';
-  } else {
-    el.dataset.open = '1';
-    el.style.opacity = '1';
-    el.style.maxHeight = el.scrollHeight + 'px';
-    if (chev) chev.style.transform = 'rotate(180deg)';
-  }
+  var opening = el.style.display === 'none';
+  flipToggle(el, opening);
+  rotateChevron(document.getElementById('conflict-chevron'), opening);
 }
 
 // B1: Toggle explainer panel for a muscle group in Today tab
 function toggleSessionExplainer(id) {
-  const el = document.getElementById(id);
+  // v1.44: FLIP expander; one explainer open at a time
+  var el = document.getElementById(id);
   if (!el) return;
-  if (el.classList.contains('open')) {
-    el.style.maxHeight = '0';
-    el.style.opacity = '0';
-    el.classList.remove('open');
-  } else {
-    // Close any other open explainers
-    document.querySelectorAll('#suggested-exercises .rec-expand.open').forEach(other => {
-      other.style.maxHeight = '0';
-      other.style.opacity = '0';
-      other.classList.remove('open');
+  var opening = el.style.display === 'none';
+  if (opening) {
+    document.querySelectorAll('#suggested-exercises .rec-expand').forEach(function(o) {
+      if (o !== el && o.style.display !== 'none') { o.style.display = 'none'; rotateChevron(document.getElementById('chev-' + o.id), false); }
     });
-    el.classList.add('open');
-    el.style.opacity = '1';
-    el.style.maxHeight = el.scrollHeight + 'px';
   }
+  flipToggle(el, opening);
+  rotateChevron(document.getElementById('chev-' + id), opening);
 }
 
 // ============================================================
@@ -7160,7 +7043,7 @@ function renderHealthVitals() {
 // TAB SWITCHING
 // ============================================================
 function switchTab(tab) {
-  haptic(6);
+  hapticTick();
   // v1.26: fade+slide transition
   var current = document.querySelector('[id^="tab-"]:not(.hidden)');
   var next = document.getElementById('tab-' + tab);
@@ -7177,12 +7060,7 @@ function switchTab(tab) {
   function doSwap() {
     document.querySelectorAll('[id^="tab-"]').forEach(function(el) { el.classList.add('hidden'); });
     next.classList.remove('hidden');
-    next.classList.add('tab-entering');
-    requestAnimationFrame(function() {
-      requestAnimationFrame(function() {
-        next.classList.remove('tab-entering');
-      });
-    });
+    tabEntrance(tab); // v1.44
     if (tab === 'weight') {
       setTimeout(renderWeightChart, 50);
       setTimeout(renderHealthVitals, 50);
@@ -7191,11 +7069,9 @@ function switchTab(tab) {
   }
 
   if (current) {
-    current.classList.add('tab-leaving');
-    setTimeout(function() {
-      current.classList.remove('tab-leaving');
-      doSwap();
-    }, 140);
+    // v1.44: outgoing tab fades (fast, exit), then the swap
+    var out = motion(current, [{ opacity: 1 }, { opacity: 0 }], MOTION.fast, MOTION.exit, 0, 'both');
+    if (out) out.finished.then(function() { out.cancel(); doSwap(); }).catch(doSwap); else doSwap();
   } else {
     doSwap();
   }
@@ -7371,7 +7247,7 @@ function maybePlayBoot() {
   var hand = motion(cs, [{ opacity: 1 }, { opacity: 0 }], MOTION.fast, MOTION.exit, 1280, 'both');
   A.push(hand);
   A.push(motion(wrap, [{ opacity: 0 }, { opacity: 1 }], MOTION.fast, MOTION.settle, 1280));
-  var items = [].slice.call(document.querySelectorAll('#tab-today > *')).filter(function(el) { return el.offsetParent !== null; });
+  var items = todayEntranceItems(); // v1.44
   items.forEach(function(el, i) {
     A.push(motion(el, [{ opacity: 0, transform: 'translateY(12px)' }, { opacity: 1, transform: 'none' }],
       MOTION.base, MOTION.grow, 960 + stagger(i, items.length)));
@@ -7381,6 +7257,84 @@ function maybePlayBoot() {
   if (hand) hand.finished.then(done).catch(done); else done();
   ov.addEventListener('pointerdown', function() {
     A.forEach(function(a) { try { a.finish(); } catch (_) {} });
+  });
+}
+
+// ============================================================
+// TODAY HELPERS (v1.44, docs/DESIGN.md s5, s7, s8)
+// ============================================================
+var REROLL_ICON = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>';
+function chevronSVG(id) {
+  return '<svg id="' + id + '" width="12" height="12" viewBox="0 0 12 12" fill="none" style="display:block;flex-shrink:0;" aria-hidden="true"><path d="M2.5 4.5L6 8L9.5 4.5" stroke="' + C.ash + '" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+}
+function rotateChevron(chev, open) {
+  if (!chev) return;
+  var from = open ? 'rotate(0deg)' : 'rotate(180deg)', to = open ? 'rotate(180deg)' : 'rotate(0deg)';
+  chev.style.transform = to;
+  motion(chev, [{ transform: from }, { transform: to }], MOTION.fast, MOTION.settle);
+}
+// FLIP expander: height changes instantly, revealed content fades and rises
+// 8 px, and everything below slides from where it was (transform only).
+function flipToggle(el, open, scope) {
+  if (!el) return;
+  scope = scope || document.getElementById('dashboard');
+  var followers = [], node = el;
+  while (node && node !== scope && node.parentElement) {
+    for (var sib = node.nextElementSibling; sib; sib = sib.nextElementSibling) followers.push(sib);
+    node = node.parentElement;
+  }
+  var before = followers.map(function(f) { return f.getBoundingClientRect().top; });
+  el.style.display = open ? 'block' : 'none';
+  followers.forEach(function(f, i) {
+    var d = before[i] - f.getBoundingClientRect().top;
+    if (Math.abs(d) > 0.5) motion(f, [{ transform: 'translateY(' + d.toFixed(1) + 'px)' }, { transform: 'none' }], MOTION.base, MOTION.settle);
+  });
+  if (open) motion(el, [{ opacity: 0, transform: 'translateY(8px)' }, { opacity: 1, transform: 'none' }], MOTION.base, MOTION.grow);
+}
+function splitExName(name) {
+  var m = /^(.*?)\s*\(([^)]+)\)\s*$/.exec(name || '');
+  return m ? { name: m[1], eq: m[2] } : { name: name, eq: '' };
+}
+// Same values as formatPrescription, split for display
+function rxParts(p) {
+  var each = (p.note === 'per hand' || p.note === 'per side');
+  var reps = String(p.reps).replace('-', '\u2013');
+  if (p.weightLbs > 0) return { num: String(p.weightLbs), unit: each ? 'lb each' : 'lb', sub: p.sets + ' \u00d7 ' + reps };
+  return { num: reps, unit: /s$/.test(String(p.reps)) ? '' : 'reps', sub: p.sets + ' sets' };
+}
+function todayChipLabel(def, v) {
+  if (def.key === 'sessionCapMin') return v + ' min';
+  if (def.key === 'focusMode') return v === 'auto' ? 'Auto focus' : (v === 'foundation' ? 'Foundation focus' : 'Neglect focus');
+  return def.label(v);
+}
+function setSendBtnState(btn, state, origHTML) {
+  if (!btn) return;
+  if (state === 'sending') {
+    btn.disabled = true; btn.textContent = 'Sending to Hevy'; btn.style.opacity = '0.6';
+  } else if (state === 'sent') {
+    btn.disabled = true; btn.textContent = 'Sent to Hevy'; btn.style.opacity = '1';
+    btn.style.background = 'transparent'; btn.style.color = C.lichen; btn.style.boxShadow = 'inset 0 0 0 1px ' + C.line;
+    motion(btn, [{ opacity: 0.6 }, { opacity: 1 }], MOTION.fast, MOTION.settle);
+  } else {
+    btn.disabled = false; btn.innerHTML = origHTML || 'Send to Hevy'; btn.style.opacity = '1';
+    btn.style.background = ''; btn.style.color = ''; btn.style.boxShadow = '';
+  }
+}
+// Tab entrances: full storyboard on the first visit per app session, a quiet
+// fade after that (DESIGN.md s5). Boot counts as Today's first visit.
+var _tabVisited = { today: true };
+function todayEntranceItems() {
+  return [].slice.call(document.querySelectorAll('#tab-today .td-in')).filter(function(e) { return e.offsetParent !== null; });
+}
+function tabEntrance(tab) {
+  var el = document.getElementById('tab-' + tab);
+  if (!el) return;
+  if (_tabVisited[tab]) { motion(el, [{ opacity: 0 }, { opacity: 1 }], MOTION.fast, MOTION.settle); return; }
+  _tabVisited[tab] = true;
+  var items = tab === 'today' ? todayEntranceItems() : [];
+  if (!items.length) { motion(el, [{ opacity: 0 }, { opacity: 1 }], MOTION.base, MOTION.grow); return; }
+  items.forEach(function(it, i) {
+    motion(it, [{ opacity: 0, transform: 'translateY(12px)' }, { opacity: 1, transform: 'none' }], MOTION.base, MOTION.grow, stagger(i, items.length));
   });
 }
 
@@ -7685,7 +7639,7 @@ function renderDashboard(workouts) {
   const syncColor = (hevyStatus === 'error' || healthStatus === 'missing') ? C.ember
     : (healthStatus === 'stale') ? C.resin : C.lichen; // v1.43
   document.getElementById('last-updated').innerHTML =
-    `v1.43, ${now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }).replace(/\u202f/g, ' ')} <span id="sync-dot" style="display:inline-block;width:6px;height:6px;border-radius:50%;background:${syncColor};margin-left:4px;vertical-align:middle;position:relative;top:-1px;"></span>`;
+    `v1.44, ${now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }).replace(/\u202f/g, ' ')} <span id="sync-dot" style="display:inline-block;width:6px;height:6px;border-radius:50%;background:${syncColor};margin-left:4px;vertical-align:middle;position:relative;top:-1px;"></span>`;
 
   // Populate globals BEFORE renderTimedSession so lifted-today detection works
   heatmapDayWorkouts = pp.heatmapDayWorkouts || {};
