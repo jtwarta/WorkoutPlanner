@@ -1,7 +1,18 @@
 <!DOCTYPE html>
 
 <!--
-  LiftScript v1.41
+  LiftScript v1.42
+  Changes from v1.41 (v1.42 - chart time domain fix):
+  - Weight & Trends x-axis is now the selected period ending today. It was
+    the span of weigh-ins inside the period, which clipped every overlay
+    (SI / Cardio Fitness / Dedication / Body Comp) at the last weigh-in and
+    skipped rendering entirely when the period held no weigh-ins.
+  - Weight layer draws only when weigh-ins exist in the window; its fill
+    closes at the first weigh-in instead of the left edge.
+  - Tooltip anchors added for the visible secondary line where no weigh-in
+    is within 3 days, so post-weigh-in data is inspectable. Axis labels show
+    the domain ends.
+
   Changes from v1.40 (v1.41 - Hevy 429 rate-limit hardening):
   - New fetchHevy() wrapper: on HTTP 429, backs off (Retry-After header or
     2s/5s/10s) and retries up to 3x before failing. All Hevy API call sites
@@ -1015,7 +1026,7 @@ margin-top: 4px;
     <div class="header" style="position:relative;z-index:1;">
       <div style="display:flex;align-items:center;gap:10px;">
         <h1>LiftScript</h1>
-        <div class="subtitle" id="last-updated">v1.41</div>
+        <div class="subtitle" id="last-updated">v1.42</div>
         <div id="power-score-wrap" role="button" aria-label="Toggle Power Score details" tabindex="0" style="margin-left:auto;display:flex;align-items:center;gap:6px;cursor:pointer;-webkit-tap-highlight-color:transparent;min-height:32px;" onclick="togglePowerScoreDetail()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();togglePowerScoreDetail();}">
           <div id="power-score-ring"></div>
         </div>
@@ -5365,11 +5376,12 @@ function showChartTooltip(canvas, pt) {
 
   const dateObj = new Date(pt.date + 'T12:00:00');
   const dateStr = dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-  let label = `${pt.weight.toFixed(1)} lbs`;
+  let label = pt.weight != null ? `${pt.weight.toFixed(1)} lbs` : ''; // v1.42
   if (pt.si) label += `<br><span style="color:${C.strength};">SI ${pt.si.toFixed(2)}</span>`;
   if (pt.cs) label += `<br><span style="color:${C.dangerText};">CF ${pt.cs.toFixed(2)}</span>`;
   if (pt.ded) label += `<br><span style="color:${C.gold};">Ded ${pt.ded.toFixed(2)}</span>`;
   if (pt.bc) label += `<br><span style="color:${C.pink};">BC ${pt.bc.toFixed(2)}</span>`;
+  label = label.replace(/^<br>/, '');
 
   const tip = document.createElement('div');
   tip.className = 'chart-tooltip';
@@ -5423,7 +5435,21 @@ function renderWeightChart() {
   else if (_chartPeriod === '1Y') cutoff.setFullYear(cutoff.getFullYear() - 1);
   else cutoff.setFullYear(2000); // ALL
   const recent = WEIGHT_DATA.filter(d => new Date(d.date) >= cutoff).reverse();
-  if (recent.length === 0) return;
+
+  // v1.42: the chart's time domain is the selected period ending TODAY.
+  // Previously it was the span of weigh-ins inside the period, so every
+  // overlay (SI/CF/Ded/BC) was clipped at the last weigh-in, and the chart
+  // did not render at all when the period held no weigh-ins.
+  const domEnd = localDateStr(new Date());
+  let domStart = localDateStr(cutoff);
+  if (_chartPeriod === 'ALL') {
+    const firsts = [recent, strengthIndexData, cardioScoreData, dedicationData, bodyCompData]
+      .filter(a => a && a.length)
+      .map(a => a.reduce((m, d) => (d.date < m ? d.date : m), a[0].date));
+    if (firsts.length) domStart = firsts.reduce((m, d) => (d < m ? d : m), firsts[0]);
+  }
+  const domDays = Math.max(1, (new Date(domEnd) - new Date(domStart)) / (1000 * 60 * 60 * 24));
+  const _ovr = {}; // v1.42: per-series y-scales for overlay tooltip anchors
 
   const current = WEIGHT_DATA[0].value;
   const prev = WEIGHT_DATA.length > 1 ? WEIGHT_DATA[1].value : current;
@@ -5472,17 +5498,15 @@ function renderWeightChart() {
   // x-axes on one canvas. With irregular weigh-in intervals this distorted
   // the visual co-movement the chart exists to show. Weight now uses the
   // same day-offset mapping as the overlays.
-  const wFirstDate = recent[0].date;
-  const wLastDate = recent[recent.length - 1].date;
-  const wTotalDays = (new Date(wLastDate) - new Date(wFirstDate)) / (1000 * 60 * 60 * 24);
+  const wLastDate = recent.length ? recent[recent.length - 1].date : domEnd;
   const wXForDate = function(dateStr) {
-    if (wTotalDays <= 0) return pad.left;
-    const off = (new Date(dateStr) - new Date(wFirstDate)) / (1000 * 60 * 60 * 24);
-    return pad.left + (off / wTotalDays) * chartW;
+    const off = (new Date(dateStr) - new Date(domStart)) / (1000 * 60 * 60 * 24);
+    return pad.left + (off / domDays) * chartW;
   };
 
   // Weight line (always visible - base layer) - v1.27: thicker
   _chartPoints = []; // reset
+  if (recent.length > 0) { // v1.42: weight layer only when weigh-ins exist in window
   ctx.beginPath();
   ctx.strokeStyle = C.accent;
   ctx.lineWidth = 3;
@@ -5500,7 +5524,7 @@ function renderWeightChart() {
   // Gradient fill
   const lastX = wXForDate(wLastDate);
   ctx.lineTo(lastX, h - pad.bottom);
-  ctx.lineTo(pad.left, h - pad.bottom);
+  ctx.lineTo(wXForDate(recent[0].date), h - pad.bottom); // v1.42: close fill at first weigh-in
   ctx.closePath();
   const gradient = ctx.createLinearGradient(0, 0, 0, h);
   gradient.addColorStop(0, 'rgba(95,160,82,0.28)'); // Redwood accent gradient
@@ -5517,19 +5541,20 @@ function renderWeightChart() {
     ctx.fillStyle = C.accent;
     ctx.fill();
   });
+  } // v1.42 weight guard
 
   // Strength Index line
   if (strengthIndexData.length >= 2) {
-    const wDates = recent.map(d => d.date);
-    const firstDate = wDates[0];
-    const lastDate = wDates[wDates.length - 1];
-    const totalDays = (new Date(lastDate) - new Date(firstDate)) / (1000 * 60 * 60 * 24);
+    const firstDate = domStart; // v1.42
+    const lastDate = domEnd;
+    const totalDays = domDays;
 
     const siFiltered = strengthIndexData.filter(d => d.date >= firstDate && d.date <= lastDate);
     if (siFiltered.length >= 2) {
       const siValues = siFiltered.map(d => d.index);
       const siMin = Math.min(...siValues) - 0.1;
       const siMax = Math.max(...siValues) + 0.1;
+      _ovr.si = { pts: siFiltered.map(d => ({ date: d.date, v: d.index })), min: siMin, max: siMax };
 
       if (_chartLineVisible.si) {
         // v1.27: tier threshold rules at SI=1.30 (Advanced) and SI=1.80 (Elite)
@@ -5595,16 +5620,16 @@ function renderWeightChart() {
 
   // Cardio Fitness line (vitals-only)
   if (cardioScoreData.length >= 2) {
-    const wDates = recent.map(d => d.date);
-    const firstDate = wDates[0];
-    const lastDate = wDates[wDates.length - 1];
-    const totalDays = (new Date(lastDate) - new Date(firstDate)) / (1000 * 60 * 60 * 24);
+    const firstDate = domStart; // v1.42
+    const lastDate = domEnd;
+    const totalDays = domDays;
 
     const csFiltered = cardioScoreData.filter(d => d.date >= firstDate && d.date <= lastDate);
     if (csFiltered.length >= 2) {
       const csValues = csFiltered.map(d => d.score);
       const csMin = Math.min(...csValues) - 0.1;
       const csMax = Math.max(...csValues) + 0.1;
+      _ovr.cs = { pts: csFiltered.map(d => ({ date: d.date, v: d.score })), min: csMin, max: csMax };
 
       if (_chartLineVisible.cardio) {
         ctx.beginPath();
@@ -5647,10 +5672,9 @@ function renderWeightChart() {
 
   // Dedication line (effort + consistency, rolling 7d, smoothed)
   if (dedicationData.length >= 2) {
-    const wDates = recent.map(d => d.date);
-    const firstDate = wDates[0];
-    const lastDate = wDates[wDates.length - 1];
-    const totalDays = (new Date(lastDate) - new Date(firstDate)) / (1000 * 60 * 60 * 24);
+    const firstDate = domStart; // v1.42
+    const lastDate = domEnd;
+    const totalDays = domDays;
 
     const dedFiltered = dedicationData.filter(d => d.date >= firstDate && d.date <= lastDate);
     if (dedFiltered.length >= 2) {
@@ -5668,6 +5692,7 @@ function renderWeightChart() {
       const dedValues = smoothed.map(d => d.score);
       const dedMin = Math.min(...dedValues) - 0.05;
       const dedMax = Math.max(...dedValues) + 0.05;
+      _ovr.ded = { pts: smoothed.map(d => ({ date: d.date, v: d.score })), min: dedMin, max: dedMax };
 
       if (_chartLineVisible.dedication) {
         ctx.beginPath();
@@ -5700,16 +5725,16 @@ function renderWeightChart() {
 
   // Body Composition line
   if (bodyCompData.length >= 2) {
-    const wDates = recent.map(d => d.date);
-    const firstDate = wDates[0];
-    const lastDate = wDates[wDates.length - 1];
-    const totalDays = (new Date(lastDate) - new Date(firstDate)) / (1000 * 60 * 60 * 24);
+    const firstDate = domStart; // v1.42
+    const lastDate = domEnd;
+    const totalDays = domDays;
 
     const bcFiltered = bodyCompData.filter(d => d.date >= firstDate && d.date <= lastDate);
     if (bcFiltered.length >= 2) {
       const bcValues = bcFiltered.map(d => d.score);
       const bcMin = Math.min(...bcValues) - 0.05;
       const bcMax = Math.max(...bcValues) + 0.05;
+      _ovr.bc = { pts: bcFiltered.map(d => ({ date: d.date, v: d.score })), min: bcMin, max: bcMax };
 
       if (_chartLineVisible.bodyComp) {
         ctx.beginPath();
@@ -5740,13 +5765,31 @@ function renderWeightChart() {
     }
   }
 
+  // v1.42: make the visible secondary line inspectable where no weigh-in exists
+  const _visMap = { si: 'si', cs: 'cardio', ded: 'dedication', bc: 'bodyComp' };
+  const _visKey = ['si', 'cs', 'ded', 'bc'].find(k => _chartLineVisible[_visMap[k]] && _ovr[k]);
+  if (_visKey) {
+    const s = _ovr[_visKey];
+    const t0 = new Date(domStart).getTime();
+    s.pts.forEach(function(pv) {
+      const t = new Date(pv.date).getTime();
+      const near = _chartPoints.some(pt => Math.abs(new Date(pt.date).getTime() - t) < 3 * 24 * 60 * 60 * 1000);
+      if (near) return;
+      const np = { x: pad.left + ((t - t0) / (1000 * 60 * 60 * 24) / domDays) * chartW,
+        y: pad.top + (1 - (pv.v - s.min) / ((s.max - s.min) || 1)) * chartH,
+        date: pv.date, weight: null, si: null, cs: null, ded: null, bc: null };
+      np[_visKey] = pv.v;
+      _chartPoints.push(np);
+    });
+  }
+
   // Date labels
   ctx.fillStyle = C.textDark2;
   ctx.font = '10px JetBrains Mono, monospace';
   ctx.textAlign = 'left';
-  ctx.fillText(recent[0].date.substring(5), pad.left, h - 4);
+  ctx.fillText(domStart.substring(5), pad.left, h - 4);
   ctx.textAlign = 'right';
-  ctx.fillText(recent[recent.length - 1].date.substring(5), w - pad.right, h - 4);
+  ctx.fillText(domEnd.substring(5), w - pad.right, h - 4);
 
   // Click-to-inspect handler (attach once)
   if (!canvas.dataset.chartClick) {
@@ -7477,7 +7520,7 @@ function renderDashboard(workouts) {
   const syncColor = (hevyStatus === 'error' || healthStatus === 'missing') ? C.textDim
     : (healthStatus === 'stale') ? C.warn : C.accent;
   document.getElementById('last-updated').innerHTML =
-    `v1.41<br>${now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }).replace(/\u202f/g, ' ')} <span id="sync-dot" style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${syncColor};margin-left:5px;vertical-align:middle;position:relative;top:-1px;"></span>`;
+    `v1.42<br>${now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }).replace(/\u202f/g, ' ')} <span id="sync-dot" style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${syncColor};margin-left:5px;vertical-align:middle;position:relative;top:-1px;"></span>`;
 
   // Populate globals BEFORE renderTimedSession so lifted-today detection works
   heatmapDayWorkouts = pp.heatmapDayWorkouts || {};

@@ -1,6 +1,6 @@
 # LiftScript — Master Documentation
 
-**Version: v1.41** · **Reconstructed July 10, 2026 · updated to v1.41 October 11, 2026**
+**Version: v1.42** · **Reconstructed July 10, 2026 · updated to v1.42 October 11, 2026**
 
 > **Provenance note:** the original `Master_documentation.md` (last at v1.34 +
 > pending v1.35–v1.39 deltas) was deleted from the project before patching. This
@@ -17,6 +17,9 @@
 > **v1.40–v1.41 update (Oct 11, 2026):** patched in from the `index.html`
 > changelog and verified against the 7,675-line v1.41 code. Touches §2, §3,
 > §5, §22, §28 (#23–24), §29, Appendix.
+>
+> **v1.42 update (Oct 11, 2026):** chart time-domain fix. Touches §2, §23,
+> §28 (#25), §29.
 
 ---
 
@@ -48,7 +51,7 @@ Scientific foundation (as documented in the code header):
 
 ## 2. Architecture & Development Rules
 
-- **Single file:** all HTML/CSS/JS in `index.html` (~7,675 lines at v1.41).
+- **Single file:** all HTML/CSS/JS in `index.html` (~7,718 lines at v1.42).
   Assets: `manifest.json`, `icon-180/192/512.png`, `health-data.json`
   (written by the iOS Shortcut, not by hand).
 - **Pure ASCII in index.html.** Special characters use `\uXXXX` escapes.
@@ -418,6 +421,13 @@ re-normalized across available pillars. Tap to expand the pillar breakdown.
   SI tier rules (dashed) at 1.30 ADV / 1.80 ELT when the SI line is visible.
 - Tap-to-inspect: nearest point tooltip (weight + all attached index values
   within 3 days), highlight dot, 3 s auto-fade.
+- **Time domain (v1.42):** the x-axis is the selected period ending today
+  (ALL: earliest point across weight and all overlay series). Every overlay
+  filters to that domain. The weight layer draws only when weigh-ins exist
+  in the window, and its fill closes at the first weigh-in. Tooltip anchors
+  are added for the visible secondary line wherever no weigh-in is within
+  3 days, so data after the last weigh-in is inspectable. Pre-v1.42 the
+  domain was the span of weigh-ins in the window (§28 #25).
 
 ## 24. UI Systems & Storage
 
@@ -495,7 +505,7 @@ by construction; see the §6 sanitizer.
 Items 1–17 below are **reconstructed** from the code changelog and inline
 comments — the original ordering/wording is lost; the set is believed
 complete. Items 18–22 are preserved verbatim from the v1.35–v1.39 deltas.
-Items 23–24 come from the v1.40–v1.41 changelog.
+Items 23–25 come from the v1.40–v1.42 changelog.
 
 1. Classification priority: specific patterns before generic (Tricep Dip vs
    /dip/, RDL vs /deadlift/, upright row vs /row/) — v1.1.
@@ -540,6 +550,11 @@ Items 23–24 come from the v1.40–v1.41 changelog.
     the whole refresh with a raw error; template paging at pageSize=10 made
     cold-refresh bursts large enough to trigger it. Fix: `fetchHevy()`
     backoff wrapper + template pageSize=100.
+25. **Chart clipped to the weigh-in span (v1.42):** the x-domain was the
+    first-to-last weigh-in inside the period, so all overlays stopped at the
+    last weigh-in (Feb 16, 2026 at the time: eight months of SI hidden in the
+    1Y view) and the chart did not render when the period held no weigh-ins.
+    Found by the Phase 0 visual audit. Fix: period-ending-today domain.
 
 ## 29. Version History
 
@@ -550,6 +565,7 @@ cross-references.
 
 | Version | Key changes |
 |---|---|
+| v1.42 | Chart time domain = selected period ending today (overlays no longer clipped at last weigh-in; renders without weigh-ins; overlay tooltip anchors) |
 | v1.41 | Hevy 429 hardening: `fetchHevy()` backoff wrapper (Retry-After or 2/5/10 s, 3 retries) on all call sites; template pageSize 10→100 (~47→~5 requests); readable terminal-429 message |
 | v1.40 | WAIST tile source-of-truth fix: merged `getLatestMeasurements()` value instead of raw Apple Health |
 | v1.39 | Stall detection + ~10% deload (reps[] history; ≥4-session run, max(last 3 reps) ≤ baseline; DELOAD chip; Hevy note) |
