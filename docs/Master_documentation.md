@@ -1,6 +1,6 @@
 # LiftScript — Master Documentation
 
-**Version: v1.47** · **Reconstructed July 10, 2026 · updated to v1.47 October 11, 2026**
+**Version: v1.48** · **Reconstructed July 10, 2026 · updated to v1.48 October 16, 2026**
 
 > **Provenance note:** the original `Master_documentation.md` (last at v1.34 +
 > pending v1.35–v1.39 deltas) was deleted from the project before patching. This
@@ -84,10 +84,18 @@ Scientific foundation (as documented in the code header):
   the sandbox), sets `git config user.email/user.name` explicitly, commits
   per phase, and pushes at the end of every session. Jon never runs git.
 - Push auth: HTTPS with a classic repo-scope token embedded in the clone
-  URL. The token value is deliberately not written into this document (a
-  copy is committed to the public repo). As of Oct 2026 it is not in the
-  project memory files either; Claude retrieves it from past project chats
-  (last used in the Aug 2026 v1.41 session) or asks Jon at session start.
+  URL, from a **Chat-mode** conversation in the LiftScript project (Jon's
+  workflow for over a year; works from mobile with the desktop off). The
+  token value is deliberately not written into this document (a copy is
+  committed to the public repo); Claude retrieves it from past project chats
+  or asks Jon at session start.
+- **Cowork mode cannot push** (verified Oct 16, 2026): its git proxy only
+  allows repos in the session's authorized set and rejects
+  `jtwarta/WorkoutPlanner` even with a valid token in the URL; the GitHub
+  API is gated the same way. Do analysis and patch prep in Cowork if
+  convenient, but push from a Chat-mode conversation (or, as a fallback, a
+  Code-tab session with the repo selected -- the Claude GitHub App is
+  installed on all of Jon's repos).
 - The iOS Shortcut commits `health-data.json` to the repo directly (the
   frequent "Update health data" commits).
 
@@ -382,7 +390,8 @@ target achievement (avg deficit → ×2, weight 40) + waist-to-height
 ((0.60−WHtR)/0.09, weight 20), re-weighted per available components.
 **v1.37:** computed per-date from dated measurement entries with per-field
 carry-forward; bf held constant (single snapshot, no history source); final
-point at today merges the live Apple Health waist. (Pre-v1.37 the timeline
+point at today uses the merged `getLatestMeasurements()` waist (v1.48; was
+raw Apple Health, §28 #26). (Pre-v1.37 the timeline
 was a constant — §28 #21.)
 
 **Power Score (0–100, header tree-ring):** Strength 30% (SI piecewise:
@@ -392,7 +401,8 @@ re-normalized across available pillars. Tap to expand the pillar breakdown.
 
 ## 22. Body Measurements & Frame Targets
 
-- `MEASUREMENTS_BASELINE` embedded (2020-06-10, 2026-02-18, 2026-03-29);
+- `MEASUREMENTS_BASELINE` embedded (2020-06-10, 2026-02-18, 2026-03-29,
+  2026-08-02 [v1.48]);
   localStorage stores only deltas (`bodyMeasurements_v1`, capped 400
   entries); merged by date at read (baseline survives storage clears).
 - Import path: Hevy CSV export (Profile → Settings → Export) — handles cm or
@@ -403,7 +413,10 @@ re-normalized across available pillars. Tap to expand the pillar breakdown.
   height×0.45 (inverted — lower is better); shoulder/hip display-only (no
   validated wrist formula). Deficits feed recommendation signal 4 (§13) and
   the Frame-Adjusted Targets bars (sorted worst-first). Latest Apple Health
-  waist merges in when newer than manual entries.
+  waist merges in only when dated (`waist_date`) and newer than manual
+  entries. **The Shortcut currently sends waist undated**, so manual/Hevy
+  entries win everywhere (v1.48 extended this to the waist sparkline and the
+  Body Comp "now" point, §28 #26).
 - **Source-of-truth rule (v1.40):** every measurement tile, including the
   Body Composition WAIST tile, reads the merged value from
   `getLatestMeasurements()`, never raw `healthData` fields. Pre-v1.40 the
@@ -508,7 +521,7 @@ by construction; see the §6 sanitizer.
 Items 1–17 below are **reconstructed** from the code changelog and inline
 comments — the original ordering/wording is lost; the set is believed
 complete. Items 18–22 are preserved verbatim from the v1.35–v1.39 deltas.
-Items 23–25 come from the v1.40–v1.42 changelog.
+Items 23–25 come from the v1.40–v1.42 changelog; #26 from v1.48.
 
 1. Classification priority: specific patterns before generic (Tricep Dip vs
    /dip/, RDL vs /deadlift/, upright row vs /row/) — v1.1.
@@ -558,6 +571,13 @@ Items 23–25 come from the v1.40–v1.42 changelog.
     last weigh-in (Feb 16, 2026 at the time: eight months of SI hidden in the
     1Y view) and the chart did not render when the period held no weigh-ins.
     Found by the Phase 0 visual audit. Fix: period-ending-today domain.
+26. **Undated Apple Health waist stamped as today (v1.48):** the Shortcut
+    sends `waist_circumference_in` with no date. The waist sparkline plotted
+    it at today and the Body Comp timeline's "now" point used it raw, so the
+    stale 35.0" (likely the Mar 29 value) overrode the newer 34.5" manual
+    entry (Aug 2). The tile was already correct via `getLatestMeasurements()`.
+    Fix: sparkline plots AH waist only when `waist_date` exists; timeline
+    "now" point reads `getLatestMeasurements()`.
 
 ## 29. Version History
 
@@ -568,6 +588,7 @@ cross-references.
 
 | Version | Key changes |
 |---|---|
+| v1.48 | 2026-08-02 measurements embedded in `MEASUREMENTS_BASELINE`; undated Apple Health waist no longer overrides newer manual entries in the waist sparkline or Body Comp timeline (§28 #26) |
 | v1.47 | Body rebuilt (SI hero + tier scale, lift rows, PR rows, weight freshness, chart restyle with Resin secondary line, vitals rows, measurements list; duplicate tiles removed) and transitional palette retired (88 C refs + 23 CSS vars renamed, old keys deleted). Revamp complete |
 | v1.46 | History rebuilt: stat trio with week-over-week change in words, cardio row, heatmap with full names / one Sapwood ramp for lifts + cardio (cardio buckets 15/25/35/45) / today column outline / word legend, inline FLIP day detail, column-by-column entrance; parity 13/13 |
 | v1.45 | Muscles rebuilt: grid to list grouped by urgency tier (Due now / Coming due / On track / Rested), volume bar + weekly-sets caption, days-since figure, inline FLIP detail, quiet select mode, Heartwood focus ring; recency rings and legend removed; parity 41/41 |
