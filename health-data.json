@@ -1,5 +1,5 @@
 {"updated":"
-2026-11-01T07:00:08-08:00
+2026-11-03T07:00:08-08:00
 ","resting_heart_rate":
 58
 ,"cardio_fitness":
@@ -7,12 +7,30 @@
 ,"cardio_recovery":
 27.87940116623478
 ,"steps":
-11623.2857142857
+12079.7142857143
 ,"active_energy_kcal":
-299.348
+315.038428571429
 ,"walking_heart_rate_avg":
 89.5
-,"workouts":[{"type":"Other
+,"workouts":[{"type":"Traditional Strength Training
+
+","start":"Nov 2, 2026 at 2:10 PM
+
+","duration_min":30.2
+
+,"calories":208 kcal
+
+}
+{"type":"Walking
+
+","start":"Nov 1, 2026 at 1:32 PM
+
+","duration_min":51.3
+
+,"calories":334 kcal
+
+}
+{"type":"Other
 
 ","start":"Oct 31, 2026 at 11:53 AM
 
@@ -443,32 +461,14 @@
 
 ,"calories":73 kcal
 
-}
-{"type":"Walking
-
-","start":"Sep 14, 2026 at 12:32 PM
-
-","duration_min":69.1
-
-,"calories":200 kcal
-
-}
-{"type":"Walking
-
-","start":"Sep 12, 2026 at 11:21 AM
-
-","duration_min":73.2
-
-,"calories":257 kcal
-
 }]
 ,"weight_entries": []
 ,"body_fat_pct": 
 ,"lean_body_mass_lbs": 
 ,"waist_circumference_in": 35
 
-,"rhr_12m":57,"rhr_6m":64,"rhr_3m":52
-,"vo2_12m":39.11,"vo2_6m":40.28,"vo2_3m":38.31
+,"rhr_12m":57,"rhr_6m":61.99999999999999,"rhr_3m":57
+,"vo2_12m":39.11,"vo2_6m":39.94,"vo2_3m":37.86
 ,"rec_12m":29.35693405311991,"rec_6m":25.00871567009568,"rec_3m":
 
 }
