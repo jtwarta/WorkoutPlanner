@@ -1,5 +1,5 @@
 {"updated":"
-2026-11-03T07:00:08-08:00
+2026-11-07T07:00:07-08:00
 ","resting_heart_rate":
 58
 ,"cardio_fitness":
@@ -7,12 +7,66 @@
 ,"cardio_recovery":
 27.87940116623478
 ,"steps":
-12079.7142857143
+10672.25
 ,"active_energy_kcal":
-315.038428571429
+391.951285714285
 ,"walking_heart_rate_avg":
 89.5
-,"workouts":[{"type":"Traditional Strength Training
+,"workouts":[{"type":"Walking
+
+","start":"Nov 6, 2026 at 1:37 PM
+
+","duration_min":71.9
+
+,"calories":440 kcal
+
+}
+{"type":"Traditional Strength Training
+
+","start":"Nov 5, 2026 at 8:02 PM
+
+","duration_min":19.4
+
+,"calories":136 kcal
+
+}
+{"type":"Walking
+
+","start":"Nov 5, 2026 at 12:59 PM
+
+","duration_min":86.2
+
+,"calories":450 kcal
+
+}
+{"type":"Walking
+
+","start":"Nov 4, 2026 at 7:53 PM
+
+","duration_min":80.5
+
+,"calories":241 kcal
+
+}
+{"type":"Walking
+
+","start":"Nov 4, 2026 at 12:05 PM
+
+","duration_min":55.6
+
+,"calories":334 kcal
+
+}
+{"type":"Traditional Strength Training
+
+","start":"Nov 3, 2026 at 12:22 PM
+
+","duration_min":33.8
+
+,"calories":181 kcal
+
+}
+{"type":"Traditional Strength Training
 
 ","start":"Nov 2, 2026 at 2:10 PM
 
@@ -407,68 +461,14 @@
 
 ,"calories":176 kcal
 
-}
-{"type":"Running
-
-","start":"Sep 18, 2026 at 3:31 PM
-
-","duration_min":18.9
-
-,"calories":108 kcal
-
-}
-{"type":"Walking
-
-","start":"Sep 18, 2026 at 2:50 PM
-
-","duration_min":40.5
-
-,"calories":217 kcal
-
-}
-{"type":"Running
-
-","start":"Sep 17, 2026 at 7:24 PM
-
-","duration_min":7.9
-
-,"calories":75 kcal
-
-}
-{"type":"Walking
-
-","start":"Sep 17, 2026 at 6:42 PM
-
-","duration_min":41.5
-
-,"calories":272 kcal
-
-}
-{"type":"Traditional Strength Training
-
-","start":"Sep 16, 2026 at 8:24 PM
-
-","duration_min":48.9
-
-,"calories":258 kcal
-
-}
-{"type":"Walking
-
-","start":"Sep 14, 2026 at 9:00 PM
-
-","duration_min":24.2
-
-,"calories":73 kcal
-
 }]
 ,"weight_entries": []
 ,"body_fat_pct": 
 ,"lean_body_mass_lbs": 
 ,"waist_circumference_in": 35
 
-,"rhr_12m":57,"rhr_6m":61.99999999999999,"rhr_3m":57
-,"vo2_12m":39.11,"vo2_6m":39.94,"vo2_3m":37.86
-,"rec_12m":29.35693405311991,"rec_6m":25.00871567009568,"rec_3m":
+,"rhr_12m":57,"rhr_6m":59,"rhr_3m":57
+,"vo2_12m":39.57,"vo2_6m":40.52,"vo2_3m":37.86
+,"rec_12m":29.35693405311991,"rec_6m":26.83212660608516,"rec_3m":
 
 }
