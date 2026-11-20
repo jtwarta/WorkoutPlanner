@@ -137,9 +137,9 @@ async def render(served, out):
 
         # Key state: Why this? (Today, first group)
         await page.evaluate("switchTab('today')"); await page.wait_for_timeout(700)
-        g = page.locator('#suggested-exercises .ex-group-title').first
+        g = page.locator('#suggested-exercises .ex-row').first  # v2.0: lifts are tappable rows
         await g.scroll_into_view_if_needed(); await g.click(); await page.wait_for_timeout(600)
-        await page.evaluate("document.querySelector('#suggested-exercises .ex-group-title').scrollIntoView({block:'start'}); window.scrollBy(0,-90)")
+        await page.evaluate("window.scrollTo(0,0)")
         await page.wait_for_timeout(250)
         await page.screenshot(path=f'{out}/state_why.png')
 

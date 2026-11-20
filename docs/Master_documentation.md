@@ -1,6 +1,6 @@
 # LiftScript — Master Documentation
 
-**Version: v1.49** · **Reconstructed July 10, 2026 · updated to v1.49 November 19, 2026**
+**Version: v2.0** · **Reconstructed July 10, 2026 · updated to v2.0 November 19, 2026**
 
 > **Provenance note:** the original `Master_documentation.md` (last at v1.34 +
 > pending v1.35–v1.39 deltas) was deleted from the project before patching. This
@@ -20,6 +20,11 @@
 >
 > **v1.42 update (Oct 11, 2026):** chart time-domain fix. Touches §2, §23,
 > §28 (#25), §29.
+>
+> **v2.0 update (Nov 19, 2026):** right-sized planner, second phase of the v2
+> plan. Changes what is prescribed. §13 and §14 are rewritten; also touches
+> §9 (time), §10 (SI sources), §12 (targets), §24, §29, Appendix. Decisions
+> behind it are recorded in `docs/LiftScript_v2_Review_and_Plan.md`.
 >
 > **v1.49 update (Nov 19, 2026):** reliability release, first phase of the v2
 > plan (`docs/LiftScript_v2_Review_and_Plan.md`). Touches §2, §5, §6, §22,
@@ -58,7 +63,7 @@ Scientific foundation (as documented in the code header):
 
 ## 2. Architecture & Development Rules
 
-- **Single file:** all HTML/CSS/JS in `index.html` (~7,390 lines at v1.49).
+- **Single file:** all HTML/CSS/JS in `index.html` (~7,290 lines at v2.0).
   Assets: `manifest.json`, `icon-180/192/512.png`, `health-data.json`
   (written by the iOS Shortcut, not by hand).
 - **Pure ASCII in index.html.** Special characters use `\uXXXX` escapes.
@@ -242,8 +247,13 @@ Singer 2024): 180 s heavy barbell compounds; 120 s moderate compounds; 90 s
 multi-joint machines / heavier isolation; 60 s pure isolation/small muscles.
 Hardcoded per exercise in `EXERCISE_DB.rest` with a pattern-based fallback.
 
-Time model (`TIME_CONSTANTS`): 45 s/compound set, 35 s/isolation set,
-inter-set rest, +90 s transition per exercise; session caps 30/45/60 min.
+Time model (v2.0): `_fitSecPerSet` = median of (logged duration / working
+sets) over lift-only sessions of 5 to 180 min in the last 90 days, fitted in
+`applyPersonalModel`; an exercise takes sets x that (about 6.6 min per set in
+Nov 2026). With fewer than 5 such sessions it falls back to the old formula
+(`TIME_CONSTANTS`: 45 s/compound set, 35 s/isolation set, inter-set rest,
++90 s transition), which ran about 2.5x short of real sessions. The 30/45/60
+minute caps are gone; sessions are sized in lifts (§14).
 
 ## 10. Strength Index (SI)
 
@@ -265,8 +275,13 @@ inter-set rest, +90 s transition per exercise; session caps 30/45/60 min.
   30-day change in words and a p50-ticked bar (tap for the source set), and
   the PR board (all-time PR per lift, Sapwood sparklines). The concentric
   Big-5 rings were removed (rings mean weeks).
-- Known scope note: the OHP pattern set (`overhead press|shoulder press|
-  military press`) matches machine shoulder presses too.
+- **Sources (v2.0):** exact barbell lifts only: Bench Press (Barbell), Squat
+  (Barbell) / Back Squat, Deadlift (Barbell or Trap Bar), Overhead /
+  Military / Shoulder Press (Barbell), Bent Over / Pendlay / Barbell Row.
+  Before v2.0 the deadlift slot was fed by Romanian deadlifts and the OHP and
+  row slots by machine, cable and dumbbell lifts (SI 1.21 with them, 1.10
+  without, same data). Lifts with no qualifying set in 183 days show "No
+  data" and the weights re-normalize.
 
 ## 11. Exercise Classification
 
@@ -296,12 +311,21 @@ equipment variants compete for one session slot.
 | Biceps / Triceps / Calves / Core | 6/6/6/4 | 6 | 3 |
 | Neck / Forearms | 5 | 4 | 3 |
 
+**Personal targets (v2.0, `applyPersonalModel`, run at the end of
+`preprocessWorkouts`):** the table above is the reference (90 sets a week).
+Delivered volume = fractional sets over the last 56 days / 8. Scale =
+clamp(delivered x 1.10 / 90, 0.25, 1). Each muscle's weekly target =
+reference x scale, rounded to 0.5, minimum 1. The ideal gap stretches by
+tier as the scale falls: gap x (1 + (tierMult - 1) x clamp((1 - scale) / 0.6,
+0, 1)) with tierMult 1.4 / 1.7 / 2.5 for tiers 1 / 2 / 3. In Nov 2026: scale
+0.38, chest 4 sets every 7 days, biceps 2.5 every 15. Everything downstream
+(scoring, urgency, the Muscles list) reads the personal values.
+
 `EXERCISE_DB` holds ~80 exercises (benchmark lbs for an average mid-30s
 ~75 kg male, type, default sets/reps, rest). `MUSCLE_EXERCISE_PICKS` is the
 static fallback pool; the dynamic pool unions DB + workout history + Hevy
-templates (classifiable only). `COMPOUND_ANCHORS`: Bench Press (Barbell),
-Bent Over Row (Barbell), Overhead Press (Barbell), Squat (Barbell), Romanian
-Deadlift (Barbell), Hip Thrust (Barbell).
+templates (classifiable only); since v2.0 it is used for template matching
+only, not for picking lifts. `COMPOUND_ANCHORS` was removed in v2.0.
 
 ## 13. Recommendation Scoring (5-Signal)
 
@@ -325,35 +349,39 @@ Deadlift (Barbell), Hip Thrust (Barbell).
 - Human-readable explainer strings generated per muscle for the grid detail
   panel and Today-tab "Why this?" expanders.
 
-## 14. Session Builder
+## 14. Session Builder (v2.0)
 
-`buildTimedSession(recs, prefs)`:
-- Focus modes: auto / foundation (tiers ≤ 2 only) / neglect (score minus
-  structural bonus). Custom sessions (muscle multi-select → Build Session)
-  override focus and pin selected muscles to the top.
-- Start with top 3 muscles, expand up to 6 while total time < 75% of cap
-  (skipping suppressed/negative-score muscles). Per-muscle candidate caps
-  [3,2,2,then 2] (`MUSCLE_EXERCISE_CAP`).
-- Candidate importance = groupScore × typeBonus (compound 1.5) ×
-  deficitBonus (1.3 if lifting <85% of benchmark) × orderBonus (−0.1/rank).
-- `fitCandidates` greedy fit under the time cap with guards:
-  - movement-pattern dedup for compounds (`MOVEMENT_PATTERNS`: h-push,
-    v-push, h-pull, v-pull, knee-dominant, hip-dominant)
-  - ≤1 compound per muscle until 70% of budget used
-  - v1.33 variety: one exercise per name-family per session; ≤2 isolations
-    per muscle (silent skips)
-  - **Big 5 rails (v1.29/v1.30):** regex classifier for barbell
-    bench/squat/deadlift/OHP/row; cap 2 per session ≤75 min (3 otherwise),
-    relaxed to 3 when Foundation volume delivery < 0.60 of target
-    (`foundationVolumeDeliveryRatio`); conflicts — Squat+Deadlift **block**
-    (CNS/spinal), Deadlift+Row **caution** (skip past 40% budget). Skips
-    logged to the collapsible "Session Adjustments" strip.
-  - guarantees one isolation for the #1 muscle if it fits.
-- Final list demand-ordered (`getExerciseDemandRank`): heavy barbell
-  compounds → other compounds → large-muscle isolation → small-muscle
-  accessories. Grouped by anatomy order for display.
-- Rerolls: lift reroll rotates non-anchor candidates per muscle
-  (`_liftRerollOffset`); cardio reroll cycles protocols. Both haptic-backed.
+`buildTimedSession(recs, prefs)` with `prefs = { liftCount, equipment }`:
+- **Size:** N lifts, 3 / 4 / 5, default 4 (Jon expects to drop about one).
+- **Region:** push (chest, shoulders, triceps), pull (back, biceps, forearms,
+  neck) or legs (quads, hamstrings, glutes, calves). Regions are ordered by
+  their most overdue large (tier 1 to 2) muscle; the first is planned.
+  **Reroll steps to the next region**; after a full cycle it also rotates
+  the lifts through the five most-used per muscle.
+- **Slots** (`planSessionSlots`): the region's large muscles, most overdue
+  first, one lift each; if the region has fewer than three large muscles the
+  lead muscle gets a second lift; then small muscles of the region and core,
+  most overdue first, except that a small muscle untrained for 60 days goes
+  last (it still shows as due on Muscles). A custom session puts the chosen
+  muscles first and gives each a second lift before filling from the region.
+- **Lifts** (`liftCandidates`): only exercises in the workout history whose
+  primary muscle matches, ranked by uses in the last 90 days, then recency.
+  The first lift for a large muscle prefers a compound. Home mode filters
+  `GYM_ONLY_REGEX`. A muscle with no history falls back to
+  `MUSCLE_EXERCISE_PICKS` (shown as "New for you").
+- **Guards:** no repeated exercise or name-family; within one muscle no
+  repeated movement pattern; Squat + Deadlift (Big 5) still blocked.
+- **Edits:** `_sessionSwaps` / `_sessionSkips` keyed by slot ("quads#0"),
+  set from the Today tab, applied by the builder, cleared by reroll, a toggle
+  change, a new custom session, or a full (non-keepState) render.
+- Output keeps the old shape (`exercises[]` with `prescription`, `totalSec`),
+  so Send to Hevy is unchanged. Order: heavy compounds first
+  (`getExerciseDemandRank`).
+- Removed in v2.0: the time-capped greedy builder, focus modes, per-muscle
+  candidate caps, `rankExercisesForMuscle` (recency + variety + anchor
+  bonuses), the Big 5 cap and the Session Adjustments strip.
+- Loads and reps still come from `prescribeExercise` (§9), untouched until
+  v2.1; e.g. a 62 lb kettlebell is still rounded to 60.
 
 ## 15–20. Cardio Engine
 
@@ -479,11 +507,12 @@ re-normalized across available pillars. Tap to expand the pillar breakdown.
 
 - **Tabs:** Today / Muscles / History / Body; fade+slide transitions; ARIA
   tablist (v1.28).
-- **Today (v1.44):** Newsreader session title + "About N min"; quiet text
-  toggles (60 min / Gym / Auto focus) and Reroll; exercise rows with name +
-  equipment, Newsreader prescription, Heartwood edge rule on anchors, Resin
-  "Deload"; Why this? as FLIP explainers under each muscle label; Send to
-  Hevy as the single filled button; cardio plan rows.
+- **Today (v2.0):** title + "About N min" (fitted); a caption naming the
+  region and why; toggles "4 lifts" / "Gym"; Reroll (next region); a flat
+  list of lift rows with the last result on each; tap a row for the reason,
+  up to three swaps from history, or skip; "N lifts skipped, Undo"; Send to
+  Hevy on the first screen (bottom edge at 573 pt of 852 at four lifts);
+  cardio plan rows below.
 - **Muscles (v1.45):** list grouped by urgency (Due now / Coming due / On
   track / Rested), volume bar + "N of M weekly sets", days-since figure,
   inline detail, quiet "Build a custom session" select mode.
@@ -634,6 +663,7 @@ cross-references.
 
 | Version | Key changes |
 |---|---|
+| v2.0 | Right-sized planner: N-lift sessions by region from your own lift history; personal weekly targets and gaps; fitted session time; Today rebuilt with last result, swap and skip, Send on the first screen; Strength Index restricted to barbell lifts; old builder, ranker, focus modes and Big 5 cap removed |
 | v1.49 | Reliability: incremental `/workouts/events` sync on every open; cached paint from a local health copy; state-preserving background re-render; visible error line; weigh-in entry; dead code removed (Redwood helpers, tier emblems, unused `muscle1RMs`, `toggleSectionExplainer`); dev test A4 fixed. Engine output identical to v1.48 (14 replay dates x 18 setting combinations) |
 | v1.48 | 2026-08-02 measurements embedded in `MEASUREMENTS_BASELINE`; undated Apple Health waist no longer overrides newer manual entries in the waist sparkline or Body Comp timeline (§28 #26) |
 | v1.47 | Body rebuilt (SI hero + tier scale, lift rows, PR rows, weight freshness, chart restyle with Resin secondary line, vitals rows, measurements list; duplicate tiles removed) and transitional palette retired (88 C refs + 23 CSS vars renamed, old keys deleted). Revamp complete |
@@ -725,3 +755,14 @@ cross-references.
   and a deleted one disappears without a manual refresh; a custom session
   and reroll survive a background sync; a 500 from the sync leaves the
   dashboard up; weigh-in saves and rejects out-of-range input.
+
+- v2.0 (Nov 2026), replayed over 78 multi-lift sessions in 183 days with
+  `tools/backtest.js` and ad hoc scripts. Time: predicted / actual duration
+  median 1.06 (was 0.39), fitted out of sample. "Due now": 2 muscles (was 7).
+  Exact-name match of logged lifts to the first plan: 20% (unchanged) with a
+  4-lift plan instead of 9; within three rerolls 31% (was 27%). Share of the
+  plan that was done: 15% first plan, 24% best (was 7% and 9%). Sessions with
+  at least one planned lift: 49% first, 76% best (was 36% and 53%). The plan
+  document's 60% exact-match target was not met: half the logged sessions
+  mix regions and near-identical variants (bench vs incline bench) count as
+  misses. Judge v2.0 on live use.

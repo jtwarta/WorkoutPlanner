@@ -132,6 +132,17 @@ The single file is not what is holding the app back. Keep it. Move validation in
 
 ## Phased plan
 
+**Status, November 19, 2026.** v1.49 shipped. v2.0 shipped with two of its
+three backtest targets met: duration ratio 1.06 and "Due now" at 2. The
+exact-match target (60%) was missed: 20% on the first plan, the same as
+before but with four lifts instead of nine, and 31% within three rerolls.
+Half of the logged sessions mix regions and close variants count as misses,
+so the target was the wrong measure. The share of each plan actually done
+doubled (7% to 15%; 9% to 24% best case). Three things were added beyond the
+plan: sessions are built by region (push, pull, legs), Reroll steps to the
+next region, and a small muscle untrained for 60 days is no longer pushed
+into every session.
+
 **v1.49, reliability.** No engine change.
 - Sync with `/workouts/events` on every open; full fetch only on cold start.
 - Paint from cache without waiting for health; apply background data without resetting session state.

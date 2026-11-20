@@ -1,7 +1,25 @@
 <!DOCTYPE html>
 
 <!--
-  LiftScript v1.49
+  LiftScript v2.0
+  Changes from v1.49 (v2.0 - right-sized planner; changes what is prescribed):
+  - Session = N lifts (3/4/5, default 4) from one region (push, pull, legs),
+    led by the most overdue large muscle. Replaces the time-capped builder
+    that wrote nine-lift sessions. Focus modes and the minute cap are gone.
+  - Lifts come from your own history, ranked by 90-day use. The novelty
+    bonus, the fixed anchors and the template-library pool no longer pick
+    lifts. A reference lift is used only for a muscle with no history.
+  - Weekly set targets scale to delivered volume plus 10%; the ideal gap
+    between sessions stretches with them (applyPersonalModel).
+  - Session time is fitted from logged durations per working set.
+  - Today: flat list with the last result on each lift; tap a lift for the
+    reason, up to three swaps from your history, or skip. Send to Hevy sits
+    on the first screen.
+  - Strength Index counts exact barbell lifts only.
+  - Removed: old builder and ranker, Big 5 cap logic, session adjustments.
+  Unchanged: prescribeExercise (loads, reps, deloads), cardio, scores other
+  than through the Strength Index, Send to Hevy.
+
   Changes from v1.48 (v1.49 - reliability; no engine or scoring change):
   - Incremental sync: one /workouts/events call on every open replaces the
     8-hour cache window, which hid a workout logged since the last fetch,
@@ -913,7 +931,7 @@ margin-top: 4px;
     <div class="header">
       <div class="hdr-id">
         <h1>LiftScript</h1>
-        <div class="subtitle" id="last-updated">v1.49</div>
+        <div class="subtitle" id="last-updated">v2.0</div>
       </div>
       <button id="header-refresh-btn" class="hdr-btn" onclick="refreshData()" title="Refresh data" aria-label="Refresh data from Hevy and health">
         <svg width="17" height="17" viewBox="0 0 16 16" fill="none" style="display:block;">
@@ -948,7 +966,7 @@ margin-top: 4px;
 
 <div id="tab-muscles" class="hidden">
   <div class="card">
-    <div class="td-titlerow td-in"><div class="td-title">What&#8217;s due</div><div class="td-cap">By priority</div></div>
+    <div class="td-titlerow td-in"><div class="td-title">What&#8217;s due</div><div class="td-cap">Against your own pace</div></div>
     <div id="muscle-select-controls" class="td-in"></div>
     <div id="muscle-grid"></div>
     <div class="muscle-detail" id="muscle-detail" style="display:none;"><div class="muscle-detail-inner rec-explainer" id="muscle-detail-inner"></div></div>
@@ -1253,6 +1271,10 @@ function calculateExerciseTime(exerciseName, sets) {
   const isCompound = db ? db.type === 'compound' : isLikelyCompound(exerciseName);
   const setTime = isCompound ? TIME_CONSTANTS.compoundSetSec : TIME_CONSTANTS.isolationSetSec;
   const restSec = getRestSeconds(exerciseName);
+  // v2.0: when enough of your own sessions exist, time comes from them
+  // (median logged duration per working set over 90 days). The formula below
+  // ran about 2.5x short of real sessions.
+  if (_fitSecPerSet > 0) return sets * _fitSecPerSet;
   return (sets * setTime) + ((sets - 1) * restSec) + TIME_CONSTANTS.transitionSec;
 }
 
@@ -1615,17 +1637,6 @@ const MUSCLE_EXERCISE_PICKS = {
   forearms:   ['Wrist Curl (Barbell)', 'Wrist Curl (Dumbbell)', 'Reverse Wrist Curl (Barbell)', 'Reverse Curl (Barbell)', 'Reverse Curl (Dumbbell)', 'Farmer Carry (Dumbbell)', 'Dead Hang'],
 };
 
-// Primary compound anchor per group -- always gets a priority boost
-// so the core barbell lifts stay in most sessions
-const COMPOUND_ANCHORS = {
-  chest: 'Bench Press (Barbell)',
-  back: 'Bent Over Row (Barbell)',
-  shoulders: 'Overhead Press (Barbell)',
-  quads: 'Squat (Barbell)',
-  hamstrings: 'Romanian Deadlift (Barbell)',
-  glutes: 'Hip Thrust (Barbell)',
-};
-
 // v1.29: Big 5 classification for session-level conflict resolution.
 // Evidence: Simao et al. 2012 (order effects), Schoenfeld 2017 (volume/frequency),
 // plus coaching tradition consensus across 5/3/1, Starting Strength, Juggernaut, RP.
@@ -1666,46 +1677,6 @@ function findBig5Conflict(newKey, existingKeys) {
     if (hit) return c;
   }
   return null;
-}
-
-// Big 5 cap based on time budget AND volume-delivery ratio.
-// Research + tradition say 2 heavy compounds is the ceiling for 45-75 min
-// sessions *when volume is maxed*. v1.30: when the user is consistently
-// under-delivering Foundation volume, the cap relaxes to 3 since there's
-// no recovery economy to protect. The Squat+Deadlift block and Deadlift+Row
-// caution are independent of this - those are CNS/spinal safety rails that
-// apply regardless of volume loading.
-function foundationVolumeDeliveryRatio() {
-  if (!muscleAnalysis) return null;
-  var foundationKeys = ['chest', 'back', 'shoulders', 'quads', 'hamstrings', 'glutes'];
-  var totalActual = 0;
-  var totalTarget = 0;
-  for (var i = 0; i < foundationKeys.length; i++) {
-    var k = foundationKeys[i];
-    var stat = muscleAnalysis[k];
-    if (stat && stat.idealSetsPerWeek > 0) {
-      // 30-day actual sets divided by 4.3 weeks = average weekly sets
-      totalActual += (stat.totalSets30d || 0) / 4.3;
-      totalTarget += stat.idealSetsPerWeek;
-    }
-  }
-  if (totalTarget === 0) return null;
-  return totalActual / totalTarget;
-}
-
-function bigFiveCapForBudget(capSec) {
-  var capMin = capSec / 60;
-  var baseCap = capMin <= 75 ? 2 : 3;
-  // Adaptive: if user is significantly under-delivering Foundation volume,
-  // relax the cap to 3. Threshold 0.60 of target = ~39% of Schoenfeld
-  // optimal (since targets are set at 65% of optimal per master doc).
-  // A user at 60%+ of target is consistent enough that cap=2 protects
-  // meaningful recovery; below 60% the cap is just getting in the way.
-  if (baseCap === 2) {
-    var ratio = foundationVolumeDeliveryRatio();
-    if (ratio !== null && ratio < 0.60) return 3;
-  }
-  return baseCap;
 }
 
 // Build the dynamic exercise pool from all known sources
@@ -1753,84 +1724,6 @@ function addHevyTemplatesToPool() {
     }
   }
   if (added > 0) console.log('Added ' + added + ' exercises from Hevy templates to dynamic pool');
-}
-
-// Rank exercises within a muscle group using history data
-// Returns the same exercise names but reordered by composite score
-function rankExercisesForMuscle(muscleKey) {
-  let pool = _dynamicExercisePool[muscleKey]
-    ? Array.from(_dynamicExercisePool[muscleKey])
-    : (MUSCLE_EXERCISE_PICKS[muscleKey] || []);
-
-  if (pool.length === 0) return pool;
-
-  if (pool.length <= 1) return pool;
-
-  const now = new Date();
-  const todayStr = localDateStr(now);
-  let scored = [];
-
-  for (const exName of pool) {
-    const hist = exerciseHistory[exName];
-    const db = EXERCISE_DB[exName];
-    let score = 1.0;
-
-    // 1. Recency: days since last performed (more days = higher score)
-    // Cap at 21 days to avoid infinite growth for never-done exercises
-    let daysSince = 14; // default if never done
-    if (hist && hist.lastDate) {
-      const last = new Date(hist.lastDate + 'T12:00:00');
-      daysSince = Math.max(0, Math.round((now - last) / (1000 * 60 * 60 * 24)));
-    }
-    const recencyScore = Math.min(daysSince / 14, 1.5);
-    score += recencyScore * 0.4;
-
-    // 2. Variety: fewer appearances in last 30d = higher score
-    let count30d = 0;
-    if (hist && hist.dates) {
-      const cutoff = new Date(now);
-      cutoff.setDate(cutoff.getDate() - 30);
-      const cutoffStr = localDateStr(cutoff);
-      for (const d of hist.dates) {
-        if (d >= cutoffStr) count30d++;
-      }
-    }
-    const varietyScore = Math.max(0, 1 - (count30d / 8));
-    score += varietyScore * 0.25;
-
-    // 3. Compound anchor bonus: primary compound gets permanent boost
-    if (COMPOUND_ANCHORS[muscleKey] === exName) {
-      score += 0.6;
-    }
-
-    // 4. Deficit bonus: if current weight is well below benchmark
-    if (db && db.benchmarkLbs > 0 && hist && hist.lastWeightLbs > 0) {
-      if (hist.lastWeightLbs / db.benchmarkLbs < 0.85) {
-        score += 0.2;
-      }
-    }
-
-    scored.push({ name: exName, score });
-  }
-
-  scored.sort((a, b) => b.score - a.score);
-  // Apply reroll rotation: shift top picks to create variety
-  if (_liftRerollOffset > 0 && scored.length > 1) {
-    // Keep compound anchor in position 0 if present, rotate the rest
-    var anchorName = COMPOUND_ANCHORS[muscleKey];
-    var anchorIdx = -1;
-    for (var ri = 0; ri < scored.length; ri++) {
-      if (scored[ri].name === anchorName) { anchorIdx = ri; break; }
-    }
-    var anchor = anchorIdx >= 0 ? scored.splice(anchorIdx, 1)[0] : null;
-    // Rotate remaining by offset
-    if (scored.length > 1) {
-      var rot = _liftRerollOffset % scored.length;
-      scored = scored.slice(rot).concat(scored.slice(0, rot));
-    }
-    if (anchor) scored.unshift(anchor);
-  }
-  return scored.map(s => s.name);
 }
 
 // ============================================================
@@ -2136,9 +2029,10 @@ let hevyStatus = 'pending'; // 'ok' | 'error'
 // ============================================================
 const PREFS_KEY = 'wa_prefs_v1_1';
 const PREFS_DEFAULTS = {
-  sessionCapMin: 60,
+  sessionCapMin: 60,   // unused since v2.0 (kept so stored prefs still load)
   equipment: 'gym',
-  focusMode: 'auto',
+  focusMode: 'auto',   // unused since v2.0
+  liftCount: 4,        // v2.0: sessions are sized in lifts
 };
 
 function loadPrefs() {
@@ -2155,9 +2049,8 @@ const GYM_ONLY_REGEX = /(Machine|Cable|Smith|Leg Press|Hack Squat|Pec Deck)/i;
 
 // Chip definitions
 const CHIP_DEFS = [
-  { key: 'sessionCapMin', label: v => `${v}m`, values: [30, 45, 60] },
+  { key: 'liftCount', label: v => `${v} lifts`, values: [3, 4, 5] },
   { key: 'equipment', label: v => v === 'gym' ? 'Gym' : 'Home', values: ['gym', 'home'] },
-  { key: 'focusMode', label: v => v === 'auto' ? 'Auto' : v === 'foundation' ? 'Foundation' : 'Neglect', values: ['auto', 'foundation', 'neglect'] },
 ];
 
 function cycleChip(key) {
@@ -2169,6 +2062,7 @@ function cycleChip(key) {
   const next = def.values[(idx + 1) % def.values.length];
   sessionPrefs[key] = next;
   savePrefs(sessionPrefs);
+  clearSessionEdits();
   var activeRecs = _customSessionActive && _customSessionRecs ? _customSessionRecs : LAST_RECS;
   if (activeRecs) renderTimedSession(activeRecs);
   if (workoutCache) renderCardioPlan(heatmapDayCardio);
@@ -2304,13 +2198,69 @@ async function syncWorkoutEvents(cached) {
 // p50 = 50th percentile BW multiplier for general gym-going male population
 // Derived from STRENGTH_STANDARDS (competition 25th ~ gym 50th)
 // Age-adjusted dynamically via PROFILE.age
+// v2.0: exact barbell lifts only. The old patterns counted a Romanian
+// deadlift as the deadlift and machine or dumbbell presses and rows as the
+// overhead press and row.
 const STRENGTH_INDEX_LIFTS = {
-  bench:    { weight: 0.20, p50: 0.95, patterns: [/bench press.*barbell/i, /^bench press$/i] },
-  squat:    { weight: 0.25, p50: 1.20, patterns: [/squat.*barbell/i, /^squat$/i, /barbell.*squat/i] },
-  deadlift: { weight: 0.30, p50: 1.45, patterns: [/^deadlift/i, /deadlift.*barbell/i] },
-  ohp:      { weight: 0.10, p50: 0.55, patterns: [/overhead press/i, /shoulder press/i, /military press/i] },
-  row:      { weight: 0.15, p50: 0.70, patterns: [/barbell row/i, /bent over row/i, /pendlay row/i, /seated row/i, /cable row/i, /dumbbell row/i] },
+  bench:    { weight: 0.20, p50: 0.95, patterns: [/^bench press \(barbell\)$/i, /^bench press$/i] },
+  squat:    { weight: 0.25, p50: 1.20, patterns: [/^squat \(barbell\)$/i, /^back squat( \(barbell\))?$/i, /^squat$/i] },
+  deadlift: { weight: 0.30, p50: 1.45, patterns: [/^deadlift \(barbell\)$/i, /^deadlift \(trap bar\)$/i, /^deadlift$/i] },
+  ohp:      { weight: 0.10, p50: 0.55, patterns: [/^(overhead|military|standing military|shoulder) press \(barbell\)$/i, /^overhead press$/i] },
+  row:      { weight: 0.15, p50: 0.70, patterns: [/^(bent over|pendlay|barbell) row( \(barbell\))?$/i] },
 };
+
+// ============================================================
+// PERSONAL MODEL (v2.0)
+// The fixed targets total 90 sets a week; logged volume ran near 35, so
+// nearly every muscle read as due. Targets now scale to delivered volume
+// plus 10%, and the ideal gap between sessions stretches with them (more
+// for small muscles). Session time is fitted from logged durations.
+// ============================================================
+var _fitSecPerSet = 0;       // median seconds per working set, lift-only sessions, 90 days
+var _volumeScale = 1;        // personal target / reference target
+var _weeklySetsDelivered = 0;
+const FREQ_TIER_MULT = { 1: 1.4, 2: 1.7, 3: 2.5 };
+function applyPersonalModel(sorted, muscleStats, heatmapDayMuscle, now) {
+  const per = [];
+  const cut90 = now.getTime() - 90 * 24 * 60 * 60 * 1000;
+  for (const w of sorted) {
+    const t0 = new Date(w.start_time || w.created_at).getTime();
+    if (t0 < cut90 || !w.end_time) continue;
+    const durSec = (new Date(w.end_time).getTime() - t0) / 1000;
+    if (!(durSec >= 300 && durSec <= 10800)) continue;
+    let sets = 0;
+    let liftOnly = true;
+    for (const ex of (w.exercises || [])) {
+      const p = classifyExerciseCached(ex).primary;
+      if (p === 'cardio' || p === 'other') { liftOnly = false; break; }
+      sets += getWorkingSets(ex).length;
+    }
+    if (liftOnly && sets > 0) per.push(durSec / sets);
+  }
+  per.sort(function(a, b) { return a - b; });
+  _fitSecPerSet = per.length >= 5 ? per[Math.floor(per.length / 2)] : 0;
+
+  let total = 0;
+  for (let i = 0; i < 56; i++) {
+    const d = new Date(now);
+    d.setDate(d.getDate() - i);
+    const m = heatmapDayMuscle[localDateStr(d)];
+    if (m) for (const k in m) total += m[k];
+  }
+  _weeklySetsDelivered = total / 8;
+  let reference = 0;
+  for (const k in MUSCLE_GROUPS) reference += MUSCLE_GROUPS[k].idealSetsPerWeek;
+  _volumeScale = _weeklySetsDelivered > 0
+    ? Math.max(0.25, Math.min(1, (_weeklySetsDelivered * 1.10) / reference))
+    : 1;
+  const stretch = Math.max(0, Math.min(1, (1 - _volumeScale) / 0.6));
+  for (const k in muscleStats) {
+    const g = MUSCLE_GROUPS[k];
+    const s = muscleStats[k];
+    s.idealSetsPerWeek = Math.max(1, Math.round(g.idealSetsPerWeek * _volumeScale * 2) / 2);
+    s.idealFreqDays = Math.round(g.idealFreqDays * (1 + ((FREQ_TIER_MULT[g.tier] || 1) - 1) * stretch));
+  }
+}
 
 // ============================================================
 // UNIFIED PREPROCESS PIPELINE (v1.1 Task 6)
@@ -2752,6 +2702,8 @@ function preprocessWorkouts(workouts, bodyweightLbs, weightData) {
       musclesCovered: weekMusclesHit.size,
     });
   }
+
+  applyPersonalModel(sorted, muscleStats, heatmapDayMuscle, now); // v2.0
 
   return {
     exerciseHistory: exHistory,
@@ -3205,6 +3157,7 @@ let _selectedMuscles = new Set();
 
 function rerollLifts() {
   _liftRerollOffset++;
+  clearSessionEdits();
   hapticTick();
   var activeRecs = _customSessionActive && _customSessionRecs ? _customSessionRecs : LAST_RECS;
   if (activeRecs) {
@@ -3232,6 +3185,7 @@ function resetToAutoSession() {
   _customSessionRecs = null;
   _customSessionKeys = [];
   _liftRerollOffset = 0;
+  clearSessionEdits();
   if (LAST_RECS) renderTimedSession(LAST_RECS);
 }
 
@@ -3287,6 +3241,7 @@ function buildCustomSession() {
   _customSessionActive = true;
   _customSessionRecs = customRecs;
   _customSessionKeys = selected;
+  clearSessionEdits();
   _liftRerollOffset = 0;
   _muscleSelectMode = false;
   _selectedMuscles.clear();
@@ -3678,9 +3633,6 @@ function generateRecommendations(muscleStats) {
 // Improved: fatigue-aware, ensures isolation for #1 priority,
 // avoids stacking heavy compounds for same movement pattern
 // ============================================================
-const MUSCLE_EXERCISE_CAP = {
-  caps: [3, 2, 2],
-};
 
 // Movement pattern groups to avoid stacking
 const MOVEMENT_PATTERNS = {
@@ -3739,178 +3691,165 @@ function getRestSeconds(name) {
   return 60;
 }
 
+// ---- v2.0 session builder ----
+// A session is N lifts (default 4) from one region, led by the most overdue
+// large muscle. Lifts are the ones you actually use: candidates come from
+// your own history, ranked by how often you did them in the last 90 days.
+// One lift per muscle; the lead muscle gets a second when its region has
+// fewer than three large muscles (two chest lifts on a push day, two back
+// lifts on a pull day). The last slots go to small muscles and core.
+const SESSION_REGIONS = {
+  push: ['chest', 'shoulders', 'triceps'],
+  pull: ['back', 'biceps', 'forearms', 'neck'],
+  legs: ['quads', 'hamstrings', 'glutes', 'calves'],
+};
+const REGION_NAMES = { push: 'Push', pull: 'Pull', legs: 'Legs' };
+function regionOf(muscleKey) {
+  for (const r in SESSION_REGIONS) {
+    if (SESSION_REGIONS[r].indexOf(muscleKey) !== -1) return r;
+  }
+  return null;
+}
+
+// Per-session edits made on the Today tab. Keys are slot ids ("quads#0").
+let _sessionSwaps = {};
+let _sessionSkips = {};
+function clearSessionEdits() { _sessionSwaps = {}; _sessionSkips = {}; }
+
+function liftCandidates(muscleKey, prefs) {
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - 90);
+  const cutStr = localDateStr(cutoff);
+  const out = [];
+  for (const name in exerciseHistory) {
+    if (classifyExercise(name).primary !== muscleKey) continue;
+    if (prefs.equipment === 'home' && GYM_ONLY_REGEX.test(name)) continue;
+    const h = exerciseHistory[name];
+    let uses = 0;
+    for (const d of (h.dates || [])) { if (d >= cutStr) uses++; }
+    const db = EXERCISE_DB[name];
+    out.push({ name: name, uses: uses, last: h.lastDate || '', compound: db ? db.type === 'compound' : isLikelyCompound(name) });
+  }
+  out.sort(function(a, b) { return (b.uses - a.uses) || b.last.localeCompare(a.last) || a.name.localeCompare(b.name); });
+  if (out.length === 0) {
+    // Nothing logged for this muscle: fall back to the reference list
+    const picks = MUSCLE_EXERCISE_PICKS[muscleKey] || [];
+    for (const name of picks) {
+      if (prefs.equipment === 'home' && GYM_ONLY_REGEX.test(name)) continue;
+      const db = EXERCISE_DB[name];
+      out.push({ name: name, uses: 0, last: '', compound: db ? db.type === 'compound' : isLikelyCompound(name) });
+    }
+  }
+  return out;
+}
+
+function planSessionSlots(recs, n) {
+  const tierOf = function(k) { return (MUSCLE_GROUPS[k] && MUSCLE_GROUPS[k].tier) || 3; };
+  const ok = recs.filter(function(r) { return r.score >= 0; });
+  const custom = (_customSessionActive && _customSessionKeys.length > 0) ? _customSessionKeys.slice() : [];
+  // Regions in order of need: by each region's most overdue large muscle.
+  // Reroll steps to the next region ("not today"); after a full cycle it
+  // also rotates the lifts.
+  const regionOrder = [];
+  ok.forEach(function(r) {
+    const rg = regionOf(r.key);
+    if (rg && tierOf(r.key) <= 2 && regionOrder.indexOf(rg) === -1) regionOrder.push(rg);
+  });
+  let region = null;
+  let rot = 0;
+  if (custom.length > 0) {
+    for (const k of custom) { region = regionOf(k); if (region) break; }
+    if (!region) region = regionOrder[0] || 'push';
+    rot = _liftRerollOffset;
+  } else {
+    if (regionOrder.length === 0) return { region: null, leadMuscle: null, slots: [], rot: 0 };
+    region = regionOrder[_liftRerollOffset % regionOrder.length];
+    rot = Math.floor(_liftRerollOffset / regionOrder.length);
+  }
+  const members = SESSION_REGIONS[region];
+  const bigs = ok.filter(function(r) { return members.indexOf(r.key) !== -1 && tierOf(r.key) <= 2; }).map(function(r) { return r.key; });
+  // Small muscles and core fill the last slots, most overdue first. One you
+  // have not trained in 60 days goes to the back of that line: it stays
+  // visible as due on the Muscles tab, but is not pushed into every session.
+  const smallRecs = ok.filter(function(r) { return (members.indexOf(r.key) !== -1 && tierOf(r.key) === 3) || r.key === 'core'; });
+  const smalls = smallRecs.filter(function(r) { return r.daysSince <= 60; })
+    .concat(smallRecs.filter(function(r) { return !(r.daysSince <= 60); }))
+    .map(function(r) { return r.key; });
+  const order = custom.slice();
+  const count = function(k) { return order.filter(function(x) { return x === k; }).length; };
+  // A custom session gives the chosen muscles a second lift before anything else
+  custom.forEach(function(k) { if (count(k) < 2) order.push(k); });
+  bigs.forEach(function(k) { if (count(k) === 0) order.push(k); });
+  if (bigs.length > 0 && bigs.length < 3 && count(bigs[0]) < 2) order.push(bigs[0]);
+  smalls.forEach(function(k) { if (count(k) === 0) order.push(k); });
+  bigs.forEach(function(k) { if (count(k) < 2) order.push(k); }); // only reached when the list is still short
+  return { region: region, leadMuscle: order[0] || null, slots: order.slice(0, n), rot: rot };
+}
+
 function buildTimedSession(recs, prefs) {
   prefs = prefs || sessionPrefs;
-  var focusMode = prefs.focusMode || 'auto';
-  // Custom session overrides focus mode
-  if (_customSessionActive) focusMode = 'auto';
-  var filteredRecs = recs;
-  if (focusMode === 'foundation') {
-    filteredRecs = recs.filter(function(r) { return r.tier && r.tier <= 2; });
-    if (filteredRecs.length < 2) filteredRecs = recs; // fallback if not enough
-  } else if (focusMode === 'neglect') {
-    filteredRecs = recs.slice().sort(function(a, b) {
-      var aScore = a.score >= 0 ? a.score - (a.structBonus || 0) : a.score;
-      var bScore = b.score >= 0 ? b.score - (b.structBonus || 0) : b.score;
-      return bScore - aScore;
+  const n = Math.max(1, Math.min(6, parseInt(prefs.liftCount, 10) || 4));
+  const plan = planSessionSlots(recs, n);
+  const used = {};
+  const usedFam = {};
+  const usedPat = {};
+  const big5 = [];
+  const perMuscle = {};
+  const session = [];
+  let skipped = 0;
+  plan.slots.forEach(function(mk, si) {
+    const idx = perMuscle[mk] || 0;
+    perMuscle[mk] = idx + 1;
+    const slotKey = mk + '#' + idx;
+    if (_sessionSkips[slotKey]) { skipped++; return; }
+    let cands = liftCandidates(mk, prefs);
+    if (plan.rot > 0 && cands.length > 1) {
+      // Rotates through your five most-used lifts for the muscle
+      const top = cands.slice(0, Math.min(5, cands.length));
+      const r = plan.rot % top.length;
+      cands = top.slice(r).concat(top.slice(0, r), cands.slice(top.length));
+    }
+    const valid = cands.filter(function(c) {
+      if (used[c.name] || usedFam[exerciseFamily(c.name)]) return false;
+      // Same movement pattern twice only matters within one muscle
+      const mp = getMovementPattern(c.name);
+      if (c.compound && mp && usedPat[mk + ':' + mp]) return false;
+      const b = isBig5(c.name);
+      if (b) {
+        const cf = findBig5Conflict(b, big5);
+        if (cf && cf.severity === 'block') return false;
+      }
+      return true;
     });
-  }
-  // Dynamic muscle count: start with 3, expand if time budget allows
-  var startCount = 3;
-  var maxCount = Math.min(filteredRecs.length, 6);
-  var topKeys = filteredRecs.slice(0, startCount).map(r => r.key);
-  const recScores = {};
-  recs.forEach(r => { recScores[r.key] = r.score; });
-
-  const capSec = (prefs.sessionCapMin || TIME_CONSTANTS.sessionCapMin) * 60;
-
-  function buildCandidatesForKeys(keys) {
-    var muscleCaps = {};
-    keys.forEach(function(key, idx) { muscleCaps[key] = MUSCLE_EXERCISE_CAP.caps[idx] || 2; });
-    var cands = [];
-    for (var ki = 0; ki < keys.length; ki++) {
-      var key = keys[ki];
-      var picks = rankExercisesForMuscle(key);
-      var cappedPicks = picks.slice(0, muscleCaps[key]);
-      var groupPriority = recScores[key] || 0;
-      for (var ei = 0; ei < cappedPicks.length; ei++) {
-        var exName = cappedPicks[ei];
-        if (prefs.equipment === 'home' && GYM_ONLY_REGEX.test(exName)) continue;
-        var db = EXERCISE_DB[exName];
-        var p = prescribeExercise(exName);
-        var mp = getMovementPattern(exName);
-        var compound = db ? db.type === 'compound' : isLikelyCompound(exName);
-        var isolation = db ? db.type === 'isolation' : !isLikelyCompound(exName);
-        var typeBonus = compound ? 1.5 : 1.0;
-        var deficitBonus = 1.0;
-        if (db && db.benchmarkLbs > 0 && p.weightLbs > 0) {
-          deficitBonus = (p.weightLbs / db.benchmarkLbs) < 0.85 ? 1.3 : 1.0;
-        }
-        var orderBonus = 1 - (ei * 0.1);
-        var importance = groupPriority * typeBonus * deficitBonus * orderBonus;
-        var timeSec = calculateExerciseTime(exName, p.sets);
-        cands.push({
-          name: exName, muscle: key, prescription: p,
-          importance: importance, timeSec: timeSec,
-          isCompound: compound, isIsolation: isolation,
-          movementPattern: mp,
-        });
-      }
-    }
-    cands.sort(function(a, b) { return b.importance - a.importance; });
-    return cands;
-  }
-
-  function fitCandidates(cands, keys) {
-    var sess = [];
-    var total = 0;
-    var usedPat = new Set();
-    var muscCompCount = {};
-    var topM = keys[0];
-    var topMHasIso = false;
-    // v1.29: Big 5 conflict + cap tracking
-    var big5InSession = [];          // e.g. ['squat', 'bench']
-    var big5Cap = bigFiveCapForBudget(capSec);
-    var conflictLog = [];            // user-visible resolution reasons
-    // v1.33: session variety guards
-    var usedFamilies = new Set();    // same movement, different equipment = one slot
-    var muscIsoCount = {};           // soft cap: 2 isolations per muscle per session
-
-    for (var ci = 0; ci < cands.length; ci++) {
-      var c = cands[ci];
-      if (total + c.timeSec > capSec) continue;
-      // v1.33: variety guards -- silent skips (hygiene, not a research rail)
-      var fam = exerciseFamily(c.name);
-      if (usedFamilies.has(fam)) continue;
-      if (c.isIsolation && (muscIsoCount[c.muscle] || 0) >= 2) continue;
-      if (c.isCompound && c.movementPattern) {
-        if (usedPat.has(c.movementPattern)) continue;
-      }
-      if (c.isCompound && (muscCompCount[c.muscle] || 0) >= 1) {
-        if (total >= capSec * 0.7) continue;
-      }
-
-      // v1.29: Big 5 conflict + cap checks - run only on Big 5 lifts
-      var big5Key = isBig5(c.name);
-      if (big5Key) {
-        // Cap enforcement
-        if (big5InSession.length >= big5Cap) {
-          conflictLog.push({
-            type: 'cap',
-            skipped: c.name,
-            reason: 'Session cap of ' + big5Cap + ' heavy compounds for ' + Math.round(capSec / 60) + '-min sessions. Adding another would compromise recovery or rush accessories.'
-          });
-          continue;
-        }
-        // Conflict enforcement
-        var conflict = findBig5Conflict(big5Key, big5InSession);
-        if (conflict) {
-          if (conflict.severity === 'block') {
-            conflictLog.push({
-              type: 'block',
-              skipped: c.name,
-              pair: conflict.pair,
-              reason: conflict.reason
-            });
-            continue;
-          }
-          if (conflict.severity === 'caution') {
-            // Caution: skip only if we're already past 40% time budget
-            // (i.e. we have room for it early but not late in the session)
-            if (total >= capSec * 0.4) {
-              conflictLog.push({
-                type: 'caution',
-                skipped: c.name,
-                pair: conflict.pair,
-                reason: conflict.reason
-              });
-              continue;
-            }
-          }
-        }
-      }
-
-      sess.push(c);
-      total += c.timeSec;
-      if (c.isCompound && c.movementPattern) usedPat.add(c.movementPattern);
-      if (c.isCompound) muscCompCount[c.muscle] = (muscCompCount[c.muscle] || 0) + 1;
-      if (c.muscle === topM && c.isIsolation) topMHasIso = true;
-      if (big5Key) big5InSession.push(big5Key);
-      usedFamilies.add(fam);
-      if (c.isIsolation) muscIsoCount[c.muscle] = (muscIsoCount[c.muscle] || 0) + 1;
-    }
-    if (!topMHasIso && sess.length > 0) {
-      var isoC = cands.find(function(c) {
-        return c.muscle === topM && c.isIsolation && sess.indexOf(c) === -1 && total + c.timeSec <= capSec && !usedFamilies.has(exerciseFamily(c.name));
-      });
-      if (isoC) { sess.push(isoC); total += isoC.timeSec; }
-    }
-    return { session: sess, totalSec: total, conflictLog: conflictLog, big5InSession: big5InSession };
-  }
-
-  // Build initial session with 3 muscles, then expand if >25% time remaining
-  var candidates = buildCandidatesForKeys(topKeys);
-  var result = fitCandidates(candidates, topKeys);
-  var session = result.session;
-  var totalSec = result.totalSec;
-
-  while (totalSec < capSec * 0.75 && topKeys.length < maxCount) {
-    var nextRec = filteredRecs[topKeys.length];
-    if (!nextRec || nextRec.score < 0) break; // skip suppressed muscles
-    topKeys.push(nextRec.key);
-    candidates = buildCandidatesForKeys(topKeys);
-    result = fitCandidates(candidates, topKeys);
-    session = result.session;
-    totalSec = result.totalSec;
-  }
-
-  // Sort by demand: heavy compounds first, small accessories last
+    const tier = (MUSCLE_GROUPS[mk] && MUSCLE_GROUPS[mk].tier) || 3;
+    let pick = null;
+    const sw = _sessionSwaps[slotKey];
+    if (sw) pick = valid.find(function(c) { return c.name === sw; }) || null;
+    if (!pick && idx === 0 && tier <= 2) pick = valid.find(function(c) { return c.compound; }) || null;
+    if (!pick) pick = valid[0] || null; // otherwise your most-used lift that still fits
+    if (!pick) return;
+    used[pick.name] = true;
+    usedFam[exerciseFamily(pick.name)] = true;
+    const mp = getMovementPattern(pick.name);
+    if (pick.compound && mp) usedPat[mk + ':' + mp] = true;
+    const b5 = isBig5(pick.name);
+    if (b5) big5.push(b5);
+    const p = prescribeExercise(pick.name);
+    session.push({
+      name: pick.name, muscle: mk, slotKey: slotKey, prescription: p,
+      timeSec: calculateExerciseTime(pick.name, p.sets),
+      isCompound: pick.compound, isIsolation: !pick.compound, movementPattern: mp,
+      lead: si === 0,
+      alts: valid.filter(function(c) { return c.name !== pick.name; }).slice(0, 3).map(function(c) { return c.name; }),
+    });
+  });
+  let totalSec = 0;
+  session.forEach(function(e) { totalSec += e.timeSec; });
+  // Heavy compounds first, small accessories last
   session.sort(function(a, b) {
     return getExerciseDemandRank(a.name) - getExerciseDemandRank(b.name);
   });
-
-  // v1.29: surface conflict resolution log from final fit pass
-  return { exercises: session, totalSec: totalSec, conflictLog: (result && result.conflictLog) || [], big5InSession: (result && result.big5InSession) || [] };
+  return { exercises: session, totalSec: totalSec, conflictLog: [], big5InSession: big5, region: plan.region, leadMuscle: plan.leadMuscle, skipped: skipped };
 }
 
 // Store for Send to Hevy feature
@@ -4380,26 +4319,25 @@ function getExerciseDemandRank(exName) {
 
 // toggleTodayChips removed in v1.19b - filters are always visible
 
+function lastResultText(name) {
+  const h = exerciseHistory[name];
+  if (!h || !h.lastDate) return 'New for you';
+  const when = fmtShortDate(h.lastDate);
+  if (h.lastWeightLbs > 0) return 'Last ' + h.lastWeightLbs + ' \u00d7 ' + (h.lastReps || 0) + ', ' + when;
+  if (h.lastReps > 0) return 'Last ' + h.lastReps + ' reps, ' + when;
+  return 'Last done ' + when;
+}
+
 function renderTimedSession(recs) {
   const built = buildTimedSessionAndStore(recs);
   const exercises = built.exercises;
-  const totalSec = built.totalSec;
-  const conflictLog = built.conflictLog || [];
-  const totalMin = Math.round(totalSec / 60);
+  const totalMin = Math.round(built.totalSec / 60);
+  const recMap = {};
+  recs.forEach(r => { recMap[r.key] = r; });
 
-  // Gather unique muscle groups in display order
-  const grouped = {};
-  for (const ex of exercises) {
-    if (!grouped[ex.muscle]) grouped[ex.muscle] = [];
-    grouped[ex.muscle].push(ex);
-  }
-
-  // --- HERO BLOCK ---
-
-  // Detect if user already lifted today
+  // --- HERO ---
   const todayStr = localDateStr(new Date());
   const liftedToday = heatmapDayWorkouts[todayStr] && heatmapDayWorkouts[todayStr].length > 0;
-  // v1.44: Today rebuilt to DESIGN.md s8 (presentation only; every value unchanged)
   var baseLabel = liftedToday ? 'Tomorrow\u2019s session' : 'Today\u2019s session';
   var heroHtml = '<div class="td-in">';
   if (liftedToday) {
@@ -4407,7 +4345,18 @@ function renderTimedSession(recs) {
     heroHtml += '<div class="td-done" style="color:' + C.lichen + ';">Done today: ' + exCount + ' exercise' + (exCount !== 1 ? 's' : '') + ' logged</div>';
   }
   heroHtml += '<div class="td-titlerow"><div class="td-title">' + baseLabel + '</div><div class="td-cap">About ' + totalMin + ' min</div></div>';
-  if (_customSessionActive) heroHtml += '<div class="td-cap" style="margin-top:2px;">Custom session</div>';
+  // v2.0: one line saying what the session is and why
+  var reason = '';
+  if (_customSessionActive) {
+    reason = 'Custom session';
+  } else if (built.region && built.leadMuscle && recMap[built.leadMuscle]) {
+    var lr = recMap[built.leadMuscle];
+    var ln = lr.name;
+    reason = REGION_NAMES[built.region] + '. ' + (lr.daysSince === Infinity
+      ? 'No ' + ln.toLowerCase() + ' work on record.'
+      : ln + (/s$/.test(ln) ? ' are ' : ' is ') + lr.daysSince + (lr.daysSince === 1 ? ' day' : ' days') + ' out.');
+  }
+  if (reason) heroHtml += '<div class="td-cap" style="margin-top:2px;">' + reason + '</div>';
   if (_consecutiveTrainDays >= 3) {
     var restText = _consecutiveTrainDays >= 5
       ? _consecutiveTrainDays + ' days straight. A rest day is recommended.'
@@ -4417,7 +4366,7 @@ function renderTimedSession(recs) {
   heroHtml += '</div>';
   document.getElementById('today-hero').innerHTML = heroHtml;
 
-  // Settings row: three quiet toggles + reroll, never styled like the primary action
+  // Settings row: quiet toggles + reroll, never styled like the primary action
   var togs = CHIP_DEFS.map(function(def) {
     var cur = sessionPrefs[def.key];
     var changed = cur !== PREFS_DEFAULTS[def.key];
@@ -4427,115 +4376,82 @@ function renderTimedSession(recs) {
     (_customSessionActive ? '<button class="td-quiet" onclick="resetToAutoSession()">Back to auto</button>' : '') +
     '<button class="td-quiet" onclick="rerollLifts()">' + REROLL_ICON + 'Reroll</button></div>';
 
-  // --- EXERCISE LIST ---
+  // --- LIFTS (v2.0): flat list; tap a lift for the reason, swaps, or skip ---
   const exContainer = document.getElementById('suggested-exercises');
-
-  // Sort muscle groups by anatomy order
-  let groupKeys = Object.keys(grouped);
-  groupKeys.sort((a, b) => {
-    const ai = ANATOMY_ORDER.indexOf(a);
-    const bi = ANATOMY_ORDER.indexOf(b);
-    return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi);
-  });
-
-  // B1: Build rec lookup for explainers
-  const recMap = {};
-  recs.forEach(r => { recMap[r.key] = r; });
-
   let exHtml = '';
-
-  // v1.29: Session adjustments (algorithm decisions), collapsed to one line
-  if (conflictLog.length > 0) {
-    var seenReasons = {};
-    var uniqueLog = [];
-    for (var cli = 0; cli < conflictLog.length; cli++) {
-      var key_cl = conflictLog[cli].reason;
-      if (!seenReasons[key_cl]) { seenReasons[key_cl] = true; uniqueLog.push(conflictLog[cli]); }
+  const optStyle = 'display:flex;justify-content:space-between;align-items:center;gap:12px;min-height:44px;padding:6px 0;border-top:1px solid ' + C.line + ';cursor:pointer;-webkit-tap-highlight-color:transparent;';
+  for (let i = 0; i < exercises.length; i++) {
+    const ex = exercises[i];
+    const isDeload = !!(ex.prescription && ex.prescription.deload);
+    const nm = splitExName(ex.name);
+    const rp = rxParts(ex.prescription);
+    const rec = recMap[ex.muscle];
+    exHtml += '<div class="ex-row td-in' + (ex.lead ? ' ex-row-anchor' : '') + '" role="button" tabindex="0" style="cursor:pointer;-webkit-tap-highlight-color:transparent;border-left-color:' + (ex.lead ? C.heartwood : 'transparent') + ';" onclick="toggleLiftDetail(' + i + ')">' +
+      '<div class="ex-main"><div class="ex-name">' + nm.name + '</div>' + (nm.eq ? '<div class="ex-sub">' + nm.eq + '</div>' : '') +
+      '<div class="ex-sub">' + lastResultText(ex.name) + '</div></div>' +
+      '<div class="ex-rx"><div><span class="ex-num" style="color:' + (isDeload ? C.resin : C.sapwood) + ';">' + rp.num + '</span>' +
+      (rp.unit ? ' <span class="ex-unit">' + rp.unit + '</span>' : '') + '</div>' +
+      '<div class="ex-sub"' + (isDeload ? ' style="color:' + C.resin + ';"' : '') + '>' + (isDeload ? 'Deload, ' : '') + rp.sub + '</div></div></div>';
+    let detail = '<div><span style="color:' + C.sapwood + ';">' + (MUSCLE_GROUPS[ex.muscle] ? MUSCLE_GROUPS[ex.muscle].name : '') + '.</span> ' + (rec ? rec.explainer : '') + '</div>';
+    if (ex.alts.length > 0) {
+      detail += '<div style="margin-top:12px;color:' + C.sapwood + ';">Swap for</div>';
+      for (let j = 0; j < ex.alts.length; j++) {
+        const an = splitExName(ex.alts[j]);
+        detail += '<div role="button" tabindex="0" style="' + optStyle + (j === 0 ? 'margin-top:6px;' : '') + '" onclick="swapLift(' + i + ',' + j + ')">' +
+          '<span style="color:' + C.sapwood + ';font-size:15px;">' + an.name + (an.eq ? ', ' + an.eq.toLowerCase() : '') + '</span>' +
+          '<span style="text-align:right;flex-shrink:0;">' + lastResultText(ex.alts[j]).replace(/^Last /, 'last ') + '</span></div>';
+      }
     }
-    var adjItems = uniqueLog.map(function(e, ei) {
-      var label = e.type === 'cap' ? 'Over cap' : (e.type === 'block' ? 'Conflict' : 'Caution');
-      var col = e.type === 'block' ? C.resin : C.sapwood;
-      return '<div style="' + (ei ? 'margin-top:10px;' : '') + '"><div style="color:' + col + ';">' + label + (e.skipped ? ', ' + e.skipped + ' skipped' : '') + '</div><div>' + e.reason + '</div></div>';
-    }).join('');
-    exHtml += '<div id="session-conflict-strip" class="td-adj td-in">' +
-      '<div class="td-adj-head" onclick="toggleConflictDetail()"><span>' + uniqueLog.length + ' session adjustment' + (uniqueLog.length !== 1 ? 's' : '') + '</span>' + chevronSVG('conflict-chevron') + '</div>' +
-      '<div id="conflict-detail" style="display:none;"><div class="rec-explainer">' + adjItems + '</div></div></div>';
+    detail += '<div role="button" tabindex="0" style="' + optStyle + (ex.alts.length === 0 ? 'margin-top:12px;' : '') + '" onclick="skipLift(' + i + ')"><span style="font-size:15px;">Skip this lift today</span><span></span></div>';
+    exHtml += '<div class="rec-expand" id="lift-detail-' + i + '" style="display:none;"><div class="rec-explainer">' + detail + '</div></div>';
   }
-
-  for (const key of groupKeys) {
-    const exes = grouped[key];
-    const meta = MUSCLE_GROUPS[key];
-    if (!meta) continue;
-    const rec = recMap[key];
-
-    exHtml += '<div class="ex-group"><div class="ex-group-title td-in" onclick="toggleSessionExplainer(\'exp-' + key + '\')"><span>' + meta.name + '</span>' + chevronSVG('chev-exp-' + key) + '</div>';
-
-    // B1: "Why this?" explainer, inline under the group label
-    if (rec) {
-      const daysSince = rec.daysSince === Infinity ? '\u221E' : rec.daysSince;
-      const idealFreq = (muscleAnalysis && muscleAnalysis[key]) ? muscleAnalysis[key].idealFreqDays : '?';
-      const volActual = rec.weeklyActual;
-      const volIdeal = rec.weeklyIdeal;
-      const propDef = proportionDeficits[key];
-      const lines = [];
-      lines.push('Days since trained: <b>' + daysSince + '</b> (ideal every ' + idealFreq + ')');
-      const deficit = Math.max(0, volIdeal - volActual);
-      if (deficit > 0) {
-        lines.push('Volume gap: <b>' + deficit.toFixed(1) + ' sets/wk</b> below ' + volIdeal);
-      } else {
-        lines.push('Volume: <b>' + volActual + ' of ' + volIdeal + '</b>, on target');
-      }
-      if (propDef && propDef > 0.05) {
-        const ft = Object.entries(FRAME_TARGETS).find(([k, v]) => v.muscle === key);
-        if (ft) lines.push('Frame target: <b>' + ft[1].label + '</b>, <span style="color:' + C.resin + ';">' + Math.round(propDef * 100) + '% below potential</span>');
-      }
-      exHtml += '<div class="rec-expand" id="exp-' + key + '" style="display:none;"><div class="rec-explainer">' +
-        lines.map(function(l) { return '<div>' + l + '</div>'; }).join('') + '</div></div>';
-    }
-
-    for (const ex of exes) {
-      const isAnchor = COMPOUND_ANCHORS[key] === ex.name;
-      const isDeload = !!(ex.prescription && ex.prescription.deload);
-      const nm = splitExName(ex.name);
-      const rp = rxParts(ex.prescription);
-      exHtml += '<div class="ex-row td-in' + (isAnchor ? ' ex-row-anchor' : '') + '" style="border-left-color:' + (isAnchor ? C.heartwood : 'transparent') + ';">' +
-        '<div class="ex-main"><div class="ex-name">' + nm.name + '</div>' + (nm.eq ? '<div class="ex-sub">' + nm.eq + '</div>' : '') + '</div>' +
-        '<div class="ex-rx"><div><span class="ex-num" style="color:' + (isDeload ? C.resin : C.sapwood) + ';">' + rp.num + '</span>' +
-        (rp.unit ? ' <span class="ex-unit">' + rp.unit + '</span>' : '') + '</div>' +
-        '<div class="ex-sub"' + (isDeload ? ' style="color:' + C.resin + ';"' : '') + '>' + (isDeload ? 'Deload, ' : '') + rp.sub + '</div></div></div>';
-    }
-    exHtml += '</div>';
+  if (built.skipped > 0) {
+    exHtml += '<div class="td-set td-in"><span class="td-cap">' + built.skipped + ' lift' + (built.skipped !== 1 ? 's' : '') + ' skipped</span>' +
+      '<button class="td-quiet" onclick="restoreSkipped()">Undo</button></div>';
   }
   // The one filled button in the app (DESIGN.md s8)
   if (exercises.length > 0) {
-    exHtml += '<div id="send-row" class="td-in" style="margin-top:24px;"><button id="send-to-hevy-btn" class="send-btn" onclick="sendSessionToHevy()">Send to Hevy</button></div>';
+    exHtml += '<div id="send-row" class="td-in" style="margin-top:16px;"><button id="send-to-hevy-btn" class="send-btn" onclick="sendSessionToHevy()">Send to Hevy</button></div>';
   }
   exContainer.innerHTML = exHtml;
 }
 
-// v1.29: Toggle the conflict resolution detail strip
-function toggleConflictDetail() {
-  // v1.44: FLIP expander
-  var el = document.getElementById('conflict-detail');
-  if (!el) return;
-  var opening = el.style.display === 'none';
-  flipToggle(el, opening);
-  rotateChevron(document.getElementById('conflict-chevron'), opening);
+// v2.0: per-lift detail, swap and skip
+function rerenderSession() {
+  var r = (_customSessionActive && _customSessionRecs) ? _customSessionRecs : LAST_RECS;
+  if (r) renderTimedSession(r);
 }
-
-// B1: Toggle explainer panel for a muscle group in Today tab
-function toggleSessionExplainer(id) {
-  // v1.44: FLIP expander; one explainer open at a time
-  var el = document.getElementById(id);
+function toggleLiftDetail(i) {
+  var el = document.getElementById('lift-detail-' + i);
   if (!el) return;
   var opening = el.style.display === 'none';
   if (opening) {
     document.querySelectorAll('#suggested-exercises .rec-expand').forEach(function(o) {
-      if (o !== el && o.style.display !== 'none') { o.style.display = 'none'; rotateChevron(document.getElementById('chev-' + o.id), false); }
+      if (o !== el && o.style.display !== 'none') o.style.display = 'none';
     });
+    hapticTick();
   }
   flipToggle(el, opening);
-  rotateChevron(document.getElementById('chev-' + id), opening);
+}
+function swapLift(i, j) {
+  var ex = _lastBuiltSession && _lastBuiltSession.exercises[i];
+  if (!ex || !ex.alts[j]) return;
+  _sessionSwaps[ex.slotKey] = ex.alts[j];
+  hapticTick();
+  rerenderSession();
+}
+function skipLift(i) {
+  var ex = _lastBuiltSession && _lastBuiltSession.exercises[i];
+  if (!ex) return;
+  _sessionSkips[ex.slotKey] = true;
+  delete _sessionSwaps[ex.slotKey];
+  hapticTick();
+  rerenderSession();
+}
+function restoreSkipped() {
+  _sessionSkips = {};
+  hapticTick();
+  rerenderSession();
 }
 
 // ============================================================
@@ -6738,8 +6654,6 @@ function rxParts(p) {
   return { num: reps, unit: /s$/.test(String(p.reps)) ? '' : 'reps', sub: p.sets + ' sets' };
 }
 function todayChipLabel(def, v) {
-  if (def.key === 'sessionCapMin') return v + ' min';
-  if (def.key === 'focusMode') return v === 'auto' ? 'Auto focus' : (v === 'foundation' ? 'Foundation focus' : 'Neglect focus');
   return def.label(v);
 }
 function setSendBtnState(btn, state, origHTML) {
@@ -7126,6 +7040,7 @@ function renderDashboard(workouts, opts) {
     _customSessionKeys = [];
     _muscleSelectMode = false;
     _selectedMuscles.clear();
+    clearSessionEdits();
   }
   _renderedHealthSig = JSON.stringify(healthData);
 
@@ -7171,7 +7086,7 @@ function renderDashboard(workouts, opts) {
   const syncColor = (hevyStatus === 'error' || healthStatus === 'missing') ? C.ember
     : (healthStatus === 'stale') ? C.resin : C.lichen; // v1.43
   document.getElementById('last-updated').innerHTML =
-    `v1.49, ${now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }).replace(/\u202f/g, ' ')} <span id="sync-dot" style="display:inline-block;width:6px;height:6px;border-radius:50%;background:${syncColor};margin-left:4px;vertical-align:middle;position:relative;top:-1px;"></span>`;
+    `v2.0, ${now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }).replace(/\u202f/g, ' ')} <span id="sync-dot" style="display:inline-block;width:6px;height:6px;border-radius:50%;background:${syncColor};margin-left:4px;vertical-align:middle;position:relative;top:-1px;"></span>`;
 
   // Populate globals BEFORE renderTimedSession so lifted-today detection works
   heatmapDayWorkouts = pp.heatmapDayWorkouts || {};

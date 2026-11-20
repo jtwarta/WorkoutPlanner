@@ -29,6 +29,7 @@ out.n_recent = recent.length;
     const lifts = w.exercises.filter(isLift); if (!lifts.length || lifts.length !== w.exercises.length) continue;
     const actual = (Date.parse(w.end_time) - T(w)) / 60000; if (actual > 180 || actual < 5) continue;
     let pred = 0, sets = 0;
+    asOf(T(w) - 60000); E.run(`__prep(__ws, null)`);
     for (const e of lifts) { const n = e.sets.length; sets += n; pred += E.run(`calculateExerciseTime(${JSON.stringify(e.title)}, ${n})`) / 60; }
     rows.push({ actual, pred, ratio: actual / pred, nEx: lifts.length, sets });
   }
@@ -41,7 +42,7 @@ out.n_recent = recent.length;
 // ---- B. routine-started workouts: size + replay overlap ----
 {
   const rw = ws.filter(w => w.routine_id === RID && T(w) < NOWMS).reverse();
-  const variants = []; for (const cap of [30, 45, 60]) for (const eq of ['gym', 'home']) for (const fm of ['auto', 'foundation', 'neglect']) variants.push({ sessionCapMin: cap, equipment: eq, focusMode: fm });
+  const variants = []; for (const n of [3, 4, 5]) for (const eq of ['gym', 'home']) variants.push({ liftCount: n, equipment: eq });
   const rows = [];
   for (const w of rw) {
     asOf(T(w) - 60000);
@@ -57,7 +58,7 @@ out.n_recent = recent.length;
         const hit = actual.filter(a => s.includes(a)).length;
         const row = { v, rr, pool, nPres: s.length, hit, s };
         if (!best || hit > best.hit || (hit === best.hit && s.length < best.nPres)) best = row;
-        if (pool === 'hist' && v.sessionCapMin === 60 && v.equipment === 'gym' && v.focusMode === 'auto' && rr === 0) def = row;
+        if (pool === 'hist' && v.liftCount === 4 && v.equipment === 'gym' && rr === 0) def = row;
       }
     }
     rows.push({ date: w.start_time.slice(0, 10), nActual: actual.length, bestHit: best.hit, bestN: best.nPres, defN: def.nPres, defHit: def.hit, dur: (Date.parse(w.end_time) - T(w)) / 60000 });
@@ -135,11 +136,11 @@ out.n_recent = recent.length;
   // F. deload flags now, with run dates
   out.F_deloads_now = JSON.parse(E.run(`JSON.stringify(Object.keys(exerciseHistory).filter(n => prescribeExercise(n).deload).map(n => { const h = exerciseHistory[n]; const k = h.weights.length; return n + ': rx ' + prescribeExercise(n).weightLbs + ' | last 4 sessions ' + h.dates.slice(k-4).map((d,i)=> d + ' ' + h.weights[k-4+i] + 'x' + h.reps[k-4+i]).join(', '); }))`));
   // H. determinism: pool with vs without Hevy template library
-  const s1 = E.run(`JSON.stringify(buildTimedSession(__r.recs, {sessionCapMin:60,equipment:'gym',focusMode:'auto'}).exercises.map(e=>e.name))`);
+  const s1 = E.run(`JSON.stringify(buildTimedSession(__r.recs, {liftCount:4,equipment:'gym'}).exercises.map(e=>e.name))`);
   const poolBefore = E.run(`Object.values(_dynamicExercisePool).reduce((a,s)=>a+s.size,0)`);
   E.ctx.__t = templates; E.run(`__addTemplates(__t)`);
   const poolAfter = E.run(`Object.values(_dynamicExercisePool).reduce((a,s)=>a+s.size,0)`);
-  const s2 = E.run(`JSON.stringify(buildTimedSession(__r.recs, {sessionCapMin:60,equipment:'gym',focusMode:'auto'}).exercises.map(e=>e.name))`);
+  const s2 = E.run(`JSON.stringify(buildTimedSession(__r.recs, {liftCount:4,equipment:'gym'}).exercises.map(e=>e.name))`);
   out.H_determinism = { pool_before_templates: poolBefore, pool_after_templates: poolAfter, same_session: s1 === s2, before: JSON.parse(s1), after: JSON.parse(s2) };
   const never = JSON.parse(s2).filter(n => !ws.some(w => w.exercises.some(e => e.title === n)));
   out.H_determinism.after_exercises_never_logged = never;

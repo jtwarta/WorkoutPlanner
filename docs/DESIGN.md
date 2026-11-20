@@ -340,6 +340,21 @@ turns Resin when over. Shoulder and hip are display rows without bars. The
 duplicate Body Composition tile grid is removed; tapping a row shows its
 sparkline. Import and Export are quiet text buttons.
 
+**Lift row (v2.0).** Replaces the grouped exercise rows on Today. A flat
+list, no muscle labels. Left: name (SF 17 / 500), equipment (caption), then
+the last result as a caption ("Last 115 x 5, Oct 11"; "New for you" when
+there is none). Right: prescription as before. The first-planned lift of the
+session carries the 2 px Heartwood rule. The whole row is the tap target; it
+FLIP-expands an explainer under itself holding the reason (muscle name in
+Sapwood, then the existing explainer prose), "Swap for" with up to three
+alternatives as 44 px rows (name in SF 15 Sapwood, last result in caption,
+hairline between), and "Skip this lift today" in Ash. One explainer open at a
+time. Skipped lifts are stated once under the list ("1 lift skipped") with a
+quiet "Undo". A caption under the section title says what the session is and
+why ("Legs. Quads are 14 days out."). Settings are two quiet toggles ("4
+lifts", "Gym"). Send to Hevy stays the one filled button and must sit on the
+first screen at the default lift count.
+
 **Inline input (v1.49).** One number, entered in place. A quiet text button
 ("Add a weigh-in") swaps for the field: Newsreader 24 in Sapwood, no box, a
 1 px Line rule under it, unit in caption after it, then quiet "Cancel" and
