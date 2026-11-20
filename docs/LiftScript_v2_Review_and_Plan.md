@@ -23,7 +23,7 @@ Reviewed v1.48 (commit 694a147) on November 19, 2026. No app code changed in thi
 7. **The app can show a stale plan after a workout.** Inside the 8-hour cache window it makes no Hevy request, so a session logged two hours ago is invisible. (Verified)
 8. **The headline numbers rest on bad inputs.** Bodyweight is frozen at February 16 with no way to update it. The Strength Index counts a Romanian deadlift as your deadlift and a machine press as your overhead press. (Verified)
 
-**Recommendation.** v2 is a smaller, more accurate planner: three lifts and an optional short tail, sized from your own logs; a week view that spreads about ten weekly exercise slots across the body; progression tuned to gaps and real increments; a Today screen where Send sits above the fold and any lift can be swapped. Cut the composite scores. Ship reliability fixes first as v1.49.
+**Recommendation.** v2 is a smaller, more accurate planner: four lifts, sized from your own logs; a week view that spreads about ten weekly exercise slots across the body; progression tuned to gaps and real increments; a Today screen where Send sits above the fold and any lift can be swapped. Cut the composite scores. Ship reliability fixes first as v1.49.
 
 Revision to my opening view: I expected the engine to need more signals (readiness, sleep). The backtest says its main problem is scale and fit, so readiness moves to the last, optional phase.
 
@@ -90,7 +90,7 @@ Measured at 393 x 852.
 
 **Proposed structure: three tabs.**
 
-- **Today.** Three lifts, each showing your last result. An optional "If there's time" tail of two. Send above the fold. Tap a lift for the reason, your own alternatives, or skip. Cardio is one line.
+- **Today.** Four lifts, each showing your last result (the frames show an earlier three-plus-tail layout). Send above the fold. Tap a lift for the reason, your own alternatives, or skip. Cardio is one line.
 - **Week** (merges Muscles and History). What you did, what the next three sessions cover, and coverage against your own pace.
 - **Progress** (replaces Body). Core lifts with trend and how often you trained each, then weight with an entry control, measurements and vitals collapsed below.
 
@@ -143,7 +143,7 @@ The single file is not what is holding the app back. Keep it. Move validation in
 **v2.0, right-sized planner and Today.**
 - Fit minutes per exercise from your trailing sessions.
 - Scale weekly targets to delivered volume plus 10%.
-- Session is three lifts plus a tail of two; rank by your own 90-day use; drop the novelty bonus for core lifts; anchors must be lifts you have done.
+- Session is four lifts (decided; see Decisions); rank by your own 90-day use; drop the novelty bonus for core lifts; anchors must be lifts you have done.
 - Today rebuilt to frame A with swap and skip.
 - Fix Strength Index patterns.
 - *Will change:* session contents, time estimate, urgency groups, index value. *Validate on the backtest:* logged exercises found in the prescribed session rises from 28% to at least 60%; predicted versus actual duration ratio within 0.8 to 1.25; "Due now" count at most 3. Every other number unchanged.
@@ -163,13 +163,13 @@ The single file is not what is holding the app back. Keep it. Move validation in
 
 ---
 
-## Decisions for you
+## Decisions (settled November 19, 2026)
 
-1. **Session size.** Plan three lifts and a short tail, or keep hour-long plans. *Default: three lifts.*
-2. **Composite scores.** Cut all four. *Default: cut.*
-3. **Core lifts and rep bands.** Confirm, or let v2.1 infer them from 90 days of logs (bench heavy, for example). *Default: infer, and show you the list.*
-4. **Shortcut.** `weight_entries` is empty. I can specify the fix and optional HRV and sleep fields for you to apply. *Default: in-app weigh-ins only.*
-5. **Lenora.** *Default: stay single-user.* One question either way: is every workout in your Hevy account yours? If any coached sessions are logged there, they feed your history and v2 needs a way to exclude them.
+1. **Session size: four lifts.** The plan loads four, expecting about one to be dropped in session; extras are added by hand in Hevy. No separate "If there's time" tail.
+2. **Composite scores: cut all four** (Power Score, Dedication, Body Comp, Cardio Fitness).
+3. **Core lifts and rep bands: inferred** from 90 days of logs, with the list shown for review.
+4. **Weigh-ins: in-app entry.** No Shortcut change for now.
+5. **Single user.** Every workout in the Hevy account is Jon's; nothing is excluded from history.
 
 ---
 
