@@ -203,8 +203,8 @@ arrays [reps added v1.39]), `templateIdMap` (from
 `exercise_template_id` seen in workouts), `muscleStats` (30-day sets/volume/
 recency per muscle, secondary muscles at 0.5 credit; `daysSincePrimary`
 tracked separately from `daysSinceAny` so indirect stimulus doesn't reset
-the clock), `muscle1RMs` (30-day best per key lift + percentile), the SI
-timeline (§10), the Cardio Fitness and Dedication timelines (§21), and the
+the clock), the SI timeline (§10; the unused `muscle1RMs` output was removed
+in v1.49), the Cardio Fitness and Dedication timelines (§21), and the
 heatmap maps (`heatmapDayMuscle`, `heatmapDayWorkouts`, `heatmapDayCardio`).
 
 Apple Watch cardio is merged into `heatmapDayCardio` after the Hevy pass:
@@ -500,7 +500,7 @@ re-normalized across available pillars. Tap to expand the pillar breakdown.
   boot sequence, and Power Score sheet. Haptics via the iOS 17.4
   checkbox-switch label-click workaround (WebKit blocks clicking the input
   directly); navigator.vibrate on Android. prefers-reduced-motion honored.
-- **localStorage keys:** `workoutCache_v1` (8 h TTL), `wa_prefs_v1_1`,
+- **localStorage keys:** `workoutCache_v1` (no TTL since v1.49; kept current by the events sync), `wa_prefs_v1_1`,
   `weightHistory`, `bodyMeasurements_v1`, `hevy_template_map` +
   `hevy_template_map_ts` (7 d TTL), `hevy_routine_id`, `chart_secondary_v1`,
   `v117_cache_cleared` (one-time cache bust flag), `workoutSyncTs_v1` and
