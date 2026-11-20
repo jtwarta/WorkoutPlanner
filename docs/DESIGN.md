@@ -4,7 +4,7 @@
 v1.43 to v1.47. Rulebook for all presentation work. Implement against this document only. If a screen needs
 something this file doesn't cover, add the rule here first, then build it.
 
-**Scope:** presentation only. Scoring, prescription, recommendation, and data
+**Scope (v1.43 to v1.47 revamp):** presentation only. Scoring, prescription, recommendation, and data
 logic do not change. Every computed value on screen must match the parity
 baseline (git tag `pre-revamp-v1.42`). See §11.
 
@@ -339,6 +339,13 @@ figure), 4 px bar. Waist (inverted) reads "35.0 in, target under 32.4" and
 turns Resin when over. Shoulder and hip are display rows without bars. The
 duplicate Body Composition tile grid is removed; tapping a row shows its
 sparkline. Import and Export are quiet text buttons.
+
+**Inline input (v1.49).** One number, entered in place. A quiet text button
+("Add a weigh-in") swaps for the field: Newsreader 24 in Sapwood, no box, a
+1 px Line rule under it, unit in caption after it, then quiet "Cancel" and
+"Save" (Save in Sapwood) at the right. Validation is an Ember caption under
+the field that clears on the next keystroke. Font size is never under 16 px
+(iOS zooms the page otherwise). No modal, no native prompt.
 
 **Tooltip.** Bark, radius 6, padding 6 x 10. Values in Newsreader 15, labels
 and date in caption.

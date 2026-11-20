@@ -1,7 +1,20 @@
 <!DOCTYPE html>
 
 <!--
-  LiftScript v1.48
+  LiftScript v1.49
+  Changes from v1.48 (v1.49 - reliability; no engine or scoring change):
+  - Incremental sync: one /workouts/events call on every open replaces the
+    8-hour cache window, which hid a workout logged since the last fetch,
+    and the 16-page refetch. Full fetch on cold start, manual refresh, a
+    cache older than 21 days, or more than 6 pages of changes.
+  - Cached dashboard paints from a locally cached health file instead of
+    waiting on the network; a failed health fetch falls back to that copy.
+  - Background data re-renders keep rerolls, a custom session and select mode.
+  - Errors after boot show as an Ember line under the tabs.
+  - Weigh-in entry on Body (stored in weightHistory, which was never written).
+  - Removed dead code: Redwood-era helpers, tier emblems, the unused
+    muscle1RMs computation, toggleSectionExplainer. Dev test A4 updated.
+
   Changes from v1.47 (v1.48 - measurements baseline + undated waist fix):
   - MEASUREMENTS_BASELINE: 2026-08-02 entry embedded (from the in-app export).
   - Waist history sparkline: the Apple Health waist is plotted only when the
@@ -900,7 +913,7 @@ margin-top: 4px;
     <div class="header">
       <div class="hdr-id">
         <h1>LiftScript</h1>
-        <div class="subtitle" id="last-updated">v1.48</div>
+        <div class="subtitle" id="last-updated">v1.49</div>
       </div>
       <button id="header-refresh-btn" class="hdr-btn" onclick="refreshData()" title="Refresh data" aria-label="Refresh data from Hevy and health">
         <svg width="17" height="17" viewBox="0 0 16 16" fill="none" style="display:block;">
@@ -975,6 +988,14 @@ margin-top: 4px;
       </div>
       <div class="td-cap" id="weight-delta"></div>
     </div>
+    <div class="td-set td-in" id="weigh-in-row"><button class="td-quiet" id="weigh-in-open" onclick="openWeighIn()">Add a weigh-in</button></div>
+    <div id="weigh-in-form" style="display:none;align-items:baseline;gap:12px;padding:4px 0 12px;">
+      <input id="weigh-in-input" type="number" inputmode="decimal" step="0.1" min="80" max="400" aria-label="Body weight in pounds" oninput="document.getElementById('weigh-in-msg').style.display='none'" style="width:104px;background:transparent;border:0;border-bottom:1px solid #3A2E26;border-radius:0;color:#EAD7BC;font-family:Newsreader,Georgia,serif;font-size:24px;font-weight:500;line-height:1.1;padding:4px 0;outline:none;-webkit-appearance:none;appearance:none;">
+      <span class="weight-unit">lb</span><span style="flex:1;"></span>
+      <button class="td-quiet" onclick="closeWeighIn()">Cancel</button>
+      <button class="td-quiet" style="color:#EAD7BC;" onclick="saveWeighIn()">Save</button>
+    </div>
+    <div id="weigh-in-msg" class="td-cap" style="display:none;color:#E5735A;padding-bottom:8px;"></div>
     <div id="chart-period-chips" class="td-set"></div>
     <div class="weight-chart">
       <canvas id="weight-canvas"></canvas>
@@ -1009,14 +1030,33 @@ margin-top: 4px;
 </div>
 
 <script>
-window.onerror = function(msg, src, line, col, err) {
+// v1.49: errors after boot were written to the hidden loading screen. They
+// now also show as an Ember line under the tabs when the dashboard is up.
+function __lsReport(text) {
   var el = document.getElementById('loading-text');
-  if (el) el.textContent = 'JS Error: ' + msg + ' (line ' + line + ')';
+  if (el) el.textContent = text;
+  var dash = document.getElementById('dashboard');
+  if (!dash || dash.classList.contains('hidden')) return;
+  var tabs = document.querySelector('.tabs');
+  if (!tabs) return;
+  var box = document.getElementById('inline-error');
+  if (!box) {
+    box = document.createElement('div');
+    box.id = 'inline-error';
+    box.className = 'error-msg';
+    box.style.margin = '0 0 14px 0';
+    tabs.insertAdjacentElement('afterend', box);
+  }
+  box.textContent = text + '. Tap refresh to reload.';
+}
+window.onerror = function(msg, src, line, col, err) {
+  __lsReport('Something went wrong: ' + msg + ' (line ' + line + ')');
   return false;
 };
 window.addEventListener('unhandledrejection', function(e) {
-  var el = document.getElementById('loading-text');
-  if (el) el.textContent = 'Promise Error: ' + (e.reason ? e.reason.message || e.reason : 'unknown');
+  var r = e.reason;
+  if (r && r.name === 'AbortError') return; // cancelled animations
+  __lsReport('Something went wrong: ' + (r ? r.message || r : 'unknown'));
 });
 </script>
 <script>
@@ -1136,130 +1176,6 @@ function haptic(ms) {
 }
 
 // ============================================================
-// REDWOOD AESTHETIC UTILITIES (v1.19)
-// ============================================================
-
-// SVG noise filter for bark texture overlay (inline data URI)
-const BARK_TEXTURE_SVG = 'none'; // v1.43: textures banned (DESIGN.md s10)
-
-// Branch divider SVG (organic wavy line with offshoots)
-function branchDividerHTML() {
-  return ''; // v1.43: dividers banned (DESIGN.md s10)
-}
-
-// Moss progress bar (soft-edged gradient fill)
-function mossBarHTML(value, max, color, height) {
-  height = height || 6;
-  var pct = Math.min(100, Math.round((value / max) * 100));
-  return '<div style="height:' + height + 'px;border-radius:' + height + 'px;background:' + C.bark + ';overflow:hidden;position:relative;">' +
-    '<div style="width:' + pct + '%;height:100%;border-radius:' + height + 'px;background:linear-gradient(90deg,' + color + '55,' + color + 'bb,' + color + ');position:relative;transition:width 0.4s ease;">' +
-    '<div style="position:absolute;right:-3px;top:-2px;width:14px;height:' + (height + 4) + 'px;background:radial-gradient(ellipse at left,' + color + '66,transparent);border-radius:0 ' + height + 'px ' + height + 'px 0;"></div>' +
-    '</div></div>';
-}
-
-// Cross-section ring SVG for muscle grid (organic concentric rings)
-function crossSectionRingSvg(daysSince, idealDays, arcColor) {
-  var size = 36;
-  var cx = size / 2;
-  var cy = size / 2;
-  var ringCount = 5;
-  var remaining;
-  if (daysSince === Infinity) { remaining = 0; }
-  else { remaining = Math.max(0, 1 - (daysSince / idealDays)); }
-  var filled = Math.round(remaining * ringCount);
-  var label = daysSince === Infinity ? '?' : daysSince;
-  var fontSize = String(label).length > 1 ? 10 : 11;
-  var svg = '<svg width="' + size + '" height="' + size + '" viewBox="0 0 ' + size + ' ' + size + '" style="flex-shrink:0;">';
-  for (var i = 0; i < ringCount; i++) {
-    var r = 4 + i * 3.2;
-    var isFilled = i < filled;
-    var pts = [];
-    for (var j = 0; j < 36; j++) {
-      var angle = (j / 36) * Math.PI * 2;
-      var noise = Math.sin(angle * 3 + i * 2.1) * 1.4 + Math.cos(angle * 5 + i * 1.3) * 0.7;
-      var rx = cx + (r + noise) * Math.cos(angle);
-      var ry = cy + (r + noise) * Math.sin(angle);
-      pts.push((j === 0 ? 'M' : 'L') + rx.toFixed(1) + ',' + ry.toFixed(1));
-    }
-    pts.push('Z');
-    var opacity = isFilled ? (0.5 + (i / ringCount) * 0.5).toFixed(2) : '0.15';
-    var strokeW = isFilled ? '1.8' : '0.7';
-    svg += '<path d="' + pts.join(' ') + '" fill="none" stroke="' + (isFilled ? arcColor : C.bark) + '" stroke-width="' + strokeW + '" opacity="' + opacity + '"/>';
-  }
-  svg += '<circle cx="' + cx + '" cy="' + cy + '" r="8" fill="' + C.char + '" opacity="0.85"/>';
-  svg += '<text x="' + cx + '" y="' + cy + '" text-anchor="middle" dominant-baseline="central" fill="' + C.sapwood + '" font-family="-apple-system,system-ui,sans-serif" font-size="' + fontSize + '" font-weight="700">' + label + '</text>';
-  svg += '</svg>';
-  return svg;
-}
-
-// Time-of-day canopy light gradient
-function siConcentricRingsHTML(liftPercentiles) {
-  // liftPercentiles: { bench: 0.0-1.0, squat: ..., deadlift: ..., ohp: ..., row: ... }
-  // Renders 5 concentric rings, each radius scaled by its percentile
-  var size = 120;
-  var cx = size / 2;
-  var cy = size / 2;
-  var maxR = 46;
-  var minR = 10;
-  var liftOrder = ['deadlift', 'squat', 'bench', 'row', 'ohp'];
-  var liftColors = {
-    deadlift: '#5FA052',
-    squat:    '#4E8A43',
-    bench:    '#C084FC',
-    row:      '#7CBAD4',
-    ohp:      '#E8C44A',
-  };
-  var svg = '<svg width="' + size + '" height="' + size + '" viewBox="0 0 ' + size + ' ' + size + '" style="display:block;">';
-  // Background circle (dim)
-  svg += '<circle cx="' + cx + '" cy="' + cy + '" r="' + (maxR + 3) + '" fill="none" stroke="' + C.line + '" stroke-width="1" opacity="0.4"/>';
-  // Render each lift as a ring, outer-to-inner order
-  for (var i = 0; i < liftOrder.length; i++) {
-    var k = liftOrder[i];
-    var pct = Math.max(0, Math.min(1, liftPercentiles[k] || 0));
-    var r = minR + ((maxR - minR) * (1 - i / liftOrder.length));
-    var circumference = 2 * Math.PI * r;
-    var fillLen = circumference * pct;
-    var gapLen = circumference - fillLen;
-    // Background ring (dim)
-    svg += '<circle cx="' + cx + '" cy="' + cy + '" r="' + r + '" fill="none" stroke="' + C.bark + '" stroke-width="2.2" opacity="0.5"/>';
-    // Filled arc (rotated so start is at top)
-    svg += '<circle cx="' + cx + '" cy="' + cy + '" r="' + r + '" fill="none" stroke="' + liftColors[k] + '" stroke-width="2.6" stroke-linecap="round" stroke-dasharray="' + fillLen.toFixed(2) + ' ' + gapLen.toFixed(2) + '" transform="rotate(-90 ' + cx + ' ' + cy + ')"/>';
-  }
-  // Heartwood center dot
-  svg += '<circle cx="' + cx + '" cy="' + cy + '" r="2.2" fill="' + C.resin + '"/>';
-  svg += '</svg>';
-  return svg;
-}
-
-function getCanopyGradient() {
-  var h = new Date().getHours();
-  if (h >= 5 && h < 8) {
-    // Dawn: cool amber emerging
-    return 'radial-gradient(ellipse 110% 70% at 55% 0%, rgba(220,170,100,0.38), transparent 60%), radial-gradient(ellipse 80% 50% at 20% 0%, rgba(180,130,90,0.22), transparent 60%)';
-  } else if (h >= 8 && h < 11) {
-    // Morning: warm golden canopy light
-    return 'radial-gradient(ellipse 110% 70% at 65% 0%, rgba(232,196,74,0.42), transparent 60%), radial-gradient(ellipse 80% 50% at 25% 0%, rgba(212,170,90,0.26), transparent 60%)';
-  } else if (h >= 11 && h < 16) {
-    // Midday: bright sap-gold + filtered green
-    return 'radial-gradient(ellipse 110% 70% at 55% 0%, rgba(232,196,74,0.35), transparent 60%), radial-gradient(ellipse 70% 45% at 30% 0%, rgba(140,190,110,0.22), transparent 60%)';
-  } else if (h >= 16 && h < 19) {
-    // Dusk: rich ember
-    return 'radial-gradient(ellipse 110% 70% at 55% 0%, rgba(200,120,60,0.40), transparent 60%), radial-gradient(ellipse 80% 50% at 70% 0%, rgba(166,61,47,0.22), transparent 60%)';
-  } else if (h >= 19 && h < 22) {
-    // Evening: dim twilight purple
-    return 'radial-gradient(ellipse 100% 60% at 50% 0%, rgba(123,107,138,0.32), transparent 60%), radial-gradient(ellipse 70% 45% at 65% 0%, rgba(100,90,120,0.18), transparent 60%)';
-  } else {
-    // Night: faint cool moonlight
-    return 'radial-gradient(ellipse 90% 55% at 55% 0%, rgba(120,130,160,0.22), transparent 60%)';
-  }
-}
-
-function updateCanopyLight() {
-  var el = document.getElementById('canopy-light');
-  if (el) el.style.background = getCanopyGradient();
-}
-
-// ============================================================
 // STRENGTH STANDARDS (Pillar 2)
 // BW multipliers for 1RM - male, general gym-going population, age-adjusted
 // Shifted from OpenPowerlifting competition data to recreational lifter norms:
@@ -1278,21 +1194,6 @@ const STRENGTH_STANDARDS = {
   'hip_thrust':      { multipliers: [0.45, 0.65, 0.95, 1.30, 1.75], keyMuscle: 'glutes' },
   'calf_raise':      { multipliers: [0.35, 0.50, 0.75, 1.00, 1.40], keyMuscle: 'calves' },
   'plank_equivalent': { multipliers: null, keyMuscle: 'core' },
-};
-
-const MUSCLE_KEY_LIFTS = {
-  chest:      { standard: 'bench_press',    patterns: [/bench press/i] },
-  back:       { standard: 'deadlift',       patterns: [/deadlift/i, /barbell row/i, /bent over row/i] },
-  shoulders:  { standard: 'overhead_press', patterns: [/overhead press/i, /shoulder press/i, /military press/i] },
-  quads:      { standard: 'squat',          patterns: [/squat/i] },
-  hamstrings: { standard: 'leg_curl',       patterns: [/leg curl/i, /romanian deadlift/i] },
-  glutes:     { standard: 'hip_thrust',     patterns: [/hip thrust/i] },
-  biceps:     { standard: 'barbell_curl',   patterns: [/barbell curl/i, /bicep curl/i] },
-  triceps:    { standard: 'skull_crusher',  patterns: [/skullcrusher/i, /skull crusher/i, /tricep extension/i, /triceps extension/i, /triceps pushdown/i, /tricep pushdown/i] },
-  calves:     { standard: 'calf_raise',     patterns: [/calf raise/i, /calf extension/i] },
-  core:       { standard: 'plank_equivalent', patterns: [] },
-  neck:       { standard: null, patterns: [] },
-  forearms:   { standard: null, patterns: [] },
 };
 
 // ============================================================
@@ -1987,6 +1888,50 @@ function getStoredWeightEntries() {
   return Storage.get('weightHistory', []);
 }
 
+// v1.49: in-app weigh-in. weightHistory was read but never written, and the
+// Shortcut sends no weight entries, so body weight could not be updated.
+function openWeighIn() {
+  var form = document.getElementById('weigh-in-form');
+  var input = document.getElementById('weigh-in-input');
+  if (!form || !input) return;
+  input.value = '';
+  input.placeholder = PROFILE.bodyweightLbs ? PROFILE.bodyweightLbs.toFixed(1) : '';
+  form.style.display = 'flex';
+  document.getElementById('weigh-in-row').style.display = 'none';
+  document.getElementById('weigh-in-msg').style.display = 'none';
+  try { input.focus(); } catch (_) {}
+}
+function closeWeighIn() {
+  document.getElementById('weigh-in-form').style.display = 'none';
+  document.getElementById('weigh-in-row').style.display = '';
+  document.getElementById('weigh-in-msg').style.display = 'none';
+}
+function saveWeighIn() {
+  var input = document.getElementById('weigh-in-input');
+  var msg = document.getElementById('weigh-in-msg');
+  var v = parseFloat(input.value);
+  if (!(v >= 80 && v <= 400)) {
+    msg.textContent = 'Enter a weight between 80 and 400 lb.';
+    msg.style.display = 'block';
+    return;
+  }
+  var today = localDateStr(new Date());
+  var list = getStoredWeightEntries().filter(function(e) { return e && e.date !== today; });
+  list.push({ date: today, value: Math.round(v * 10) / 10 });
+  list.sort(function(a, b) { return b.date.localeCompare(a.date); });
+  if (list.length > 400) list.length = 400;
+  if (!Storage.set('weightHistory', list)) {
+    msg.textContent = 'Could not save on this device.';
+    msg.style.display = 'block';
+    return;
+  }
+  closeWeighIn();
+  hapticTick();
+  // Body weight feeds the Strength Index, so recompute everything
+  if (workoutCache) renderDashboard(workoutCache, { keepState: true });
+  else renderWeightChart();
+}
+
 function getMergedWeightData() {
   const stored = getStoredWeightEntries();
   // Apple Health weight entries from iOS Shortcut (via Hevy -> HealthKit)
@@ -2157,7 +2102,6 @@ const apiKey = 'e38cf123-61c4-4b8c-ae25-7442d6d9c874';
 let workoutCache = null;
 let muscleAnalysis = null;
 let exerciseHistory = {};
-let muscle1RMs = {};
 let strengthIndexData = [];
 let cardioScoreData = [];
 let dedicationData = [];
@@ -2306,6 +2250,54 @@ async function fetchWorkouts(pageSize = 10, maxPages = 16) {
   return allWorkouts;
 }
 
+// v1.49: incremental sync. One call to /workouts/events on every open
+// replaces the 8-hour cache window (which hid a workout logged since the last
+// fetch) and the 16-page refetch. Events carry the full workout object.
+// Falls back to a full fetch when the cache is old or the change list is long.
+const SYNC_TS_KEY = 'workoutSyncTs_v1';
+const SYNC_MARGIN_MS = 10 * 60 * 1000;           // clock-skew margin
+const SYNC_MAX_AGE_MS = 21 * 24 * 60 * 60 * 1000;
+const SYNC_MAX_PAGES = 6;
+async function syncWorkoutEvents(cached) {
+  const lastSync = Storage.get(SYNC_TS_KEY, null) || (cached && cached.ts) || 0;
+  if (!cached || !cached.data || !lastSync || (Date.now() - lastSync) > SYNC_MAX_AGE_MS) {
+    return { workouts: await fetchWorkouts(), changed: true };
+  }
+  const since = new Date(lastSync - SYNC_MARGIN_MS).toISOString();
+  const byId = new Map();
+  for (const w of cached.data) byId.set(w.id, w);
+  let changed = false;
+  let page = 1;
+  let totalPages = 1;
+  while (page <= totalPages) {
+    if (page > SYNC_MAX_PAGES) return { workouts: await fetchWorkouts(), changed: true };
+    const resp = await fetchHevy(`${API_BASE}/workouts/events?page=${page}&pageSize=10&since=${encodeURIComponent(since)}`, {
+      headers: { 'api-key': apiKey },
+      mode: 'cors'
+    });
+    if (!resp.ok) throw new Error('Hevy sync error ' + resp.status);
+    const data = await resp.json();
+    totalPages = data.page_count || 1;
+    for (const ev of (data.events || [])) {
+      if (ev.type === 'deleted') {
+        if (byId.delete(ev.id)) changed = true;
+      } else if (ev.workout && ev.workout.id) {
+        const prev = byId.get(ev.workout.id);
+        if (!prev || prev.updated_at !== ev.workout.updated_at) {
+          byId.set(ev.workout.id, ev.workout);
+          changed = true;
+        }
+      }
+    }
+    page++;
+  }
+  if (!changed) return { workouts: cached.data, changed: false };
+  const list = Array.from(byId.values()).sort((a, b) =>
+    new Date(b.start_time || b.created_at) - new Date(a.start_time || a.created_at)
+  ).slice(0, 155); // same cap as fetchWorkouts
+  return { workouts: list, changed: true };
+}
+
 // ============================================================
 // STRENGTH INDEX LIFT DEFINITIONS
 // ============================================================
@@ -2337,7 +2329,6 @@ function preprocessWorkouts(workouts, bodyweightLbs, weightData) {
   const exHistory = {};
   const templateIdMap = {};
   const muscleStats = {};
-  const muscle1RMInputs = {}; // { muscleKey: { best1RM, exercise } }
   // v1.38: true rolling window. Per-lift chronological event lists (one
   // best-estimated-1RM event per lift per workout); each SI datapoint takes
   // the max over events in the trailing 183 days, so old PRs age out of the
@@ -2358,7 +2349,6 @@ function preprocessWorkouts(workouts, bodyweightLbs, weightData) {
       lastTrainedAny: null, daysSinceAny: Infinity,
       totalSets30d: 0, totalVolume30d: 0, sessionCount30d: 0, exercises: new Set(),
     };
-    muscle1RMInputs[key] = { best1RM: 0, exercise: '' };
   }
 
   // Weight data sorted for SI interpolation
@@ -2492,24 +2482,6 @@ function preprocessWorkouts(workouts, bodyweightLbs, weightData) {
         bestWeight: bestSet.w || 0, bestReps: bestSet.r || 0,
       });
 
-      // --- Muscle 1RM (last 30d) ---
-      if (isRecent) {
-        for (const [muscleKey, keyLift] of Object.entries(MUSCLE_KEY_LIFTS)) {
-          const matched = keyLift.patterns.some(p => p.test(name));
-          if (!matched) continue;
-          for (const s of workingSets) {
-            const wLbs = (s.weight_kg || 0) * 2.20462;
-            const reps = s.reps || 0;
-            if (wLbs <= 0 || reps <= 0) continue;
-            const est = estimate1RM(wLbs, reps);
-            if (est > muscle1RMInputs[muscleKey].best1RM) {
-              muscle1RMInputs[muscleKey].best1RM = est;
-              muscle1RMInputs[muscleKey].exercise = name;
-            }
-          }
-        }
-      }
-
       // --- Strength index events (v1.38: true 183-day rolling window) ---
       // Record the best estimated 1RM per lift in THIS workout; the SI
       // datapoint below windows over the trailing 183 days.
@@ -2582,19 +2554,6 @@ function preprocessWorkouts(workouts, bodyweightLbs, weightData) {
       }
       siTimeline.push({ date: dateStr, index: Math.round(index * 100) / 100, lifts: { ...lifts } });
     }
-  }
-
-  // Finalize muscle 1RMs with percentiles
-  const muscle1RMResults = {};
-  for (const [key, data] of Object.entries(muscle1RMInputs)) {
-    const keyLift = MUSCLE_KEY_LIFTS[key];
-    const bwMult = bodyweightLbs > 0 ? data.best1RM / bodyweightLbs : 0;
-    const percentile = estimatePercentile(keyLift.standard, bwMult);
-    muscle1RMResults[key] = {
-      best1RM: Math.round(data.best1RM),
-      bwMult: Math.round(bwMult * 100) / 100,
-      percentile, exercise: data.exercise,
-    };
   }
 
   // Merge Apple Watch cardio into heatmap (dedup against Hevy within 30 min)
@@ -2798,7 +2757,6 @@ function preprocessWorkouts(workouts, bodyweightLbs, weightData) {
     exerciseHistory: exHistory,
     templateIdMap,
     muscleStats,
-    muscle1RMs: muscle1RMResults,
     strengthIndexTimeline: siTimeline,
     cardioScoreTimeline: csTimeline,
     dedicationTimeline: dedTimeline,
@@ -3241,6 +3199,7 @@ let _liftRerollOffset = 0;
 // Custom muscle session state
 let _customSessionActive = false;
 let _customSessionRecs = null;
+let _customSessionKeys = []; // v1.49: lets a custom session survive a background re-render
 let _muscleSelectMode = false;
 let _selectedMuscles = new Set();
 
@@ -3271,6 +3230,7 @@ function rerollCardio() {
 function resetToAutoSession() {
   _customSessionActive = false;
   _customSessionRecs = null;
+  _customSessionKeys = [];
   _liftRerollOffset = 0;
   if (LAST_RECS) renderTimedSession(LAST_RECS);
 }
@@ -3297,11 +3257,10 @@ function toggleMuscleSelection(key, evt) {
   }
 }
 
-function buildCustomSession() {
-  if (_selectedMuscles.size === 0 || !LAST_RECS || !muscleAnalysis) return;
-  // Build synthetic recs: selected muscles scored highest (in selection order),
-  // then remaining muscles at their normal scores
-  var selected = Array.from(_selectedMuscles);
+// Synthetic recs: selected muscles scored highest (in selection order), then
+// the remaining muscles at their normal scores. Built from the current
+// LAST_RECS, so it can be rebuilt after new data arrives (v1.49).
+function makeCustomRecs(selected) {
   var customRecs = [];
   var maxScore = 10; // Ensure selected muscles rank above all others
   for (var i = 0; i < selected.length; i++) {
@@ -3314,12 +3273,20 @@ function buildCustomSession() {
   }
   // Add remaining muscles at their original scores (won't be in top N)
   for (var j = 0; j < LAST_RECS.length; j++) {
-    if (!_selectedMuscles.has(LAST_RECS[j].key)) {
+    if (selected.indexOf(LAST_RECS[j].key) === -1) {
       customRecs.push(Object.assign({}, LAST_RECS[j]));
     }
   }
+  return customRecs;
+}
+
+function buildCustomSession() {
+  if (_selectedMuscles.size === 0 || !LAST_RECS || !muscleAnalysis) return;
+  var selected = Array.from(_selectedMuscles);
+  var customRecs = makeCustomRecs(selected);
   _customSessionActive = true;
   _customSessionRecs = customRecs;
+  _customSessionKeys = selected;
   _liftRerollOffset = 0;
   _muscleSelectMode = false;
   _selectedMuscles.clear();
@@ -4546,29 +4513,6 @@ function renderTimedSession(recs) {
   exContainer.innerHTML = exHtml;
 }
 
-// Generic collapsible section toggle
-function toggleSectionExplainer(id, triggerEl) {
-  const el = document.getElementById(id);
-  if (!el) return;
-  if (el.classList.contains('open')) {
-    el.style.maxHeight = '0';
-    el.style.opacity = '0';
-    el.classList.remove('open');
-    if (triggerEl) {
-      const chev = triggerEl.querySelector('.section-chevron');
-      if (chev) chev.style.transform = 'rotate(0deg)';
-    }
-  } else {
-    el.classList.add('open');
-    el.style.opacity = '1';
-    el.style.maxHeight = el.scrollHeight + 'px';
-    if (triggerEl) {
-      const chev = triggerEl.querySelector('.section-chevron');
-      if (chev) chev.style.transform = 'rotate(180deg)';
-    }
-  }
-}
-
 // v1.29: Toggle the conflict resolution detail strip
 function toggleConflictDetail() {
   // v1.44: FLIP expander
@@ -5458,46 +5402,6 @@ function setChartPeriod(period) {
 }
 
 // ============================================================
-// TIER EMBLEMS (v1.13: visual rank icons for categories)
-// ============================================================
-function tierEmblem(label, color) {
-  // Map labels to tier rank (1-5) for distinct icon shapes
-  const tierMap = {
-    'Low': 1, 'Developing': 1, 'Elevated': 1, 'Above Avg': 1, 'Poor': 1,
-    'Normal': 2, 'Fair': 2, 'Moderate': 2,
-    'Good': 3, 'Average': 3, 'Intermediate': 3, 'Fit': 3,
-    'Athletic': 4, 'Active': 4, 'High': 4, 'Advanced': 4, 'Great': 4,
-    'Elite': 5, 'Excellent': 5,
-  };
-  const tier = tierMap[label] || 2;
-  const s = 12; // svg size
-
-  let icon;
-  if (tier === 1) {
-    // hollow circle
-    icon = `<circle cx="6" cy="6" r="4" fill="none" stroke="${color}" stroke-width="1.5"/>`;
-  } else if (tier === 2) {
-    // filled circle
-    icon = `<circle cx="6" cy="6" r="4" fill="${color}" opacity="0.7"/>`;
-  } else if (tier === 3) {
-    // diamond
-    icon = `<path d="M6 2L10 6L6 10L2 6Z" fill="${color}" opacity="0.8"/>`;
-  } else if (tier === 4) {
-    // shield/chevron up
-    icon = `<path d="M6 1.5L10.5 4V7.5C10.5 9.5 8.5 11 6 11.5C3.5 11 1.5 9.5 1.5 7.5V4L6 1.5Z" fill="${color}" opacity="0.85"/>`;
-  } else {
-    // star
-    icon = `<path d="M6 1L7.5 4.5L11 5L8.5 7.5L9 11L6 9.5L3 11L3.5 7.5L1 5L4.5 4.5Z" fill="${color}"/>`;
-  }
-  return `<svg width="${s}" height="${s}" viewBox="0 0 ${s} ${s}" style="vertical-align:middle;margin-right:3px;flex-shrink:0;">${icon}</svg>`;
-}
-
-// Format a tier badge (emblem + label) for inline use
-function tierBadge(label, color) {
-  return tierEmblem(label, color) + `<span style="color:${color};font-weight:600;">${label}</span>`;
-}
-
-// ============================================================
 // PERSONAL RECORDS BOARD (merged into Strength Index rows)
 // ============================================================
 function renderPRBoard() {
@@ -6257,13 +6161,37 @@ function renderMeasurementsCard() {
 // ============================================================
 const HEALTH_DATA_URL = 'https://jtwarta.github.io/WorkoutPlanner/health-data.json';
 const HEALTH_STALE_HOURS = 48; // consider data stale after 48h
+const HEALTH_CACHE_KEY = 'healthCache_v1';
+
+// v1.49: the last good health file is kept locally so the cached dashboard
+// can paint at once instead of waiting on the network.
+function healthStatusFor(data) {
+  if (!data) return 'missing';
+  if (!data.updated) return 'stale';
+  const ageHours = (Date.now() - new Date(data.updated).getTime()) / (1000 * 60 * 60);
+  return ageHours <= HEALTH_STALE_HOURS ? 'ok' : 'stale';
+}
+function loadCachedHealth() {
+  const c = Storage.get(HEALTH_CACHE_KEY, null);
+  if (c && typeof c === 'object') {
+    healthData = c;
+    healthStatus = healthStatusFor(c);
+    return true;
+  }
+  return false;
+}
+function healthFetchFailed() {
+  if (!loadCachedHealth()) {
+    healthStatus = 'missing';
+    healthData = null;
+  }
+}
 
 async function fetchHealthData() {
   try {
     const resp = await fetchWithTimeout(HEALTH_DATA_URL + '?t=' + Date.now(), { cache: 'no-store' });
     if (!resp.ok) {
-      healthStatus = 'missing';
-      healthData = null;
+      healthFetchFailed();
       return;
     }
     // Shortcuts inserts literal newlines in JSON - strip them before parsing
@@ -6279,19 +6207,11 @@ async function fetchHealthData() {
     cleanText = cleanText.replace(/:\s*}/g, ': null}');
     const data = JSON.parse(cleanText);
     healthData = data;
-
-    // Check freshness
-    if (data.updated) {
-      const updatedAt = new Date(data.updated);
-      const ageHours = (Date.now() - updatedAt.getTime()) / (1000 * 60 * 60);
-      healthStatus = ageHours <= HEALTH_STALE_HOURS ? 'ok' : 'stale';
-    } else {
-      healthStatus = 'stale';
-    }
+    healthStatus = healthStatusFor(data);
+    Storage.set(HEALTH_CACHE_KEY, data);
   } catch (e) {
     console.warn('Health data fetch failed:', e.message);
-    healthStatus = 'missing';
-    healthData = null;
+    healthFetchFailed();
   }
 }
 
@@ -6950,7 +6870,6 @@ function showScreen(screen) {
     document.getElementById(id).classList.toggle('hidden', id !== screen);
   });
   if (screen === 'dashboard') {
-    updateCanopyLight();
     // v1.43: after the boot has played once, returning from the loader is a quiet fade
     if (_bootPlayed && wasLoading) motion(document.getElementById('dashboard'), [{ opacity: 0 }, { opacity: 1 }], MOTION.fast, MOTION.settle);
   }
@@ -7194,13 +7113,21 @@ document.addEventListener('click', function(e) {
   }
 });
 
-function renderDashboard(workouts) {
-  _cardioRerollOffset = 0;
-  _liftRerollOffset = 0;
-  _customSessionActive = false;
-  _customSessionRecs = null;
-  _muscleSelectMode = false;
-  _selectedMuscles.clear();
+var _renderedHealthSig = null;
+function renderDashboard(workouts, opts) {
+  // v1.49: background data (sync, health, a weigh-in) re-renders with
+  // keepState so rerolls, a custom session and select mode are not discarded.
+  var keep = !!(opts && opts.keepState);
+  if (!keep) {
+    _cardioRerollOffset = 0;
+    _liftRerollOffset = 0;
+    _customSessionActive = false;
+    _customSessionRecs = null;
+    _customSessionKeys = [];
+    _muscleSelectMode = false;
+    _selectedMuscles.clear();
+  }
+  _renderedHealthSig = JSON.stringify(healthData);
 
   // One-time cache bust on v1.17 upgrade to force fresh fuzzy matching
   if (!Storage.get('v117_cache_cleared')) {
@@ -7224,7 +7151,6 @@ function renderDashboard(workouts) {
   exerciseHistory = pp.exerciseHistory;
   _templateIdMap = pp.templateIdMap || {};
   muscleAnalysis = pp.muscleStats;
-  muscle1RMs = pp.muscle1RMs;
   strengthIndexData = pp.strengthIndexTimeline;
   cardioScoreData = pp.cardioScoreTimeline;
   dedicationData = pp.dedicationTimeline || [];
@@ -7245,13 +7171,18 @@ function renderDashboard(workouts) {
   const syncColor = (hevyStatus === 'error' || healthStatus === 'missing') ? C.ember
     : (healthStatus === 'stale') ? C.resin : C.lichen; // v1.43
   document.getElementById('last-updated').innerHTML =
-    `v1.48, ${now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }).replace(/\u202f/g, ' ')} <span id="sync-dot" style="display:inline-block;width:6px;height:6px;border-radius:50%;background:${syncColor};margin-left:4px;vertical-align:middle;position:relative;top:-1px;"></span>`;
+    `v1.49, ${now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }).replace(/\u202f/g, ' ')} <span id="sync-dot" style="display:inline-block;width:6px;height:6px;border-radius:50%;background:${syncColor};margin-left:4px;vertical-align:middle;position:relative;top:-1px;"></span>`;
 
   // Populate globals BEFORE renderTimedSession so lifted-today detection works
   heatmapDayWorkouts = pp.heatmapDayWorkouts || {};
   heatmapDayCardio = pp.heatmapDayCardio || {};
 
-  renderTimedSession(recs);
+  var sessionRecs = recs;
+  if (keep && _customSessionActive && _customSessionKeys.length > 0) {
+    _customSessionRecs = makeCustomRecs(_customSessionKeys);
+    sessionRecs = _customSessionRecs;
+  }
+  renderTimedSession(sessionRecs);
 
   // Background: fetch all Hevy exercise templates for ID resolution at send-time
   // Note: we intentionally do NOT re-render the session when templates load.
@@ -7279,6 +7210,7 @@ async function refreshData() {
     const [workouts] = await Promise.all([fetchWorkouts(), fetchHealthData()]);
     workoutCache = workouts;
     setCachedWorkouts(workouts);
+    Storage.set(SYNC_TS_KEY, Date.now());
     hevyStatus = 'ok';
     renderDashboard(workouts);
   } catch (err) {
@@ -7292,7 +7224,9 @@ async function refreshData() {
 async function loadDashboard() {
   showScreen('loading-screen');
 
-  // Start health data fetch in parallel (non-blocking)
+  // v1.49: paint from the locally cached health file; the network copy
+  // replaces it in the background.
+  const hadHealth = loadCachedHealth();
   const healthPromise = fetchHealthData();
 
   try {
@@ -7302,21 +7236,29 @@ async function loadDashboard() {
       updateLoading('Loading from cache...');
       workoutCache = cached.data;
       hevyStatus = 'ok';
-      await healthPromise; // ensure health status is ready
+      // First run only (no cached health yet): give the network 1.5 s
+      if (!hadHealth) await Promise.race([healthPromise, new Promise(r => setTimeout(r, 1500))]);
       renderDashboard(cached.data);
 
-      // If stale, refresh in background
-      if (isCacheStale(cached)) {
-        fetchWorkouts().then(fresh => {
-          workoutCache = fresh;
-          setCachedWorkouts(fresh);
-          hevyStatus = 'ok';
-          renderDashboard(fresh);
-        }).catch(err => {
-          console.warn('Background refresh failed:', err.message);
-          hevyStatus = 'error';
-        });
-      }
+      // Health: re-render only if the file differs from what was painted
+      healthPromise.then(() => {
+        if (workoutCache && JSON.stringify(healthData) !== _renderedHealthSig) {
+          renderDashboard(workoutCache, { keepState: true });
+        }
+      });
+      // Workouts: incremental sync on every open
+      syncWorkoutEvents(cached).then(res => {
+        Storage.set(SYNC_TS_KEY, Date.now());
+        hevyStatus = 'ok';
+        if (res.changed) {
+          workoutCache = res.workouts;
+          setCachedWorkouts(res.workouts);
+          renderDashboard(res.workouts, { keepState: true });
+        }
+      }).catch(err => {
+        console.warn('Background sync failed:', err.message);
+        hevyStatus = 'error';
+      });
       return;
     }
 
@@ -7325,6 +7267,7 @@ async function loadDashboard() {
     const workouts = await fetchWorkouts();
     workoutCache = workouts;
     setCachedWorkouts(workouts);
+    Storage.set(SYNC_TS_KEY, Date.now());
     hevyStatus = 'ok';
     await healthPromise;
     renderDashboard(workouts);
@@ -7373,10 +7316,10 @@ function runDevTests() {
 
   // Test A4: CSS custom properties load correctly (catches en-dash encoding bug)
   const rootStyle = getComputedStyle(document.documentElement);
-  const accentVar = rootStyle.getPropertyValue('--accent').trim();
+  const accentVar = rootStyle.getPropertyValue('--char').trim();
   results.push({
-    test: 'A4: CSS --accent resolves to #5FA052',
-    pass: accentVar === '#5FA052',
+    test: 'A4: CSS --char resolves to #17120F',
+    pass: accentVar.toUpperCase() === '#17120F',
     got: accentVar || '(empty -- var() references may use en-dash instead of double-hyphen)'
   });
 

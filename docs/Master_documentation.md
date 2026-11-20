@@ -1,6 +1,6 @@
 # LiftScript — Master Documentation
 
-**Version: v1.48** · **Reconstructed July 10, 2026 · updated to v1.48 October 16, 2026**
+**Version: v1.49** · **Reconstructed July 10, 2026 · updated to v1.49 November 19, 2026**
 
 > **Provenance note:** the original `Master_documentation.md` (last at v1.34 +
 > pending v1.35–v1.39 deltas) was deleted from the project before patching. This
@@ -20,6 +20,10 @@
 >
 > **v1.42 update (Oct 11, 2026):** chart time-domain fix. Touches §2, §23,
 > §28 (#25), §29.
+>
+> **v1.49 update (Nov 19, 2026):** reliability release, first phase of the v2
+> plan (`docs/LiftScript_v2_Review_and_Plan.md`). Touches §2, §5, §6, §22,
+> §24, §28 (#27-30), §29, Appendix. No engine or scoring change.
 >
 > **v1.43–v1.47 update (Oct 11, 2026):** visual revamp (Growth Rings). Touches
 > §10, §23, §24, §29, §30, Appendix. Presentation only; logic unchanged.
@@ -54,7 +58,7 @@ Scientific foundation (as documented in the code header):
 
 ## 2. Architecture & Development Rules
 
-- **Single file:** all HTML/CSS/JS in `index.html` (~7,432 lines at v1.47).
+- **Single file:** all HTML/CSS/JS in `index.html` (~7,390 lines at v1.49).
   Assets: `manifest.json`, `icon-180/192/512.png`, `health-data.json`
   (written by the iOS Shortcut, not by hand).
 - **Pure ASCII in index.html.** Special characters use `\uXXXX` escapes.
@@ -140,6 +144,17 @@ embedded baseline, deduped by date (`getMergedWeightData`).
   all needed names are matched; result cached 7 days.
 - `GET /routines`, `POST /routines`, `PUT /routines/{id}` — see §26.
   Quirk: `folder_id` is required by POST but rejected by PUT.
+- **Incremental sync (v1.49):** `GET /workouts/events?page=N&pageSize=10&since=<ISO>`
+  (live-verified Nov 2026) returns `{page, page_count, events}`; each event is
+  `{type:'updated', workout}` (the full workout object, same shape as
+  `/workouts`) or `{type:'deleted', id, deleted_at}`. `syncWorkoutEvents()`
+  runs on every open with a warm cache: `since` = last sync time
+  (`workoutSyncTs_v1`) minus 10 min; updates are merged by id, deletes
+  removed, the list re-sorted newest first and capped at 155. It falls back
+  to the full `fetchWorkouts()` when the cache is older than 21 days or the
+  change list exceeds 6 pages. Full fetch still runs on cold start and on
+  the manual refresh button. `CACHE_STALE_MS` / `isCacheStale` are no longer
+  used by boot (§28 #27).
 - Weight display quirk: Hevy shows lbs as `floor(kg × 2.20462, 2dp)` —
   truncation. The app therefore **ceils** kg to 3dp on send so the
   back-conversion lands on or above the target (e.g. 140 lbs → 63.504 kg,
@@ -151,6 +166,11 @@ Written by the iOS Shortcut on a schedule; fetched with cache-busting
 `?t=Date.now()`, `cache: 'no-store'`. Considered stale after 48 h
 (`HEALTH_STALE_HOURS`); status ok/stale/missing drives the header sync dot
 and the Health Vitals card.
+
+**Local copy (v1.49):** the last good parsed file is stored in
+`healthCache_v1`. Boot paints from it immediately and re-renders only if the
+network copy differs; a failed fetch falls back to it instead of "missing".
+On a first run with no local copy, boot waits up to 1.5 s for the network.
 
 **Sanitizer** (Shortcuts emits malformed JSON): strip literal newlines/CRs,
 `}{ → },{`, remove thousands commas, strip `kcal` suffixes, `": ," → ": null,"`,
@@ -417,6 +437,13 @@ re-normalized across available pillars. Tap to expand the pillar breakdown.
   entries. **The Shortcut currently sends waist undated**, so manual/Hevy
   entries win everywhere (v1.48 extended this to the waist sparkline and the
   Body Comp "now" point, §28 #26).
+- **Weigh-in entry (v1.49):** "Add a weigh-in" on the Body weight card opens
+  an inline field (80 to 400 lb, one entry per local date) and writes
+  `weightHistory`, the stored source that outranks Apple Health and the
+  baseline. Before v1.49 nothing wrote that key and the Shortcut sends an
+  empty `weight_entries`, so body weight was frozen at the Feb 16, 2026
+  baseline (§28 #30). A weigh-in re-renders the whole dashboard; the
+  Strength Index picks it up from the next workout dated on or after it.
 - **Source-of-truth rule (v1.40):** every measurement tile, including the
   Body Composition WAIST tile, reads the merged value from
   `getLatestMeasurements()`, never raw `healthData` fields. Pre-v1.40 the
@@ -476,10 +503,15 @@ re-normalized across available pillars. Tap to expand the pillar breakdown.
 - **localStorage keys:** `workoutCache_v1` (8 h TTL), `wa_prefs_v1_1`,
   `weightHistory`, `bodyMeasurements_v1`, `hevy_template_map` +
   `hevy_template_map_ts` (7 d TTL), `hevy_routine_id`, `chart_secondary_v1`,
-  `v117_cache_cleared` (one-time cache bust flag).
-- **Boot:** cache-first render, background refresh when stale; health fetch
-  in parallel; global onerror/unhandledrejection surface to the loading
-  screen.
+  `v117_cache_cleared` (one-time cache bust flag), `workoutSyncTs_v1` and
+  `healthCache_v1` (v1.49).
+- **Boot (v1.49):** cache-first render using the local health copy, then an
+  incremental workout sync and the health fetch in the background. Background
+  results call `renderDashboard(workouts, {keepState: true})`, which keeps
+  reroll offsets, an active custom session (rebuilt from `_customSessionKeys`)
+  and muscle select mode. Global onerror/unhandledrejection write to the
+  loading screen and, once the dashboard is up, to an Ember line under the
+  tabs (`#inline-error`); AbortError rejections are ignored.
 
 ## 25. (Reserved — original content unknown)
 
@@ -579,6 +611,20 @@ Items 23–25 come from the v1.40–v1.42 changelog; #26 from v1.48.
     Fix: sparkline plots AH waist only when `waist_date` exists; timeline
     "now" point reads `getLatestMeasurements()`.
 
+27. **Stale plan inside the cache window (v1.49):** with a cache under 8 h
+    old the app made no Hevy request, so a workout logged since the last
+    fetch was invisible and Today offered a finished session again. Fix:
+    incremental `/workouts/events` sync on every open.
+28. **Background refresh discarded session state (v1.49):** the stale-cache
+    refresh called `renderDashboard`, which reset rerolls and any custom
+    session and changed the list under the user. Fix: `keepState`.
+29. **Cached paint blocked on the health file; errors hidden (v1.49):** the
+    cached dashboard awaited `health-data.json` (6.7 s measured with a 6 s
+    response; now 0.5 s), and runtime errors after boot were written to the
+    hidden loading screen.
+30. **Body weight could not be updated (v1.49):** `weightHistory` was read
+    but never written. Fix: weigh-in entry.
+
 ## 29. Version History
 
 Reconstructed from the verbatim changelog in the `index.html` header (which
@@ -588,6 +634,7 @@ cross-references.
 
 | Version | Key changes |
 |---|---|
+| v1.49 | Reliability: incremental `/workouts/events` sync on every open; cached paint from a local health copy; state-preserving background re-render; visible error line; weigh-in entry; dead code removed (Redwood helpers, tier emblems, unused `muscle1RMs`, `toggleSectionExplainer`); dev test A4 fixed. Engine output identical to v1.48 (14 replay dates x 18 setting combinations) |
 | v1.48 | 2026-08-02 measurements embedded in `MEASUREMENTS_BASELINE`; undated Apple Health waist no longer overrides newer manual entries in the waist sparkline or Body Comp timeline (§28 #26) |
 | v1.47 | Body rebuilt (SI hero + tier scale, lift rows, PR rows, weight freshness, chart restyle with Resin secondary line, vitals rows, measurements list; duplicate tiles removed) and transitional palette retired (88 C refs + 23 CSS vars renamed, old keys deleted). Revamp complete |
 | v1.46 | History rebuilt: stat trio with week-over-week change in words, cardio row, heatmap with full names / one Sapwood ramp for lifts + cardio (cardio buckets 15/25/35/45) / today column outline / word legend, inline FLIP day detail, column-by-column entrance; parity 13/13 |
@@ -669,3 +716,12 @@ cross-references.
   then 200; 429 forever = 4 calls; Retry-After capped at 30 s; non-numeric
   Retry-After falls back to 2 s) before push. Live `curl -D` header capture
   confirmed the pageSize limits before patching.
+- v1.49 (Nov 2026): engine parity by Node replay (`tools/engine_harness.js`):
+  recommendations, sessions for all 18 setting combinations, SI, Dedication,
+  Cardio Fitness, Body Comp, Power Score and cardio plans identical to v1.48
+  at 14 dates. Text parity on all four tabs with the recorded fixtures (only
+  additions: the weigh-in control and the version string). Browser scenarios:
+  no-change open = 1 events call and 0 workout pages; a new workout appears
+  and a deleted one disappears without a manual refresh; a custom session
+  and reroll survive a background sync; a 500 from the sync leaves the
+  dashboard up; weigh-in saves and rejects out-of-range input.
