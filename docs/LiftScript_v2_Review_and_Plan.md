@@ -143,6 +143,16 @@ plan: sessions are built by region (push, pull, legs), Reroll steps to the
 next region, and a small muscle untrained for 60 days is no longer pushed
 into every session.
 
+v2.1 shipped November 20, 2026, with neither replay target met: prescribed
+load with reps met rose from 25% to 36% (target 45%), and prescribed jumps
+landed 9% of the time on a sample of 22 (target 50%). Jumps are now a median
+4.4% of the load, down from 11.1%. One planned rule was dropped on the
+evidence: stepping back after a 42-day gap. After such gaps the last load was
+matched or beaten 86% of the time, so the lift now simply repeats. Stalls no
+longer trigger a deload; the lift is flagged, leads its muscle's days, and a
+back-off is offered. Next: about four weeks of live use before any tuning,
+then v2.2.
+
 **v1.49, reliability.** No engine change.
 - Sync with `/workouts/events` on every open; full fetch only on cold start.
 - Paint from cache without waiting for health; apply background data without resetting session state.

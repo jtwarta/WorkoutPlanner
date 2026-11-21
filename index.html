@@ -1,7 +1,20 @@
 <!DOCTYPE html>
 
 <!--
-  LiftScript v2.0
+  LiftScript v2.1
+  Changes from v2.0 (v2.1 - progression; changes loads and rep targets):
+  - Rep band per lift follows your recent sessions (median of the last 6 in
+    180 days, table width kept); the table band applies under 3 sessions.
+  - Next load = a load you have logged or the lift's smallest logged step,
+    not a forced 5 lb. A step over 10% needs two reps past the band first.
+    Loads are no longer rounded to 5 lb; a held load is sent to Hevy as the
+    exact kg you logged.
+  - Gap rule: over 21 days since the lift, it repeats last time.
+  - Stalls (4+ sessions at one load inside 90 days, no rep gained): no
+    automatic deload. The lift is marked Stalled, leads its muscle's days,
+    and a back-off is offered in the lift's detail. The detail also says how
+    each load was chosen.
+
   Changes from v1.49 (v2.0 - right-sized planner; changes what is prescribed):
   - Session = N lifts (3/4/5, default 4) from one region (push, pull, legs),
     led by the most overdue large muscle. Replaces the time-capped builder
@@ -931,7 +944,7 @@ margin-top: 4px;
     <div class="header">
       <div class="hdr-id">
         <h1>LiftScript</h1>
-        <div class="subtitle" id="last-updated">v2.0</div>
+        <div class="subtitle" id="last-updated">v2.1</div>
       </div>
       <button id="header-refresh-btn" class="hdr-btn" onclick="refreshData()" title="Refresh data" aria-label="Refresh data from Hevy and health">
         <svg width="17" height="17" viewBox="0 0 16 16" fill="none" style="display:block;">
@@ -2339,16 +2352,17 @@ function preprocessWorkouts(workouts, bodyweightLbs, weightData) {
         // the reps of the FIRST set at the top weight, which triggered +5 lbs
         // off an 8,6,5 session on a 6-8 range. Zero-rep sets are ignored for
         // the min; bodyweight (0-lb) exercises keep their old behavior.
-        let bestWeight = 0, bestReps = 0;
+        let bestWeight = 0, bestReps = 0, bestKg = 0;
         for (const s of workingSets) {
           const wLbs = Math.round((s.weight_kg || 0) * 2.20462);
           const r = s.reps || 0;
-          if (wLbs > bestWeight) { bestWeight = wLbs; bestReps = r; }
+          if (wLbs > bestWeight) { bestWeight = wLbs; bestReps = r; bestKg = s.weight_kg || 0; }
           else if (wLbs > 0 && wLbs === bestWeight && r > 0 && (bestReps === 0 || r < bestReps)) { bestReps = r; }
         }
         if (!exHistory[name]) exHistory[name] = { weights: [], dates: [], reps: [] };
         if (!exHistory[name].reps) exHistory[name].reps = []; // safety for older shapes
         exHistory[name].lastWeightLbs = bestWeight;
+        exHistory[name].lastWeightKg = bestKg; // v2.1
         exHistory[name].lastReps = bestReps;
         exHistory[name].lastDate = dateStr;
         exHistory[name].lastSets = workingSets.length;
@@ -3384,6 +3398,42 @@ function estimateWeightFromPeers(name) {
   return 0;
 }
 
+// ---- v2.1 progression ----
+// Double progression kept, with four changes drawn from the backtest:
+//  1. Rep band per lift follows what you actually do (bench at 2-4, not a
+//     table's 6-8), keeping the table's width.
+//  2. The next load is a step you have logged or the lift's own smallest
+//     step, never forced to 5 lb. A step over 10% of the load needs two
+//     reps past the band first (NSCA: 2-10% jumps).
+//  3. Time since the lift counts: after 21 days it repeats last time. It
+//     no longer asks for one more rep, or 5 lb more, after a six-week gap.
+//  4. A stall is not answered with an automatic deload (ignored 6 times
+//     in 10). The lift is flagged, leads its muscle's days so it gets
+//     practised more often, and a back-off is offered as a choice.
+let _sessionBackoffs = {}; // exercise name -> true when the back-off is chosen today
+
+function liftSteps(hist) {
+  const seen = {};
+  for (const w of (hist.weights || [])) { if (w > 0) seen[w] = true; }
+  return Object.keys(seen).map(Number).sort(function(a, b) { return a - b; });
+}
+
+function personalRepBand(hist, lo, hi) {
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - 180);
+  const cutStr = localDateStr(cutoff);
+  const reps = [];
+  for (let i = (hist.reps || []).length - 1; i >= 0 && reps.length < 6; i--) {
+    if (hist.dates[i] >= cutStr && hist.reps[i] > 0) reps.push(hist.reps[i]);
+  }
+  if (reps.length < 3) return { lo: lo, hi: hi, personal: false };
+  reps.sort(function(a, b) { return a - b; });
+  const mid = reps.length % 2 ? reps[(reps.length - 1) / 2] : (reps[reps.length / 2 - 1] + reps[reps.length / 2]) / 2;
+  const width = Math.max(1, hi - lo);
+  const nlo = Math.max(1, Math.round(mid - width / 2));
+  return { lo: nlo, hi: nlo + width, personal: nlo !== lo };
+}
+
 function prescribeExercise(name) {
   const db = EXERCISE_DB[name];
   const hist = exerciseHistory[name];
@@ -3393,84 +3443,109 @@ function prescribeExercise(name) {
   let weightLbs = db ? db.benchmarkLbs : 0;
   let note = db ? (db.note || '') : '';
 
-  // Parse the target rep range from EXERCISE_DB (e.g. "8-10" -> low=8, high=10)
   const repStr = String(db ? (db.reps || '8-10') : '8-10');
   const repParts = repStr.split('-');
   const repRangeLow = parseInt(repParts[0], 10) || 8;
   const repRangeHigh = repParts.length > 1 ? (parseInt(repParts[1], 10) || repRangeLow) : repRangeLow;
 
-  let isDeload = false;
+  const out = { sets: sets, reps: reps, weightLbs: weightLbs, note: note, deload: false, mode: 'new' };
+
   if (hist && hist.lastWeightLbs > 0) {
     const lastW = hist.lastWeightLbs;
     const lastR = hist.lastReps || repRangeLow;
     if (hist.lastSets >= 2 && hist.lastSets <= 6) sets = hist.lastSets;
 
-    // v1.39: stall detection. Double progression previously had no failure
-    // mode -- repeat the same weight and reps forever and the app keeps
-    // prescribing +1 rep. Rule (NSCA-aligned: repeated failed attempts at a
-    // target -> reduce load and rebuild): if the trailing run at the current
-    // weight spans >= 4 sessions and the gating rep count (min reps among
-    // top-weight sets) shows no net progress across the last 3 attempts,
-    // prescribe a ~10% deload (rounded to 5 lbs) and reset to the bottom of
-    // the rep range. Skipped for bodyweight/hold exercises.
+    const band = personalRepBand(hist, repRangeLow, repRangeHigh);
+    const lo = band.lo;
+    const hi = band.hi;
+
+    // Steps: the smallest gap between loads you have logged for this lift
+    const steps = liftSteps(hist);
+    let step = 5;
+    for (let i = 1; i < steps.length; i++) {
+      const g = steps[i] - steps[i - 1];
+      if (g > 0 && g < step) step = g;
+    }
+    if (step < 2) step = 2;
+    let nextUp = lastW + step;
+    const loggedUp = steps.find(function(w) { return w > lastW; });
+    if (loggedUp && loggedUp < nextUp) nextUp = loggedUp;
+    const jumpPct = (nextUp - lastW) / lastW;
+    const needReps = jumpPct > 0.10 ? hi + 2 : hi;
+    const lower = steps.filter(function(w) { return w < lastW && w >= lastW * 0.8; });
+    // One step lighter: a load you have logged within 20%, else about 10%
+    // off for heavier lifts. Light lifts with no logged lower load stay put
+    // (no invented dumbbell sizes).
+    let down = lower.length ? lower[lower.length - 1] : (lastW >= 50 ? Math.round((lastW * 0.9) / 5) * 5 : lastW);
+    if (down > lastW) down = lastW;
+
+    const gapDays = hist.lastDate
+      ? Math.max(0, Math.round((Date.now() - new Date(hist.lastDate + 'T12:00:00').getTime()) / (1000 * 60 * 60 * 24)))
+      : 0;
+
+    // Stall: 4+ sessions at this load inside 90 days with no rep gained
     let stalled = false;
-    if (note !== 'bodyweight' && note !== 'hold'
-        && Array.isArray(hist.weights) && Array.isArray(hist.reps)
-        && hist.weights.length >= 4 && hist.reps.length === hist.weights.length
-        && lastR < repRangeHigh) {
-      let runLen = 0;
-      for (let hi = hist.weights.length - 1; hi >= 0; hi--) {
-        if (hist.weights[hi] === lastW) runLen++;
+    let runLen = 0;
+    let runSpanDays = 0;
+    if (note !== 'bodyweight' && note !== 'hold' && Array.isArray(hist.reps) && hist.reps.length === hist.weights.length) {
+      const c90 = new Date();
+      c90.setDate(c90.getDate() - 90);
+      const c90Str = localDateStr(c90);
+      let firstDate = hist.lastDate;
+      for (let hi2 = hist.weights.length - 1; hi2 >= 0; hi2--) {
+        if (hist.weights[hi2] === lastW && hist.dates[hi2] >= c90Str) { runLen++; firstDate = hist.dates[hi2]; }
         else break;
       }
-      if (runLen >= 4) {
-        // "No net progress" = NO attempt in the last 3 sessions exceeded the
-        // baseline rep count. A single bad day after visible progress (e.g.
-        // 6,8,9,6) does NOT trigger a deload; a flat or declining run
-        // (7,7,7,7 or 4,4,3,3) does.
-        const rBase = hist.reps[hist.reps.length - 4];
-        const recentMax = Math.max(
-          hist.reps[hist.reps.length - 1],
-          hist.reps[hist.reps.length - 2],
-          hist.reps[hist.reps.length - 3]
-        );
+      if (runLen >= 4 && lastR < needReps) {
+        const k = hist.reps.length;
+        const rBase = hist.reps[k - 4];
+        const recentMax = Math.max(hist.reps[k - 1], hist.reps[k - 2], hist.reps[k - 3]);
         if (recentMax > 0 && rBase > 0 && recentMax <= rBase) stalled = true;
       }
+      runSpanDays = Math.round((new Date(hist.lastDate + 'T12:00:00') - new Date(firstDate + 'T12:00:00')) / (1000 * 60 * 60 * 24));
     }
 
-    // Double progression:
-    // Phase 1 -- same weight, +1 rep, until top of rep range is reached
-    // Phase 2 -- once top of rep range is hit, bump weight +5 lbs and reset to bottom of rep range
-    // Phase 0 (v1.39) -- stalled: deload ~10%, reset to bottom of rep range
-    if (stalled) {
-      let deloaded = Math.max(5, Math.round((lastW * 0.9) / 5) * 5);
-      if (deloaded >= lastW) deloaded = Math.max(5, lastW - 5);
-      weightLbs = deloaded;
-      reps = String(repRangeLow);
-      isDeload = true;
-    } else if (lastR >= repRangeHigh) {
-      // Hit the top of the rep range -- bump weight, reset to low end
-      weightLbs = lastW + 5;
-      reps = String(repRangeLow);
-    } else {
-      // Still within rep range -- hold weight, add one rep
-      weightLbs = lastW;
-      reps = String(lastR + 1);
+    let weight;
+    let target;
+    let mode;
+    // After a gap the lift repeats. The replay showed no case for stepping
+    // back: after 42+ days away you matched or beat the last load 86% of the
+    // time, and a repeat was met 54% of the time against 25% overall.
+    if (gapDays > 21) { weight = lastW; target = Math.max(1, Math.min(lastR, hi)); mode = 'repeat'; }
+    else if (lastR >= needReps) { weight = nextUp; target = lo; mode = 'up'; }
+    else { weight = lastW; target = Math.min(lastR + 1, needReps); mode = 'reps'; }
+
+    if (stalled && mode === 'reps') {
+      mode = 'stalled';
+      out.stalled = true;
+      if (down < lastW) out.backoff = { weightLbs: down, reps: hi };
+      out.stallRun = runLen;
+      out.stallEveryDays = runLen > 1 ? Math.round(runSpanDays / (runLen - 1)) : 0;
+      if (_sessionBackoffs[name] && down < lastW) { weight = down; target = hi; out.backoffOn = true; }
     }
 
+    out.sets = sets;
+    out.reps = String(target);
+    out.weightLbs = weight;
+    out.mode = mode;
+    out.band = [lo, hi];
+    out.gapDays = gapDays;
+    out.lastW = lastW;
+    // Holding a load: send back the exact kg you logged (a 28 kg bell stays 28 kg)
+    out.holdKg = (weight === lastW && hist.lastWeightKg > 0) ? hist.lastWeightKg : null;
   } else if (!db) {
     // No EXERCISE_DB entry and no history: estimate from peer exercises
-    weightLbs = estimateWeightFromPeers(name);
+    out.weightLbs = estimateWeightFromPeers(name);
+    if (out.weightLbs > 0) out.weightLbs = Math.round(out.weightLbs / 5) * 5;
   } else {
-    // Has EXERCISE_DB entry but no history: scale benchmark by user's strength in this muscle group
+    // Has EXERCISE_DB entry but no history: scale benchmark by your strength in this muscle group
     var estimated = estimateWeightFromPeers(name);
-    if (estimated > 0) weightLbs = estimated;
+    if (estimated > 0) out.weightLbs = estimated;
+    if (out.weightLbs > 0) out.weightLbs = Math.round(out.weightLbs / 5) * 5;
   }
 
-  if (note === 'bodyweight' || note === 'hold') weightLbs = 0;
-  // Final guard: ensure weight is always a multiple of 5
-  if (weightLbs > 0) weightLbs = Math.round(weightLbs / 5) * 5;
-  return { sets, reps, weightLbs, note, deload: isDeload };
+  if (note === 'bodyweight' || note === 'hold') out.weightLbs = 0;
+  return out;
 }
 
 function formatPrescription(p) {
@@ -3714,7 +3789,7 @@ function regionOf(muscleKey) {
 // Per-session edits made on the Today tab. Keys are slot ids ("quads#0").
 let _sessionSwaps = {};
 let _sessionSkips = {};
-function clearSessionEdits() { _sessionSwaps = {}; _sessionSkips = {}; }
+function clearSessionEdits() { _sessionSwaps = {}; _sessionSkips = {}; _sessionBackoffs = {}; }
 
 function liftCandidates(muscleKey, prefs) {
   const cutoff = new Date();
@@ -3730,7 +3805,9 @@ function liftCandidates(muscleKey, prefs) {
     const db = EXERCISE_DB[name];
     out.push({ name: name, uses: uses, last: h.lastDate || '', compound: db ? db.type === 'compound' : isLikelyCompound(name) });
   }
-  out.sort(function(a, b) { return (b.uses - a.uses) || b.last.localeCompare(a.last) || a.name.localeCompare(b.name); });
+  // v2.1: a stalled lift goes first, so it is practised whenever its muscle comes up
+  out.forEach(function(o) { o.stalled = !!prescribeExercise(o.name).stalled; });
+  out.sort(function(a, b) { return ((b.stalled ? 1 : 0) - (a.stalled ? 1 : 0)) || (b.uses - a.uses) || b.last.localeCompare(a.last) || a.name.localeCompare(b.name); });
   if (out.length === 0) {
     // Nothing logged for this muscle: fall back to the reference list
     const picks = MUSCLE_EXERCISE_PICKS[muscleKey] || [];
@@ -4157,8 +4234,9 @@ async function sendSessionToHevy() {
       // So we ceil the kg to 3dp to ensure the back-conversion lands on or above target.
       // e.g. 140 lbs: round gives 63.503 kg -> floor(139.999) = 139.99. WRONG.
       //               ceil  gives 63.504 kg -> floor(140.002) = 140.00. CORRECT.
-      var weightLbsRounded = p.weightLbs > 0 ? Math.ceil(p.weightLbs / 5) * 5 : 0;
-      var weightKg = weightLbsRounded > 0 ? Math.ceil((weightLbsRounded / 2.20462) * 1000) / 1000 : null;
+      // v2.1: loads are no longer forced to 5 lb; a held load goes back as the kg you logged
+      var weightLbsRounded = p.weightLbs > 0 ? p.weightLbs : 0;
+      var weightKg = p.holdKg ? p.holdKg : (weightLbsRounded > 0 ? Math.ceil((weightLbsRounded / 2.20462) * 1000) / 1000 : null);
 
       // Build sets array
       var sets = [];
@@ -4177,7 +4255,7 @@ async function sendSessionToHevy() {
       };
 
       var noteParts = [];
-      if (p.deload) noteParts.push('deload -10%'); // v1.39
+      if (p.backoffOn) noteParts.push('back-off'); // v2.1
       if (p.note === 'per hand' || p.note === 'per side') noteParts.push(p.note);
       if (noteParts.length > 0) exObj.notes = noteParts.join(' \u00b7 ');
 
@@ -4382,7 +4460,9 @@ function renderTimedSession(recs) {
   const optStyle = 'display:flex;justify-content:space-between;align-items:center;gap:12px;min-height:44px;padding:6px 0;border-top:1px solid ' + C.line + ';cursor:pointer;-webkit-tap-highlight-color:transparent;';
   for (let i = 0; i < exercises.length; i++) {
     const ex = exercises[i];
-    const isDeload = !!(ex.prescription && ex.prescription.deload);
+    const px = ex.prescription || {};
+    const isDeload = !!(px.stalled || px.backoffOn); // Resin: needs attention
+    const rxWord = px.backoffOn ? 'Back-off, ' : (px.stalled ? 'Stalled, ' : '');
     const nm = splitExName(ex.name);
     const rp = rxParts(ex.prescription);
     const rec = recMap[ex.muscle];
@@ -4391,8 +4471,21 @@ function renderTimedSession(recs) {
       '<div class="ex-sub">' + lastResultText(ex.name) + '</div></div>' +
       '<div class="ex-rx"><div><span class="ex-num" style="color:' + (isDeload ? C.resin : C.sapwood) + ';">' + rp.num + '</span>' +
       (rp.unit ? ' <span class="ex-unit">' + rp.unit + '</span>' : '') + '</div>' +
-      '<div class="ex-sub"' + (isDeload ? ' style="color:' + C.resin + ';"' : '') + '>' + (isDeload ? 'Deload, ' : '') + rp.sub + '</div></div></div>';
+      '<div class="ex-sub"' + (isDeload ? ' style="color:' + C.resin + ';"' : '') + '>' + rxWord + rp.sub + '</div></div></div>';
     let detail = '<div><span style="color:' + C.sapwood + ';">' + (MUSCLE_GROUPS[ex.muscle] ? MUSCLE_GROUPS[ex.muscle].name : '') + '.</span> ' + (rec ? rec.explainer : '') + '</div>';
+    // v2.1: say how the load was chosen
+    let how = '';
+    if (px.mode === 'up') how = 'Load goes up: every set reached ' + px.band[1] + ' last time. Start again at ' + px.reps + '.';
+    else if (px.mode === 'reps') how = 'Same load as last time. Aim for ' + px.reps + ' on every set (your range is ' + px.band[0] + ' to ' + px.band[1] + ').';
+    else if (px.mode === 'repeat') how = px.gapDays + ' days since you last did this, so it repeats last time.';
+    else if (px.mode === 'stalled') how = 'Stalled: ' + px.stallRun + ' sessions at ' + px.lastW + ' lb without adding a rep' + (px.stallEveryDays > 0 ? ', about one every ' + px.stallEveryDays + ' days' : '') + '. It now leads this muscle\u2019s days so you practise it more often.';
+    else if (px.mode === 'new') how = 'No history for this lift, so the load is an estimate.';
+    if (how) detail += '<div style="margin-top:8px;">' + how + '</div>';
+    if (px.stalled && px.backoff) {
+      detail += '<div role="button" tabindex="0" style="' + optStyle + 'margin-top:12px;" onclick="toggleBackoff(' + i + ')"><span style="color:' + C.sapwood + ';font-size:15px;">' +
+        (px.backoffOn ? 'Go back to ' + px.lastW + ' lb' : 'Use a back-off today') + '</span><span style="text-align:right;flex-shrink:0;">' +
+        (px.backoffOn ? '' : px.backoff.weightLbs + ' lb \u00d7 ' + px.backoff.reps) + '</span></div>';
+    }
     if (ex.alts.length > 0) {
       detail += '<div style="margin-top:12px;color:' + C.sapwood + ';">Swap for</div>';
       for (let j = 0; j < ex.alts.length; j++) {
@@ -4445,6 +4538,14 @@ function skipLift(i) {
   if (!ex) return;
   _sessionSkips[ex.slotKey] = true;
   delete _sessionSwaps[ex.slotKey];
+  hapticTick();
+  rerenderSession();
+}
+function toggleBackoff(i) {
+  var ex = _lastBuiltSession && _lastBuiltSession.exercises[i];
+  if (!ex) return;
+  if (_sessionBackoffs[ex.name]) delete _sessionBackoffs[ex.name];
+  else _sessionBackoffs[ex.name] = true;
   hapticTick();
   rerenderSession();
 }
@@ -7086,7 +7187,7 @@ function renderDashboard(workouts, opts) {
   const syncColor = (hevyStatus === 'error' || healthStatus === 'missing') ? C.ember
     : (healthStatus === 'stale') ? C.resin : C.lichen; // v1.43
   document.getElementById('last-updated').innerHTML =
-    `v2.0, ${now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }).replace(/\u202f/g, ' ')} <span id="sync-dot" style="display:inline-block;width:6px;height:6px;border-radius:50%;background:${syncColor};margin-left:4px;vertical-align:middle;position:relative;top:-1px;"></span>`;
+    `v2.1, ${now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }).replace(/\u202f/g, ' ')} <span id="sync-dot" style="display:inline-block;width:6px;height:6px;border-radius:50%;background:${syncColor};margin-left:4px;vertical-align:middle;position:relative;top:-1px;"></span>`;
 
   // Populate globals BEFORE renderTimedSession so lifted-today detection works
   heatmapDayWorkouts = pp.heatmapDayWorkouts || {};

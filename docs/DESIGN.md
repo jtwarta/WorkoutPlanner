@@ -355,6 +355,12 @@ why ("Legs. Quads are 14 days out."). Settings are two quiet toggles ("4
 lifts", "Gym"). Send to Hevy stays the one filled button and must sit on the
 first screen at the default lift count.
 
+**Lift row states (v2.1).** "Deload" is retired. A stalled lift shows its
+prescription in Resin with "Stalled, 3 x 4"; with the back-off chosen it
+reads "Back-off, 3 x 4". The explainer gains one sentence on how the load
+was chosen, and for a stalled lift a 44 px option row, "Use a back-off
+today" with the load in caption, which toggles to "Go back to 185 lb".
+
 **Inline input (v1.49).** One number, entered in place. A quiet text button
 ("Add a weigh-in") swaps for the field: Newsreader 24 in Sapwood, no box, a
 1 px Line rule under it, unit in caption after it, then quiet "Cancel" and

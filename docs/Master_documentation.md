@@ -1,6 +1,6 @@
 # LiftScript — Master Documentation
 
-**Version: v2.0** · **Reconstructed July 10, 2026 · updated to v2.0 November 19, 2026**
+**Version: v2.1** · **Reconstructed July 10, 2026 · updated to v2.1 November 20, 2026**
 
 > **Provenance note:** the original `Master_documentation.md` (last at v1.34 +
 > pending v1.35–v1.39 deltas) was deleted from the project before patching. This
@@ -20,6 +20,9 @@
 >
 > **v1.42 update (Oct 11, 2026):** chart time-domain fix. Touches §2, §23,
 > §28 (#25), §29.
+>
+> **v2.1 update (Nov 20, 2026):** progression. §9 is rewritten; also touches
+> §26 (exact loads on send), §29, Appendix.
 >
 > **v2.0 update (Nov 19, 2026):** right-sized planner, second phase of the v2
 > plan. Changes what is prescribed. §13 and §14 are rewritten; also touches
@@ -219,28 +222,43 @@ window.
 
 ## 9. Exercise Prescription & Double Progression
 
-`prescribeExercise(name)`:
-- Defaults from `EXERCISE_DB` (sets, rep range, benchmark lbs, note, rest).
-- With history: sets from `lastSets` (clamped 2–6); then
-  **double progression** — if gating reps ≥ rep-range ceiling: +5 lbs, reset
-  to range bottom; otherwise hold weight, +1 rep. The v1.33 gate requires
-  ALL working sets at the top weight to hit the ceiling (lastReps = min reps
-  among heaviest-weight sets); degrades to a top-set gate for pyramid
-  logging.
-- **v1.39 stall detection → deload:** if the trailing run at the current
-  weight spans ≥ 4 sessions and no attempt in the last 3 sessions exceeded
-  the baseline gating rep count (`max(reps[-3:]) <= reps[-4]`) while still
-  below the rep ceiling, prescribe a ~10% deload (rounded to 5 lbs,
-  guaranteed below the stalled weight, floor 5 lbs) with reps reset to the
-  range bottom. A single bad day after progress (6,8,9,6) does NOT trigger;
-  flat (7,7,7,7) or declining (4,4,3,3) runs do. Skipped for
-  bodyweight/hold exercises. Prescriptions carry a `deload` flag → amber
-  DELOAD chip on the Today tab + `deload -10%` in the Hevy exercise notes.
+`prescribeExercise(name)` (v2.1). With history (a logged load above zero):
+- **Sets:** from the last session, clamped 2 to 6.
+- **Rep band** (`personalRepBand`): median gating reps of the last 6 sessions
+  inside 180 days, keeping the `EXERCISE_DB` band's width (bench: table 6-8,
+  personal 2-4). Under 3 such sessions the table band applies. Gating reps =
+  fewest reps among the heaviest sets (v1.33).
+- **Steps** (`liftSteps`): the distinct loads logged for the lift. Step size =
+  smallest gap between them (default 5, floor 2). Next load up = the next
+  logged load if it is closer than one step, else last + step. If that jump
+  is over 10% of the load, two reps past the band are required first.
+- **Rule, in order:**
+  1. Over 21 days since the lift: **repeat** the last load, target = last
+     reps capped at the band top.
+  2. Every set reached the required reps: **up** one step, target = band
+     bottom.
+  3. Otherwise **reps**: same load, last reps + 1.
+- **Stall:** 4 or more sessions at the current load inside 90 days with no
+  rep gained (`max(reps[-3:]) <= reps[-4]`), while in case 3. No automatic
+  deload. The prescription holds, carries `stalled`, `stallRun`,
+  `stallEveryDays` and, when a lighter load exists, `backoff` (a logged load
+  within 20%, else about 10% off for lifts of 50 lb or more) at the band top.
+  `liftCandidates` ranks a stalled lift first for its muscle. The Today
+  detail offers "Use a back-off today" (`_sessionBackoffs`, cleared with the
+  other session edits); chosen, it sends the note `back-off`.
+- **Exact loads:** nothing is rounded to 5 lb when history exists (a 62 lb
+  kettlebell stays 62). `holdKg` carries the logged kg when the load is held.
+- Each prescription records `mode` (`up`, `reps`, `repeat`, `stalled`, `new`),
+  `band`, `gapDays`, `lastW`; the Today detail turns `mode` into a sentence.
+- `deload` is always false since v2.1 (field kept for old callers).
+- Why: on a replay of 215 lift occurrences the v1.39 rules were met 25% of
+  the time; +5 lb was a median 11% jump; 6 of 10 deloads were ignored. A
+  step-back after long gaps was tried and dropped: after 42+ days away Jon
+  matched or beat the last load 86% of the time.
 - No history: `estimateWeightFromPeers` scales the DB benchmark by the
-  user's average strength ratio in that muscle group (isolation ratio capped
-  1.5×, compound 2.0× — prevents cross-exercise ratio inflation); exercises
-  absent from the DB start at 80% of the median same-type logged weight.
-- Final guards: bodyweight/hold notes force 0 lbs; weights rounded to 5 lbs.
+  average strength ratio in that muscle group (isolation ratio capped 1.5x,
+  compound 2.0x); exercises absent from the DB start at 80% of the median
+  same-type logged weight; rounded to 5 lb. Bodyweight/hold notes force 0.
 
 Rest periods (`getRestSeconds`, evidence: Schoenfeld 2016, de Salles 2009,
 Singer 2024): 180 s heavy barbell compounds; 120 s moderate compounds; 90 s
@@ -562,9 +580,11 @@ recovered. Everything technical they may have covered is folded into
   Verified July 2026: no fuzzy false-positive risk exists for the override
   names in the current 473-template library. Unresolvable exercises are
   dropped at send time with a toast note.
-- Sets: prescribed rep count (low end if a range), `type: 'normal'`, kg
-  ceiling per the §5 truncation quirk, per-exercise `rest_seconds`. Notes
-  field: `deload -10%` (v1.39) and/or `per hand`/`per side`.
+- Sets: prescribed rep count (low end if a range), `type: 'normal'`,
+  per-exercise `rest_seconds`. Weight (v2.1): the logged kg when the load is
+  held (`holdKg`), otherwise the prescribed lb converted with the kg ceiling
+  per the §5 truncation quirk; no 5 lb rounding. Notes field: `back-off`
+  (v2.1) and/or `per hand`/`per side`.
 
 ## 27. iOS Shortcut: HealthKit Export Behavior
 
@@ -663,6 +683,7 @@ cross-references.
 
 | Version | Key changes |
 |---|---|
+| v2.1 | Progression: personal rep bands; loads step through logged weights with jumps held under 10%; repeat after a 21-day gap; stalls flagged with an optional back-off instead of an automatic deload, and the stalled lift leads its muscle; exact loads sent to Hevy |
 | v2.0 | Right-sized planner: N-lift sessions by region from your own lift history; personal weekly targets and gaps; fitted session time; Today rebuilt with last result, swap and skip, Send on the first screen; Strength Index restricted to barbell lifts; old builder, ranker, focus modes and Big 5 cap removed |
 | v1.49 | Reliability: incremental `/workouts/events` sync on every open; cached paint from a local health copy; state-preserving background re-render; visible error line; weigh-in entry; dead code removed (Redwood helpers, tier emblems, unused `muscle1RMs`, `toggleSectionExplainer`); dev test A4 fixed. Engine output identical to v1.48 (14 replay dates x 18 setting combinations) |
 | v1.48 | 2026-08-02 measurements embedded in `MEASUREMENTS_BASELINE`; undated Apple Health waist no longer overrides newer manual entries in the waist sparkline or Body Comp timeline (§28 #26) |
@@ -766,3 +787,10 @@ cross-references.
   document's 60% exact-match target was not met: half the logged sessions
   mix regions and near-identical variants (bench vs incline bench) count as
   misses. Judge v2.0 on live use.
+- v2.1 (Nov 2026), same replay (215 lift occurrences, 183 days): at the
+  prescribed load with reps met 36% (was 25%); reps missed 22% (27%); went
+  heavier 25% (21%); went lighter 17% (27%). Prescribed jumps: 22 (was 59),
+  median 4.4% of the load (was 11.1%), taken 32%, landed 9%. The plan's
+  targets (45% met, 50% of jumps landed) were not reached. The replay
+  compares against behaviour shaped by the old prescriptions, so the next
+  check is live use, not more tuning.
