@@ -1,6 +1,6 @@
 # LiftScript — Master Documentation
 
-**Version: v2.1** · **Reconstructed July 10, 2026 · updated to v2.1 November 20, 2026**
+**Version: v2.1a** · **Reconstructed July 10, 2026 · updated to v2.1a November 20, 2026**
 
 > **Provenance note:** the original `Master_documentation.md` (last at v1.34 +
 > pending v1.35–v1.39 deltas) was deleted from the project before patching. This
@@ -683,6 +683,7 @@ cross-references.
 
 | Version | Key changes |
 |---|---|
+| v2.1a | Phone layout: `.app` top padding = safe-area inset + 14 px (the wordmark sat on the inset edge and was blurred by the status bar); bottom padding 120 px to 16 px + inset; lift rows 64 px; Send margin 20 px. Found from a device screenshot: the headless render reports zero insets, so check layout with insets simulated (59 top, 34 bottom) |
 | v2.1 | Progression: personal rep bands; loads step through logged weights with jumps held under 10%; repeat after a 21-day gap; stalls flagged with an optional back-off instead of an automatic deload, and the stalled lift leads its muscle; exact loads sent to Hevy |
 | v2.0 | Right-sized planner: N-lift sessions by region from your own lift history; personal weekly targets and gaps; fitted session time; Today rebuilt with last result, swap and skip, Send on the first screen; Strength Index restricted to barbell lifts; old builder, ranker, focus modes and Big 5 cap removed |
 | v1.49 | Reliability: incremental `/workouts/events` sync on every open; cached paint from a local health copy; state-preserving background re-render; visible error line; weigh-in entry; dead code removed (Redwood helpers, tier emblems, unused `muscle1RMs`, `toggleSectionExplainer`); dev test A4 fixed. Engine output identical to v1.48 (14 replay dates x 18 setting combinations) |

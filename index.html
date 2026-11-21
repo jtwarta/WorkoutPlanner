@@ -1,7 +1,14 @@
 <!DOCTYPE html>
 
 <!--
-  LiftScript v2.1
+  LiftScript v2.1a
+  Changes from v2.1 (v2.1a - layout on the phone):
+  - 14px more space under the status bar; the wordmark was being blurred by
+    the status bar edge.
+  - Bottom padding 120px -> 16px and taller lift rows (64px), so a four-lift
+    Today with one cardio item fills the screen without a blank band below
+    it or an empty scroll.
+
   Changes from v2.0 (v2.1 - progression; changes loads and rep targets):
   - Rep band per lift follows your recent sessions (median of the last 6 in
     180 days, table width kept); the table band applies under 3 sessions.
@@ -446,7 +453,8 @@ font-variant-numeric: tabular-nums;
 .app {
 max-width: 480px;
 margin: 0 auto;
-padding: max(20px, env(safe-area-inset-top)) max(22px, env(safe-area-inset-right)) calc(120px + env(safe-area-inset-bottom)) max(22px, env(safe-area-inset-left));
+/* v2.1a: 14px of air under the status bar (the wordmark sat on the inset edge and was blurred by it); bottom padding 120 -> 16 (nothing floats there any more) */
+padding: calc(max(20px, env(safe-area-inset-top)) + 14px) max(22px, env(safe-area-inset-right)) calc(16px + env(safe-area-inset-bottom)) max(22px, env(safe-area-inset-left));
 background: #17120F;
 }
 
@@ -660,7 +668,7 @@ cursor: pointer; -webkit-tap-highlight-color: transparent;
 }
 .ex-row {
 display: flex; align-items: center; justify-content: space-between; gap: 12px;
-min-height: 56px; padding: 6px 0 6px 12px; border: none; border-left: 2px solid transparent;
+min-height: 64px; padding: 10px 0 10px 12px; border: none; border-left: 2px solid transparent; /* v2.1a: taller rows; four lifts now fill the first screen */
 }
 .ex-main { flex: 1; min-width: 0; }
 .ex-name { font-family: -apple-system, system-ui, sans-serif; font-size: 17px; font-weight: 500; line-height: 1.3; color: #EAD7BC; }
@@ -944,7 +952,7 @@ margin-top: 4px;
     <div class="header">
       <div class="hdr-id">
         <h1>LiftScript</h1>
-        <div class="subtitle" id="last-updated">v2.1</div>
+        <div class="subtitle" id="last-updated">v2.1a</div>
       </div>
       <button id="header-refresh-btn" class="hdr-btn" onclick="refreshData()" title="Refresh data" aria-label="Refresh data from Hevy and health">
         <svg width="17" height="17" viewBox="0 0 16 16" fill="none" style="display:block;">
@@ -4504,7 +4512,7 @@ function renderTimedSession(recs) {
   }
   // The one filled button in the app (DESIGN.md s8)
   if (exercises.length > 0) {
-    exHtml += '<div id="send-row" class="td-in" style="margin-top:16px;"><button id="send-to-hevy-btn" class="send-btn" onclick="sendSessionToHevy()">Send to Hevy</button></div>';
+    exHtml += '<div id="send-row" class="td-in" style="margin-top:20px;"><button id="send-to-hevy-btn" class="send-btn" onclick="sendSessionToHevy()">Send to Hevy</button></div>';
   }
   exContainer.innerHTML = exHtml;
 }
@@ -7187,7 +7195,7 @@ function renderDashboard(workouts, opts) {
   const syncColor = (hevyStatus === 'error' || healthStatus === 'missing') ? C.ember
     : (healthStatus === 'stale') ? C.resin : C.lichen; // v1.43
   document.getElementById('last-updated').innerHTML =
-    `v2.1, ${now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }).replace(/\u202f/g, ' ')} <span id="sync-dot" style="display:inline-block;width:6px;height:6px;border-radius:50%;background:${syncColor};margin-left:4px;vertical-align:middle;position:relative;top:-1px;"></span>`;
+    `v2.1a, ${now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }).replace(/\u202f/g, ' ')} <span id="sync-dot" style="display:inline-block;width:6px;height:6px;border-radius:50%;background:${syncColor};margin-left:4px;vertical-align:middle;position:relative;top:-1px;"></span>`;
 
   // Populate globals BEFORE renderTimedSession so lifted-today detection works
   heatmapDayWorkouts = pp.heatmapDayWorkouts || {};

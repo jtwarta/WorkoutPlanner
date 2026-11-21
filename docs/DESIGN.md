@@ -117,7 +117,10 @@ numbers in caption size, Ash ("145 lb").
 
 - 4 pt grid. Steps: 4, 8, 12, 16, 22, 32, 48.
 - Page gutter 22. Content width 349 at 393.
-- Rows: min height 56 (exercise, muscle), 44 (settings, vitals). Every tap
+- Page padding (v2.1a): top = safe-area inset + 14, so nothing sits on the
+  status bar edge; bottom = safe-area inset + 16. Review layouts with the
+  insets simulated (59 top, 34 bottom); the render harness reports zero.
+- Rows: min height 64 (lift rows on Today, v2.1a), 56 (muscle), 44 (settings, vitals). Every tap
   target is at least 44 x 44.
 - Radii: 6 (buttons, toggles, tooltip, heatmap cells 3), 12 (sheets), 999
   (bar ends).
