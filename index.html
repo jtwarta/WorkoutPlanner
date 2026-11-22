@@ -1,7 +1,13 @@
 <!DOCTYPE html>
 
 <!--
-  LiftScript v2.1a
+  LiftScript v2.1b
+  Changes from v2.1a (v2.1b - Strength Index proxies):
+  - Squat slot can be fed by Leg Press (Machine) at half its estimated
+    1RM; deadlift slot by Romanian Deadlift (Barbell) one for one. The best
+    of real and proxy inside the 183-day window is used; a proxy shows as
+    "Estimated" with its source.
+
   Changes from v2.1 (v2.1a - layout on the phone):
   - 14px more space under the status bar; the wordmark was being blurred by
     the status bar edge.
@@ -952,7 +958,7 @@ margin-top: 4px;
     <div class="header">
       <div class="hdr-id">
         <h1>LiftScript</h1>
-        <div class="subtitle" id="last-updated">v2.1a</div>
+        <div class="subtitle" id="last-updated">v2.1b</div>
       </div>
       <button id="header-refresh-btn" class="hdr-btn" onclick="refreshData()" title="Refresh data" aria-label="Refresh data from Hevy and health">
         <svg width="17" height="17" viewBox="0 0 16 16" fill="none" style="display:block;">
@@ -2224,8 +2230,16 @@ async function syncWorkoutEvents(cached) {
 // overhead press and row.
 const STRENGTH_INDEX_LIFTS = {
   bench:    { weight: 0.20, p50: 0.95, patterns: [/^bench press \(barbell\)$/i, /^bench press$/i] },
-  squat:    { weight: 0.25, p50: 1.20, patterns: [/^squat \(barbell\)$/i, /^back squat( \(barbell\))?$/i, /^squat$/i] },
-  deadlift: { weight: 0.30, p50: 1.45, patterns: [/^deadlift \(barbell\)$/i, /^deadlift \(trap bar\)$/i, /^deadlift$/i] },
+  // v2.1b: proxies. Barbell squats are kept light on purpose (lower back),
+  // so the squat slot may also be fed by the leg press, counted at half
+  // (a cautious rule of thumb; Jon's own squat ran 0.47 of his leg press
+  // while held back). The deadlift slot may be fed by the barbell Romanian
+  // deadlift, counted one for one, which understates a conventional pull.
+  // A proxy is always labelled "Estimated" on screen.
+  squat:    { weight: 0.25, p50: 1.20, patterns: [/^squat \(barbell\)$/i, /^back squat( \(barbell\))?$/i, /^squat$/i],
+              proxies: [{ pattern: /^leg press( \(machine\))?$/i, factor: 0.5 }] },
+  deadlift: { weight: 0.30, p50: 1.45, patterns: [/^deadlift \(barbell\)$/i, /^deadlift \(trap bar\)$/i, /^deadlift$/i],
+              proxies: [{ pattern: /^romanian deadlift \(barbell\)$/i, factor: 1.0 }] },
   ohp:      { weight: 0.10, p50: 0.55, patterns: [/^(overhead|military|standing military|shoulder) press \(barbell\)$/i, /^overhead press$/i] },
   row:      { weight: 0.15, p50: 0.70, patterns: [/^(bent over|pendlay|barbell) row( \(barbell\))?$/i] },
 };
@@ -2459,15 +2473,16 @@ function preprocessWorkouts(workouts, bodyweightLbs, weightData) {
       // datapoint below windows over the trailing 183 days.
       for (const [liftKey, liftDef] of Object.entries(STRENGTH_INDEX_LIFTS)) {
         const matched = liftDef.patterns.some(p => p.test(name));
-        if (!matched) continue;
+        const proxy = matched ? null : ((liftDef.proxies || []).find(q => q.pattern.test(name)) || null); // v2.1b
+        if (!matched && !proxy) continue;
         for (const s of workingSets) {
           const wLbs = (s.weight_kg || 0) * 2.20462;
           const reps = s.reps || 0;
           if (wLbs <= 0 || reps <= 0) continue;
-          const est = estimate1RM(wLbs, reps);
+          const est = estimate1RM(wLbs, reps) * (proxy ? proxy.factor : 1);
           const prevBest = siWorkoutBest[liftKey];
           if (!prevBest || est > prevBest.est) {
-            siWorkoutBest[liftKey] = { est: est, src: { ex: name, wt: Math.round(wLbs), reps: reps, date: dateStr } };
+            siWorkoutBest[liftKey] = { est: est, src: { ex: name, wt: Math.round(wLbs), reps: reps, date: dateStr, proxy: proxy ? proxy.factor : 0 } };
           }
         }
       }
@@ -5681,7 +5696,8 @@ function populateStrengthDetail() {
     const pr = _prs[key];
     const isAtPR = pr && currentRM >= pr.rm;
     const tr = _trends[key];
-    let capLeft = hasData ? pctile + 'th percentile' : 'No data';
+    const isProxy = !!(hasData && lift.src && lift.src.proxy);
+    let capLeft = hasData ? (isProxy ? 'Estimated, ' : '') + pctile + 'th percentile' : 'No data';
     if (tr && tr.diff !== 0) {
       capLeft += ', ' + (tr.diff > 0 ? 'up ' + tr.diff : '<span style="color:' + C.resin + ';">down ' + (-tr.diff) + '</span>') + ' lb in 30 days';
     }
@@ -5692,7 +5708,9 @@ function populateStrengthDetail() {
     if (hasData && lift.src) {
       const s = lift.src;
       const srcDateStr = new Date(s.date + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-      srcHtml = '<div data-si-src style="display:none;"><div class="ex-sub" style="padding-top:6px;">via ' + s.ex + ', ' + s.reps + ' at ' + s.wt + ' lb, ' + srcDateStr + '</div></div>';
+      srcHtml = '<div data-si-src style="display:none;"><div class="ex-sub" style="padding-top:6px;">' +
+        (s.proxy ? 'Estimated from ' + s.ex + ', ' + s.reps + ' at ' + s.wt + ' lb, ' + srcDateStr + (s.proxy === 1 ? ', counted one for one.' : ', counted at ' + Math.round(s.proxy * 100) + '%.') + ' Not a tested lift.'
+                 : 'via ' + s.ex + ', ' + s.reps + ' at ' + s.wt + ' lb, ' + srcDateStr) + '</div></div>';
     }
     html += '<div class="si-row td-in" onclick="toggleSISrc(this)">' +
       '<div class="vt-line"><div class="mu-main"><div class="ex-name">' + info.label + '</div><div class="ex-sub">' + capLeft + '</div></div>' +
@@ -7195,7 +7213,7 @@ function renderDashboard(workouts, opts) {
   const syncColor = (hevyStatus === 'error' || healthStatus === 'missing') ? C.ember
     : (healthStatus === 'stale') ? C.resin : C.lichen; // v1.43
   document.getElementById('last-updated').innerHTML =
-    `v2.1a, ${now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }).replace(/\u202f/g, ' ')} <span id="sync-dot" style="display:inline-block;width:6px;height:6px;border-radius:50%;background:${syncColor};margin-left:4px;vertical-align:middle;position:relative;top:-1px;"></span>`;
+    `v2.1b, ${now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }).replace(/\u202f/g, ' ')} <span id="sync-dot" style="display:inline-block;width:6px;height:6px;border-radius:50%;background:${syncColor};margin-left:4px;vertical-align:middle;position:relative;top:-1px;"></span>`;
 
   // Populate globals BEFORE renderTimedSession so lifted-today detection works
   heatmapDayWorkouts = pp.heatmapDayWorkouts || {};

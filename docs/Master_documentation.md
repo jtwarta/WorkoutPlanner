@@ -1,6 +1,6 @@
 # LiftScript — Master Documentation
 
-**Version: v2.1a** · **Reconstructed July 10, 2026 · updated to v2.1a November 20, 2026**
+**Version: v2.1b** · **Reconstructed July 10, 2026 · updated to v2.1b November 22, 2026**
 
 > **Provenance note:** the original `Master_documentation.md` (last at v1.34 +
 > pending v1.35–v1.39 deltas) was deleted from the project before patching. This
@@ -300,6 +300,16 @@ minute caps are gone; sessions are sized in lifts (§14).
   row slots by machine, cable and dumbbell lifts (SI 1.21 with them, 1.10
   without, same data). Lifts with no qualifying set in 183 days show "No
   data" and the weights re-normalize.
+- **Proxies (v2.1b, Jon's decision Nov 22, 2026):** he keeps barbell squats
+  light to protect his lower back and is moving to the leg press, so the
+  squat slot may be fed by Leg Press (Machine) at 0.5 x its estimated 1RM,
+  and the deadlift slot by Romanian Deadlift (Barbell) at 1.0 x. Each slot
+  takes the best of real and proxy events in the 183-day window. Proxies
+  show "Estimated" and name their source in the row detail. The 0.5 factor
+  is a cautious rule of thumb, not a validated conversion (his own squat ran
+  0.47 of his leg press while held back; textbook ratios applied to his RDL
+  would imply a squat near 300 lb). SI on Nov 22: 1.17 with the RDL proxy;
+  1.21 once a leg press at the Feb 2026 level (240 x 10) is logged.
 
 ## 11. Exercise Classification
 
@@ -683,6 +693,7 @@ cross-references.
 
 | Version | Key changes |
 |---|---|
+| v2.1b | Strength Index proxies: leg press (x0.5) may feed the squat slot and barbell Romanian deadlift (x1.0) the deadlift slot, labelled Estimated |
 | v2.1a | Phone layout: `.app` top padding = safe-area inset + 14 px (the wordmark sat on the inset edge and was blurred by the status bar); bottom padding 120 px to 16 px + inset; lift rows 64 px; Send margin 20 px. Found from a device screenshot: the headless render reports zero insets, so check layout with insets simulated (59 top, 34 bottom) |
 | v2.1 | Progression: personal rep bands; loads step through logged weights with jumps held under 10%; repeat after a 21-day gap; stalls flagged with an optional back-off instead of an automatic deload, and the stalled lift leads its muscle; exact loads sent to Hevy |
 | v2.0 | Right-sized planner: N-lift sessions by region from your own lift history; personal weekly targets and gaps; fitted session time; Today rebuilt with last result, swap and skip, Send on the first screen; Strength Index restricted to barbell lifts; old builder, ranker, focus modes and Big 5 cap removed |
