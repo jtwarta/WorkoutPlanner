@@ -1,7 +1,10 @@
 <!DOCTYPE html>
 
 <!--
-  LiftScript v2.1b
+  LiftScript v2.1c
+  Changes from v2.1b (v2.1c): Seated Shoulder Press (Machine) may feed the
+  Strength Index OHP slot one for one, labelled Estimated.
+
   Changes from v2.1a (v2.1b - Strength Index proxies):
   - Squat slot can be fed by Leg Press (Machine) at half its estimated
     1RM; deadlift slot by Romanian Deadlift (Barbell) one for one. The best
@@ -958,7 +961,7 @@ margin-top: 4px;
     <div class="header">
       <div class="hdr-id">
         <h1>LiftScript</h1>
-        <div class="subtitle" id="last-updated">v2.1b</div>
+        <div class="subtitle" id="last-updated">v2.1c</div>
       </div>
       <button id="header-refresh-btn" class="hdr-btn" onclick="refreshData()" title="Refresh data" aria-label="Refresh data from Hevy and health">
         <svg width="17" height="17" viewBox="0 0 16 16" fill="none" style="display:block;">
@@ -2240,7 +2243,11 @@ const STRENGTH_INDEX_LIFTS = {
               proxies: [{ pattern: /^leg press( \(machine\))?$/i, factor: 0.5 }] },
   deadlift: { weight: 0.30, p50: 1.45, patterns: [/^deadlift \(barbell\)$/i, /^deadlift \(trap bar\)$/i, /^deadlift$/i],
               proxies: [{ pattern: /^romanian deadlift \(barbell\)$/i, factor: 1.0 }] },
-  ohp:      { weight: 0.10, p50: 0.55, patterns: [/^(overhead|military|standing military|shoulder) press \(barbell\)$/i, /^overhead press$/i] },
+  // v2.1c: the seated machine press may feed the OHP slot one for one. In
+  // early 2026, when both were trained, the machine ran 112 against 108 on
+  // the barbell.
+  ohp:      { weight: 0.10, p50: 0.55, patterns: [/^(overhead|military|standing military|shoulder) press \(barbell\)$/i, /^overhead press$/i],
+              proxies: [{ pattern: /^seated shoulder press \(machine\)$/i, factor: 1.0 }] },
   row:      { weight: 0.15, p50: 0.70, patterns: [/^(bent over|pendlay|barbell) row( \(barbell\))?$/i] },
 };
 
@@ -7213,7 +7220,7 @@ function renderDashboard(workouts, opts) {
   const syncColor = (hevyStatus === 'error' || healthStatus === 'missing') ? C.ember
     : (healthStatus === 'stale') ? C.resin : C.lichen; // v1.43
   document.getElementById('last-updated').innerHTML =
-    `v2.1b, ${now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }).replace(/\u202f/g, ' ')} <span id="sync-dot" style="display:inline-block;width:6px;height:6px;border-radius:50%;background:${syncColor};margin-left:4px;vertical-align:middle;position:relative;top:-1px;"></span>`;
+    `v2.1c, ${now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }).replace(/\u202f/g, ' ')} <span id="sync-dot" style="display:inline-block;width:6px;height:6px;border-radius:50%;background:${syncColor};margin-left:4px;vertical-align:middle;position:relative;top:-1px;"></span>`;
 
   // Populate globals BEFORE renderTimedSession so lifted-today detection works
   heatmapDayWorkouts = pp.heatmapDayWorkouts || {};

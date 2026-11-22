@@ -1,6 +1,6 @@
 # LiftScript — Master Documentation
 
-**Version: v2.1b** · **Reconstructed July 10, 2026 · updated to v2.1b November 22, 2026**
+**Version: v2.1c** · **Reconstructed July 10, 2026 · updated to v2.1c November 22, 2026**
 
 > **Provenance note:** the original `Master_documentation.md` (last at v1.34 +
 > pending v1.35–v1.39 deltas) was deleted from the project before patching. This
@@ -310,6 +310,10 @@ minute caps are gone; sessions are sized in lifts (§14).
   0.47 of his leg press while held back; textbook ratios applied to his RDL
   would imply a squat near 300 lb). SI on Nov 22: 1.17 with the RDL proxy;
   1.21 once a leg press at the Feb 2026 level (240 x 10) is logged.
+  **v2.1c:** Seated Shoulder Press (Machine) feeds the OHP slot at 1.0 x. In
+  the first half of 2026, when both were trained, the machine's median
+  estimated 1RM was 112 against 108 on the barbell, so one for one is
+  supported by his own data. SI on Nov 22 with the RDL and machine-press proxies: 1.21.
 
 ## 11. Exercise Classification
 
@@ -693,6 +697,7 @@ cross-references.
 
 | Version | Key changes |
 |---|---|
+| v2.1c | Seated machine shoulder press (x1.0) may feed the Strength Index OHP slot, labelled Estimated |
 | v2.1b | Strength Index proxies: leg press (x0.5) may feed the squat slot and barbell Romanian deadlift (x1.0) the deadlift slot, labelled Estimated |
 | v2.1a | Phone layout: `.app` top padding = safe-area inset + 14 px (the wordmark sat on the inset edge and was blurred by the status bar); bottom padding 120 px to 16 px + inset; lift rows 64 px; Send margin 20 px. Found from a device screenshot: the headless render reports zero insets, so check layout with insets simulated (59 top, 34 bottom) |
 | v2.1 | Progression: personal rep bands; loads step through logged weights with jumps held under 10%; repeat after a 21-day gap; stalls flagged with an optional back-off instead of an automatic deload, and the stalled lift leads its muscle; exact loads sent to Hevy |
