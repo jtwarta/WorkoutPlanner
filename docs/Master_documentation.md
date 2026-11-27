@@ -1,6 +1,6 @@
 # LiftScript — Master Documentation
 
-**Version: v2.1c** · **Reconstructed July 10, 2026 · updated to v2.1c November 22, 2026**
+**Version: v2.1d** · **Reconstructed July 10, 2026 · updated to v2.1d November 27, 2026**
 
 > **Provenance note:** the original `Master_documentation.md` (last at v1.34 +
 > pending v1.35–v1.39 deltas) was deleted from the project before patching. This
@@ -386,8 +386,13 @@ only, not for picking lifts. `COMPOUND_ANCHORS` was removed in v2.0.
 `buildTimedSession(recs, prefs)` with `prefs = { liftCount, equipment }`:
 - **Size:** N lifts, 3 / 4 / 5, default 4 (Jon expects to drop about one).
 - **Region:** push (chest, shoulders, triceps), pull (back, biceps, forearms,
-  neck) or legs (quads, hamstrings, glutes, calves). Regions are ordered by
-  their most overdue large (tier 1 to 2) muscle; the first is planned.
+  neck) or legs (quads, hamstrings, glutes, calves). **Region order (v2.1d):**
+  the region trained longest ago comes first, measured by its most recently
+  trained large (tier 1 to 2) muscle; ties go to the higher score. Within the
+  region the most overdue large muscle still leads. (v2.0 ordered regions by
+  the single most overdue large muscle: on Nov 27, 2026 it planned legs again
+  three days after a leg day because glutes were 21 days out, while back was
+  11 days out. Jon caught it from the Today screen.)
   **Reroll steps to the next region**; after a full cycle it also rotates
   the lifts through the five most-used per muscle.
 - **Slots** (`planSessionSlots`): the region's large muscles, most overdue
@@ -697,6 +702,7 @@ cross-references.
 
 | Version | Key changes |
 |---|---|
+| v2.1d | Region order by how long ago the region was trained, not by its single most overdue muscle; replay same-muscle match of the first plan 37% to 47% |
 | v2.1c | Seated machine shoulder press (x1.0) may feed the Strength Index OHP slot, labelled Estimated |
 | v2.1b | Strength Index proxies: leg press (x0.5) may feed the squat slot and barbell Romanian deadlift (x1.0) the deadlift slot, labelled Estimated |
 | v2.1a | Phone layout: `.app` top padding = safe-area inset + 14 px (the wordmark sat on the inset edge and was blurred by the status bar); bottom padding 120 px to 16 px + inset; lift rows 64 px; Send margin 20 px. Found from a device screenshot: the headless render reports zero insets, so check layout with insets simulated (59 top, 34 bottom) |

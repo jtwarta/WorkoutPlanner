@@ -1,7 +1,12 @@
 <!DOCTYPE html>
 
 <!--
-  LiftScript v2.1c
+  LiftScript v2.1d
+  Changes from v2.1c (v2.1d - region order): the session's region is the one
+  trained longest ago (by its most recently trained large muscle), not the
+  region holding the single most overdue muscle. Fixes a leg day being
+  planned again three days after the last one because glutes were overdue.
+
   Changes from v2.1b (v2.1c): Seated Shoulder Press (Machine) may feed the
   Strength Index OHP slot one for one, labelled Estimated.
 
@@ -961,7 +966,7 @@ margin-top: 4px;
     <div class="header">
       <div class="hdr-id">
         <h1>LiftScript</h1>
-        <div class="subtitle" id="last-updated">v2.1c</div>
+        <div class="subtitle" id="last-updated">v2.1d</div>
       </div>
       <button id="header-refresh-btn" class="hdr-btn" onclick="refreshData()" title="Refresh data" aria-label="Refresh data from Hevy and health">
         <svg width="17" height="17" viewBox="0 0 16 16" fill="none" style="display:block;">
@@ -3854,13 +3859,23 @@ function planSessionSlots(recs, n) {
   const tierOf = function(k) { return (MUSCLE_GROUPS[k] && MUSCLE_GROUPS[k].tier) || 3; };
   const ok = recs.filter(function(r) { return r.score >= 0; });
   const custom = (_customSessionActive && _customSessionKeys.length > 0) ? _customSessionKeys.slice() : [];
-  // Regions in order of need: by each region's most overdue large muscle.
-  // Reroll steps to the next region ("not today"); after a full cycle it
-  // also rotates the lifts.
-  const regionOrder = [];
-  ok.forEach(function(r) {
+  // Regions in order of need. v2.1d: the region you trained longest ago
+  // comes first, measured by its most recently trained large muscle. The
+  // old rule took the single most overdue large muscle, so one neglected
+  // muscle (glutes at 21 days) pulled a whole leg day back three days after
+  // the last one. Ties go to the higher score. Reroll steps to the next
+  // region ("not today"); after a full cycle it also rotates the lifts.
+  const regionLast = {};
+  const regionTop = {};
+  recs.forEach(function(r) {
     const rg = regionOf(r.key);
-    if (rg && tierOf(r.key) <= 2 && regionOrder.indexOf(rg) === -1) regionOrder.push(rg);
+    if (!rg || tierOf(r.key) > 2) return;
+    const d = (r.daysSince === Infinity || r.daysSince == null) ? 9999 : r.daysSince;
+    if (regionLast[rg] === undefined || d < regionLast[rg]) regionLast[rg] = d;
+    if (r.score >= 0 && (regionTop[rg] === undefined || r.score > regionTop[rg])) regionTop[rg] = r.score;
+  });
+  const regionOrder = Object.keys(regionTop).sort(function(a, b) {
+    return (regionLast[b] - regionLast[a]) || (regionTop[b] - regionTop[a]);
   });
   let region = null;
   let rot = 0;
@@ -7220,7 +7235,7 @@ function renderDashboard(workouts, opts) {
   const syncColor = (hevyStatus === 'error' || healthStatus === 'missing') ? C.ember
     : (healthStatus === 'stale') ? C.resin : C.lichen; // v1.43
   document.getElementById('last-updated').innerHTML =
-    `v2.1c, ${now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }).replace(/\u202f/g, ' ')} <span id="sync-dot" style="display:inline-block;width:6px;height:6px;border-radius:50%;background:${syncColor};margin-left:4px;vertical-align:middle;position:relative;top:-1px;"></span>`;
+    `v2.1d, ${now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }).replace(/\u202f/g, ' ')} <span id="sync-dot" style="display:inline-block;width:6px;height:6px;border-radius:50%;background:${syncColor};margin-left:4px;vertical-align:middle;position:relative;top:-1px;"></span>`;
 
   // Populate globals BEFORE renderTimedSession so lifted-today detection works
   heatmapDayWorkouts = pp.heatmapDayWorkouts || {};
