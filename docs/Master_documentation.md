@@ -1,6 +1,6 @@
 # LiftScript — Master Documentation
 
-**Version: v2.1e** · **Reconstructed July 10, 2026 · updated to v2.1e November 27, 2026**
+**Version: v2.1f** · **Reconstructed July 10, 2026 · updated to v2.1f November 27, 2026**
 
 > **Provenance note:** the original `Master_documentation.md` (last at v1.34 +
 > pending v1.35–v1.39 deltas) was deleted from the project before patching. This
@@ -413,7 +413,17 @@ only, not for picking lifts. `COMPOUND_ANCHORS` was removed in v2.0.
   (v2.1e)** names a chosen main lift per muscle; it ranks first whenever the
   equipment setting allows it, even with no recent sessions. Currently
   quads: Leg Press (Machine), Jon's replacement for barbell back squats.
-  To change a main lift, edit that map. Home mode filters
+  To change a main lift, edit that map.
+- **Rotation (v2.1f):** only the first lift for a large (tier 1 to 2) muscle
+  is sticky. Every other slot (a muscle's second lift, small muscles, core)
+  looks at the top `ROTATE_TOP` (3) candidates that were done at least
+  `ROTATE_MIN_USES` (2) times in 90 days and takes the one done least
+  recently; with fewer than two such lifts it keeps the favourite. Reason:
+  ranking by use is self-reinforcing, which suits main lifts (bench stalled
+  at one session every 18 days) but narrows accessories for no gain. Cost on
+  the six-month replay: exact match of the first plan 18% to 15%, share of
+  the plan done 14% to 11% (history cannot reward variety that was never
+  offered). Settings tried: top 3 / min 1 (12%, 9%), top 2 / min 2 (15%, 12%). Home mode filters
   `GYM_ONLY_REGEX`. A muscle with no history falls back to
   `MUSCLE_EXERCISE_PICKS` (shown as "New for you").
 - **Guards:** no repeated exercise or name-family; within one muscle no
@@ -712,6 +722,7 @@ cross-references.
 
 | Version | Key changes |
 |---|---|
+| v2.1f | Accessory rotation: non-main slots cycle through the three most-used lifts (done twice or more in 90 days), least recent first |
 | v2.1e | `PREFERRED_LIFTS`: Leg Press (Machine) leads quads in Gym mode (use-based ranking kept picking goblet squats) |
 | v2.1d | Region order by how long ago the region was trained, not by its single most overdue muscle; replay same-muscle match of the first plan 37% to 47% |
 | v2.1c | Seated machine shoulder press (x1.0) may feed the Strength Index OHP slot, labelled Estimated |

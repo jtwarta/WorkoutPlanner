@@ -1,6 +1,12 @@
 <!DOCTYPE html>
 
 <!--
+  LiftScript v2.1f
+  Changes from v2.1e (v2.1f - accessory rotation): the main lift for a large
+  muscle stays the most-used (or preferred, or stalled) one. All other slots
+  rotate through the three most-used options for the muscle, least recently
+  done first.
+
   LiftScript v2.1e
   Changes from v2.1d (v2.1e): PREFERRED_LIFTS. Leg Press (Machine) is the
   preferred quad lift and leads quads in Gym mode. Ranking by recent use
@@ -971,7 +977,7 @@ margin-top: 4px;
     <div class="header">
       <div class="hdr-id">
         <h1>LiftScript</h1>
-        <div class="subtitle" id="last-updated">v2.1e</div>
+        <div class="subtitle" id="last-updated">v2.1f</div>
       </div>
       <button id="header-refresh-btn" class="hdr-btn" onclick="refreshData()" title="Refresh data" aria-label="Refresh data from Hevy and health">
         <svg width="17" height="17" viewBox="0 0 16 16" fill="none" style="display:block;">
@@ -3835,6 +3841,8 @@ function clearSessionEdits() { _sessionSwaps = {}; _sessionSkips = {}; _sessionB
 // lift ranks first whenever the equipment setting allows it, even with no
 // recent sessions (ranking by 90-day use alone can never bring in a lift he
 // has just decided to start doing).
+const ROTATE_TOP = 3;       // v2.1f: accessory slots rotate through this many of your most-used lifts
+const ROTATE_MIN_USES = 2;  // ...counting only lifts done at least this often in 90 days
 const PREFERRED_LIFTS = {
   quads: 'Leg Press (Machine)', // replaces barbell back squats (Nov 22, 2026)
 };
@@ -3966,6 +3974,16 @@ function buildTimedSession(recs, prefs) {
     const sw = _sessionSwaps[slotKey];
     if (sw) pick = valid.find(function(c) { return c.name === sw; }) || null;
     if (!pick && idx === 0 && tier <= 2) pick = valid.find(function(c) { return c.compound; }) || null;
+    // v2.1f: only the main lift for a large muscle is sticky (strength needs
+    // repetition). Every other slot rotates through your three most-used
+    // options for that muscle, taking the one done least recently, so the
+    // "most used wins" loop cannot narrow accessories to one lift forever.
+    if (!pick && !(idx === 0 && tier <= 2) && valid.length > 1) {
+      const pref = PREFERRED_LIFTS[mk];
+      const pool = valid.slice(0, ROTATE_TOP).filter(function(c) { return c.uses >= ROTATE_MIN_USES || c.name === pref; });
+      // Rotate only among lifts you really use; otherwise keep the favourite
+      if (pool.length >= 2) pick = pool.slice().sort(function(a, b) { return a.last.localeCompare(b.last); })[0] || null;
+    }
     if (!pick) pick = valid[0] || null; // otherwise your most-used lift that still fits
     if (!pick) return;
     used[pick.name] = true;
@@ -7253,7 +7271,7 @@ function renderDashboard(workouts, opts) {
   const syncColor = (hevyStatus === 'error' || healthStatus === 'missing') ? C.ember
     : (healthStatus === 'stale') ? C.resin : C.lichen; // v1.43
   document.getElementById('last-updated').innerHTML =
-    `v2.1e, ${now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }).replace(/\u202f/g, ' ')} <span id="sync-dot" style="display:inline-block;width:6px;height:6px;border-radius:50%;background:${syncColor};margin-left:4px;vertical-align:middle;position:relative;top:-1px;"></span>`;
+    `v2.1f, ${now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }).replace(/\u202f/g, ' ')} <span id="sync-dot" style="display:inline-block;width:6px;height:6px;border-radius:50%;background:${syncColor};margin-left:4px;vertical-align:middle;position:relative;top:-1px;"></span>`;
 
   // Populate globals BEFORE renderTimedSession so lifted-today detection works
   heatmapDayWorkouts = pp.heatmapDayWorkouts || {};

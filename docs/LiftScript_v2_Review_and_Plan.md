@@ -4,7 +4,7 @@ Reviewed v1.48 (commit 694a147) on November 19, 2026. No app code changed in thi
 
 ## Where things stand (November 27, 2026)
 
-**Live version: v2.1e.** The authoritative technical reference is
+**Live version: v2.1f.** The authoritative technical reference is
 `docs/Master_documentation.md` in the repo (and its copy in the project).
 
 | Version | Date | What it did |
@@ -16,6 +16,7 @@ Reviewed v1.48 (commit 694a147) on November 19, 2026. No app code changed in thi
 | v2.1b, v2.1c | Nov 22 | Strength Index proxies: leg press (at half) for squat, barbell Romanian deadlift (one for one) for deadlift, machine shoulder press (one for one) for overhead press |
 | v2.1d | Nov 27 | Plans the region trained longest ago; fixed a leg day repeating three days after the last |
 | v2.1e | Nov 27 | Leg press set as the preferred quad lift, so leg days in Gym mode lead with it |
+| v2.1f | Nov 27 | Accessories rotate through your three most-used options; main lifts stay fixed |
 
 **Decisions made along the way**
 - Four lifts per session, expecting about one to be dropped.
@@ -24,6 +25,18 @@ Reviewed v1.48 (commit 694a147) on November 19, 2026. No app code changed in thi
 - Moving from barbell back squats to the leg press; squats were kept light
   to protect the lower back, so past squat numbers understate leg strength.
 - Proxies accepted for the Strength Index, always labelled Estimated.
+
+**Standing request from Jon (Nov 27, 2026):** stay alert to better options
+as time unfolds. At every review, do not only rerun the numbers; look for
+and propose improvements unprompted. Checklist:
+- Lifts he keeps adding by hand or swapping to: should one become a
+  preferred or main lift (`PREFERRED_LIFTS`)?
+- Lifts the plan keeps offering that he keeps skipping or swapping away.
+- Main lifts that are still stalled after a month of leading their muscle.
+- Whether accessory rotation is being followed or swapped back.
+- Regions or muscles drifting out (legs, glutes, neck, calves).
+- Proxy inputs going stale in the Strength Index.
+- New evidence or Hevy API features worth using.
 
 **Next**
 1. Use the app for about four weeks without tuning (to roughly December 25).
