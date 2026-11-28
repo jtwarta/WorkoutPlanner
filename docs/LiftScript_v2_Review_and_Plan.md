@@ -38,6 +38,14 @@ and propose improvements unprompted. Checklist:
 - Proxy inputs going stale in the Strength Index.
 - New evidence or Hevy API features worth using.
 
+**What drives completion (Jon, Nov 27, 2026):** he finished all four planned
+pull lifts that day because each one feels good to perform. Enjoyment, not
+only habit, is why a lift gets done. Ranking by use is a rough stand-in for
+it. A better signal would be how often a lift is completed when it is
+offered, which the app cannot measure yet because it keeps no record of the
+plans it sent. Candidate for the next review: log each sent plan so
+follow-through per lift can be measured, then rank on that.
+
 **Next**
 1. Use the app for about four weeks without tuning (to roughly December 25).
 2. Then rerun `tools/backtest.js` on the new sessions. The numbers to beat:
