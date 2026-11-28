@@ -1,6 +1,11 @@
 <!DOCTYPE html>
 
 <!--
+  LiftScript v2.1e
+  Changes from v2.1d (v2.1e): PREFERRED_LIFTS. Leg Press (Machine) is the
+  preferred quad lift and leads quads in Gym mode. Ranking by recent use
+  kept choosing goblet squats because the leg press was last logged in Feb.
+
   LiftScript v2.1d
   Changes from v2.1c (v2.1d - region order): the session's region is the one
   trained longest ago (by its most recently trained large muscle), not the
@@ -966,7 +971,7 @@ margin-top: 4px;
     <div class="header">
       <div class="hdr-id">
         <h1>LiftScript</h1>
-        <div class="subtitle" id="last-updated">v2.1d</div>
+        <div class="subtitle" id="last-updated">v2.1e</div>
       </div>
       <button id="header-refresh-btn" class="hdr-btn" onclick="refreshData()" title="Refresh data" aria-label="Refresh data from Hevy and health">
         <svg width="17" height="17" viewBox="0 0 16 16" fill="none" style="display:block;">
@@ -3826,6 +3831,14 @@ let _sessionSwaps = {};
 let _sessionSkips = {};
 function clearSessionEdits() { _sessionSwaps = {}; _sessionSkips = {}; _sessionBackoffs = {}; }
 
+// v2.1e: lifts Jon has chosen as his main lift for a muscle. A preferred
+// lift ranks first whenever the equipment setting allows it, even with no
+// recent sessions (ranking by 90-day use alone can never bring in a lift he
+// has just decided to start doing).
+const PREFERRED_LIFTS = {
+  quads: 'Leg Press (Machine)', // replaces barbell back squats (Nov 22, 2026)
+};
+
 function liftCandidates(muscleKey, prefs) {
   const cutoff = new Date();
   cutoff.setDate(cutoff.getDate() - 90);
@@ -3842,7 +3855,12 @@ function liftCandidates(muscleKey, prefs) {
   }
   // v2.1: a stalled lift goes first, so it is practised whenever its muscle comes up
   out.forEach(function(o) { o.stalled = !!prescribeExercise(o.name).stalled; });
-  out.sort(function(a, b) { return ((b.stalled ? 1 : 0) - (a.stalled ? 1 : 0)) || (b.uses - a.uses) || b.last.localeCompare(a.last) || a.name.localeCompare(b.name); });
+  const pref = PREFERRED_LIFTS[muscleKey];
+  if (pref && !out.some(function(o) { return o.name === pref; }) && !(prefs.equipment === 'home' && GYM_ONLY_REGEX.test(pref))) {
+    const pdb = EXERCISE_DB[pref];
+    out.push({ name: pref, uses: 0, last: '', compound: pdb ? pdb.type === 'compound' : isLikelyCompound(pref), stalled: false });
+  }
+  out.sort(function(a, b) { return ((b.name === pref ? 1 : 0) - (a.name === pref ? 1 : 0)) || ((b.stalled ? 1 : 0) - (a.stalled ? 1 : 0)) || (b.uses - a.uses) || b.last.localeCompare(a.last) || a.name.localeCompare(b.name); });
   if (out.length === 0) {
     // Nothing logged for this muscle: fall back to the reference list
     const picks = MUSCLE_EXERCISE_PICKS[muscleKey] || [];
@@ -7235,7 +7253,7 @@ function renderDashboard(workouts, opts) {
   const syncColor = (hevyStatus === 'error' || healthStatus === 'missing') ? C.ember
     : (healthStatus === 'stale') ? C.resin : C.lichen; // v1.43
   document.getElementById('last-updated').innerHTML =
-    `v2.1d, ${now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }).replace(/\u202f/g, ' ')} <span id="sync-dot" style="display:inline-block;width:6px;height:6px;border-radius:50%;background:${syncColor};margin-left:4px;vertical-align:middle;position:relative;top:-1px;"></span>`;
+    `v2.1e, ${now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }).replace(/\u202f/g, ' ')} <span id="sync-dot" style="display:inline-block;width:6px;height:6px;border-radius:50%;background:${syncColor};margin-left:4px;vertical-align:middle;position:relative;top:-1px;"></span>`;
 
   // Populate globals BEFORE renderTimedSession so lifted-today detection works
   heatmapDayWorkouts = pp.heatmapDayWorkouts || {};

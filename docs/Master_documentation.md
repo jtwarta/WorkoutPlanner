@@ -1,6 +1,6 @@
 # LiftScript — Master Documentation
 
-**Version: v2.1d** · **Reconstructed July 10, 2026 · updated to v2.1d November 27, 2026**
+**Version: v2.1e** · **Reconstructed July 10, 2026 · updated to v2.1e November 27, 2026**
 
 > **Provenance note:** the original `Master_documentation.md` (last at v1.34 +
 > pending v1.35–v1.39 deltas) was deleted from the project before patching. This
@@ -409,7 +409,11 @@ only, not for picking lifts. `COMPOUND_ANCHORS` was removed in v2.0.
   muscles first and gives each a second lift before filling from the region.
 - **Lifts** (`liftCandidates`): only exercises in the workout history whose
   primary muscle matches, ranked by uses in the last 90 days, then recency.
-  The first lift for a large muscle prefers a compound. Home mode filters
+  The first lift for a large muscle prefers a compound. **`PREFERRED_LIFTS`
+  (v2.1e)** names a chosen main lift per muscle; it ranks first whenever the
+  equipment setting allows it, even with no recent sessions. Currently
+  quads: Leg Press (Machine), Jon's replacement for barbell back squats.
+  To change a main lift, edit that map. Home mode filters
   `GYM_ONLY_REGEX`. A muscle with no history falls back to
   `MUSCLE_EXERCISE_PICKS` (shown as "New for you").
 - **Guards:** no repeated exercise or name-family; within one muscle no
@@ -708,6 +712,7 @@ cross-references.
 
 | Version | Key changes |
 |---|---|
+| v2.1e | `PREFERRED_LIFTS`: Leg Press (Machine) leads quads in Gym mode (use-based ranking kept picking goblet squats) |
 | v2.1d | Region order by how long ago the region was trained, not by its single most overdue muscle; replay same-muscle match of the first plan 37% to 47% |
 | v2.1c | Seated machine shoulder press (x1.0) may feed the Strength Index OHP slot, labelled Estimated |
 | v2.1b | Strength Index proxies: leg press (x0.5) may feed the squat slot and barbell Romanian deadlift (x1.0) the deadlift slot, labelled Estimated |

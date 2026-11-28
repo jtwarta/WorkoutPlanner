@@ -4,7 +4,7 @@ Reviewed v1.48 (commit 694a147) on November 19, 2026. No app code changed in thi
 
 ## Where things stand (November 27, 2026)
 
-**Live version: v2.1d.** The authoritative technical reference is
+**Live version: v2.1e.** The authoritative technical reference is
 `docs/Master_documentation.md` in the repo (and its copy in the project).
 
 | Version | Date | What it did |
@@ -15,6 +15,7 @@ Reviewed v1.48 (commit 694a147) on November 19, 2026. No app code changed in thi
 | v2.1a | Nov 20 | Phone layout: space under the status bar, no empty band at the bottom |
 | v2.1b, v2.1c | Nov 22 | Strength Index proxies: leg press (at half) for squat, barbell Romanian deadlift (one for one) for deadlift, machine shoulder press (one for one) for overhead press |
 | v2.1d | Nov 27 | Plans the region trained longest ago; fixed a leg day repeating three days after the last |
+| v2.1e | Nov 27 | Leg press set as the preferred quad lift, so leg days in Gym mode lead with it |
 
 **Decisions made along the way**
 - Four lifts per session, expecting about one to be dropped.
@@ -33,8 +34,10 @@ Reviewed v1.48 (commit 694a147) on November 19, 2026. No app code changed in thi
    cut. Presentation only. v2.3 (readiness signals, offline) stays optional.
 
 **Open items**
-- No leg press has been logged since February 26, 2026. The squat slot stays
-  at the last real squat (129) until one syncs.
+- No leg press has been logged since February 26, 2026. From v2.1e leg days
+  in Gym mode prescribe it (240 lb, repeating the February session). The
+  Strength Index squat slot stays at the last real squat (129) until one
+  syncs.
 - The row slot has no qualifying lift in the last six months (last barbell
   row May 27), so it reads "No data".
 - The overhead press figure (140, from July 29) leaves the six-month window
