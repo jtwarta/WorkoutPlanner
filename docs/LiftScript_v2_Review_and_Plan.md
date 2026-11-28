@@ -2,6 +2,57 @@
 
 Reviewed v1.48 (commit 694a147) on November 19, 2026. No app code changed in this run.
 
+## Where things stand (November 27, 2026)
+
+**Live version: v2.1d.** The authoritative technical reference is
+`docs/Master_documentation.md` in the repo (and its copy in the project).
+
+| Version | Date | What it did |
+|---|---|---|
+| v1.49 | Nov 19 | Reliability: sync on every open, faster cached paint, state kept across background updates, visible errors, weigh-in entry, dead code removed |
+| v2.0 | Nov 19 | Four-lift sessions by region from your own lift history, targets scaled to your pace, fitted session time, Today rebuilt with swap and skip |
+| v2.1 | Nov 20 | Progression: personal rep bands, real load steps, repeat after a 21-day gap, stalls flagged with an optional back-off |
+| v2.1a | Nov 20 | Phone layout: space under the status bar, no empty band at the bottom |
+| v2.1b, v2.1c | Nov 22 | Strength Index proxies: leg press (at half) for squat, barbell Romanian deadlift (one for one) for deadlift, machine shoulder press (one for one) for overhead press |
+| v2.1d | Nov 27 | Plans the region trained longest ago; fixed a leg day repeating three days after the last |
+
+**Decisions made along the way**
+- Four lifts per session, expecting about one to be dropped.
+- Composite scores to be cut (in v2.2).
+- Rep bands inferred from logs. In-app weigh-ins, no Shortcut change. Single user.
+- Moving from barbell back squats to the leg press; squats were kept light
+  to protect the lower back, so past squat numbers understate leg strength.
+- Proxies accepted for the Strength Index, always labelled Estimated.
+
+**Next**
+1. Use the app for about four weeks without tuning (to roughly December 25).
+2. Then rerun `tools/backtest.js` on the new sessions. The numbers to beat:
+   prescribed load with reps met 36%; share of each plan done 15%; first plan
+   covers the muscles trained 47%.
+3. Then v2.2: three tabs (Today, Week, Progress) and the composite scores
+   cut. Presentation only. v2.3 (readiness signals, offline) stays optional.
+
+**Open items**
+- No leg press has been logged since February 26, 2026. The squat slot stays
+  at the last real squat (129) until one syncs.
+- The row slot has no qualifying lift in the last six months (last barbell
+  row May 27), so it reads "No data".
+- The overhead press figure (140, from July 29) leaves the six-month window
+  in late January.
+- Body weight is still the February 16 value until a weigh-in is entered on
+  the Body tab.
+- Loads, layout and controls were checked in a headless browser and against
+  two phone screenshots. The headless render cannot reproduce the phone's
+  status bar or insets.
+- Cardio suggestions still name machines (rower, bike) not in the logs;
+  slated for v2.2.
+- The "LiftScript v2 proposed screens" page shows the earlier three-lift
+  layout, not what shipped.
+- The `pre-v1.49` backup tag could not be pushed; the history holds every
+  earlier version.
+
+---
+
 **How to read the evidence.** *Verified* means I ran it: the real engine code in a Node harness against all 588 Hevy workouts, a headless-browser render with recorded fixtures, or a live API call. *Hypothesis* means I inferred it from reading. Line numbers refer to `index.html` at v1.48.
 
 **Coverage.** I read the engine, data, session, cardio, boot and scoring code line by line (L884 to L5583, L6249 to L6383, L6940 to L7442). I did not line-read the Body-tab renderers, CSV import, vitals renderer and motion helpers (L5584 to L6248, L6379 to L6939); I reviewed those through the rendered output and the function list.

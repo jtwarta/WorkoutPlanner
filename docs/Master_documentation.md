@@ -101,6 +101,12 @@ Scientific foundation (as documented in the code header):
   token value is deliberately not written into this document (a copy is
   committed to the public repo); Claude retrieves it from past project chats
   or asks Jon at session start.
+- **Pushing without the token (verified Nov 19 to 27, 2026):** a Chat-mode
+  session in the project can attach the repo with push access (the session's
+  add-repository tool), then push over plain HTTPS; every release from v1.49
+  to v2.1d went out this way. Tags cannot be pushed through it. Use a clone
+  depth of 20 or more before rebasing: the Shortcut's frequent "Update health
+  data" commits outrun a depth-5 fetch and make the rebase conflict.
 - **Cowork mode cannot push** (verified Oct 16, 2026): its git proxy only
   allows repos in the session's authorized set and rejects
   `jtwarta/WorkoutPlanner` even with a valid token in the URL; the GitHub
